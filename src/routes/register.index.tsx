@@ -171,10 +171,10 @@ function RegisterPage() {
             <CardHeader><CardTitle>Participant Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="Faculty Name" error={form.formState.errors.faculty_name?.message}>
-                <Input {...form.register("faculty_name")} placeholder="Dr. Jane Doe" />
+                <Input {...form.register("faculty_name")} placeholder="Enter Your Name" />
               </Field>
               <Field label="Faculty ID" error={form.formState.errors.faculty_id?.message}>
-                <Input {...form.register("faculty_id")} placeholder="FAC-001" />
+                <Input {...form.register("faculty_id")} placeholder="Enter Your ID" />
               </Field>
               <Field label="Designation" error={form.formState.errors.designation?.message}>
                 <Select onValueChange={(v) => form.setValue("designation", v as FormVals["designation"], { shouldValidate: true })}>
