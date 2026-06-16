@@ -38,7 +38,7 @@ const schema = z.object({
   institute: z.enum([GNITS_NAME, "Others"]),
   custom_institute: z.string().trim().max(150).optional(),
   email: z.string().trim().email().max(255),
-  phone: z.string().trim().regex(/^[0-9+\-\s()]{10,15}$/, "Invalid mobile number"),
+  phone: z.string().trim().regex(/^[0-9+\-\s()]{10,20}$/, "Invalid mobile number"),
   utr_number: z.string().trim().min(8, "Minimum 8 characters").max(50),
   declaration: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
 }).refine(d => d.department !== "Others" || (d.custom_department && d.custom_department.length > 0), {
@@ -129,6 +129,16 @@ function RegisterPage() {
     }
   }
 
+  const onError = (errors: any) => {
+    const errorMessages = Object.entries(errors)
+      .map(([key, value]: [string, any]) => {
+        const fieldName = key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+        return `${fieldName}: ${value.message}`;
+      })
+      .join(", ");
+    toast.error(`Please correct the errors: ${errorMessages}`);
+  };
+
   if (!open) {
     return (
       <div className="min-h-screen bg-background">
@@ -153,7 +163,7 @@ function RegisterPage() {
           <p className="mt-2 text-muted-foreground">{settings?.fdp_dates} · {settings?.venue}</p>
         </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
           <Card>
             <CardHeader><CardTitle>Participant Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
