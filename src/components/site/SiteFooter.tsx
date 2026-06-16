@@ -12,14 +12,14 @@ export function SiteFooter({ footerText, email, phone }: { footerText?: string |
         </div>
         <div>
           <h4 className="mb-2 font-bold">Contact</h4>
-          <p className="text-sm opacity-80">{email ?? "csmcsd@gnits.ac.in"}</p>
+          <p className="text-sm opacity-80">{email ?? "+91 8790883408"}</p>
           {phone && <p className="text-sm opacity-80">{phone}</p>}
         </div>
         <div>
           <h4 className="mb-2 font-bold">Quick Links</h4>
           <div className="flex flex-col gap-1 text-sm opacity-80">
             <Link to="/register" className="hover:text-gold">Register</Link>
-            <Link to="/auth" className="hover:text-gold">Admin Login</Link>
+            {/* <Link to="/auth" className="hover:text-gold">Admin Login</Link> */}
           </div>
         </div>
       </div>
