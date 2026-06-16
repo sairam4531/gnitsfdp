@@ -88,7 +88,7 @@ CREATE TABLE public.website_settings (
   seat_limit INTEGER NOT NULL DEFAULT 500,
   hero_banner_url TEXT,
   brochure_url TEXT,
-  contact_email TEXT DEFAULT 'csmcsd@gnits.ac.in',
+  contact_email TEXT DEFAULT '',
   contact_phone TEXT,
   footer_text TEXT DEFAULT '© G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
