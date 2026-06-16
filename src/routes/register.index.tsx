@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,51 +48,6 @@ const schema = z.object({
 });
 
 type FormVals = z.infer<typeof schema>;
-
-const sendSmsFn = createServerFn("POST", async (payload: { phone: string; name: string; regId: string }) => {
-  const authKey = process.env.MSG91_AUTH_KEY;
-  const templateId = process.env.MSG91_TEMPLATE_ID;
-
-  if (!authKey || !templateId) {
-    console.warn("SMS sending skipped: MSG91_AUTH_KEY or MSG91_TEMPLATE_ID is not configured.");
-    return { success: false, message: "SMS not configured" };
-  }
-
-  // Clean the phone number to digits only
-  let formattedPhone = payload.phone.replace(/[^0-9]/g, "");
-  // If it's 10 digits, default to India (+91)
-  if (formattedPhone.length === 10) {
-    formattedPhone = "91" + formattedPhone;
-  }
-
-  try {
-    const response = await fetch("https://control.msg91.com/api/v5/flow/", {
-      method: "POST",
-      headers: {
-        "authkey": authKey,
-        "content-type": "application/json",
-        "accept": "application/json",
-      },
-      body: JSON.stringify({
-        template_id: templateId,
-        recipients: [
-          {
-            mobiles: formattedPhone,
-            name: payload.name,
-            reg_id: payload.regId,
-          },
-        ],
-      }),
-    });
-
-    const data = await response.json();
-    console.log("MSG91 SMS response:", data);
-    return { success: response.ok, data };
-  } catch (error: any) {
-    console.error("Failed to send SMS:", error);
-    return { success: false, error: error?.message || error };
-  }
-});
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -167,17 +121,6 @@ function RegisterPage() {
       } as never);
       if (error) throw error;
 
-      // Send SMS via server function (non-blocking)
-      try {
-        await sendSmsFn({
-          phone: values.phone,
-          name: values.faculty_name,
-          regId: regId,
-        });
-      } catch (smsErr) {
-        console.error("SMS sending failed:", smsErr);
-      }
-
       toast.success("Successfully registered for FDP");
       navigate({ to: "/register/success", search: { id: regId } });
     } catch (e: any) {
@@ -228,10 +171,10 @@ function RegisterPage() {
             <CardHeader><CardTitle>Participant Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="Faculty Name" error={form.formState.errors.faculty_name?.message}>
-                <Input {...form.register("faculty_name")} placeholder="Enter Your Name" />
+                <Input {...form.register("faculty_name")} placeholder="Dr. Jane Doe" />
               </Field>
               <Field label="Faculty ID" error={form.formState.errors.faculty_id?.message}>
-                <Input {...form.register("faculty_id")} placeholder="Enter Your ID" />
+                <Input {...form.register("faculty_id")} placeholder="FAC-001" />
               </Field>
               <Field label="Designation" error={form.formState.errors.designation?.message}>
                 <Select onValueChange={(v) => form.setValue("designation", v as FormVals["designation"], { shouldValidate: true })}>
