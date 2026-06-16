@@ -121,9 +121,10 @@ function RegisterPage() {
 
       toast.success("Successfully registered for FDP");
       navigate({ to: "/register/success", search: { id: inserted!.registration_id } });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to submit";
-      toast.error(msg);
+    } catch (e: any) {
+      console.error("Submission error details:", e);
+      const msg = e?.message || (typeof e === "string" ? e : JSON.stringify(e)) || "Failed to submit";
+      toast.error(`Error: ${msg}`);
     } finally {
       setSubmitting(false);
     }
