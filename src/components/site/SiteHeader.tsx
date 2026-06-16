@@ -22,9 +22,9 @@ export function SiteHeader() {
           <a href="/#contact" className="text-muted-foreground transition hover:text-foreground">Contact</a>
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-90">
+          {/* <Button asChild size="sm" className="bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-90">
             <Link to="/register">Register</Link>
-          </Button>
+          </Button> */}
         </div>
       </div>
     </header>
