@@ -100,7 +100,9 @@ function RegisterPage() {
       const { error: upErr } = await supabase.storage.from("payment-screenshots").upload(path, file, { contentType: file.type });
       if (upErr) throw upErr;
 
-      const { data: inserted, error } = await supabase.from("registrations").insert({
+      const regId = `GNITS-FDP-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const { error } = await supabase.from("registrations").insert({
         faculty_name: values.faculty_name,
         faculty_id: values.faculty_id,
         designation: values.designation,
@@ -114,13 +116,13 @@ function RegisterPage() {
         registration_fee: fee,
         utr_number: values.utr_number,
         payment_screenshot_url: path,
-        registration_id: "",
+        registration_id: regId,
         payment_status: "Approved",
-      } as never).select("registration_id").single();
+      } as never);
       if (error) throw error;
 
       toast.success("Successfully registered for FDP");
-      navigate({ to: "/register/success", search: { id: inserted!.registration_id } });
+      navigate({ to: "/register/success", search: { id: regId } });
     } catch (e: any) {
       console.error("Submission error details:", e);
       const msg = e?.message || (typeof e === "string" ? e : JSON.stringify(e)) || "Failed to submit";
