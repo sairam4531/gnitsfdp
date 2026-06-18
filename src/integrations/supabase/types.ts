@@ -14,6 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
+      feedback_forms: {
+        Row: {
+          created_at: string
+          fdp_title: string
+          feedback_button_name: string
+          feedback_date: string | null
+          id: string
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fdp_title: string
+          feedback_button_name?: string
+          feedback_date?: string | null
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fdp_title?: string
+          feedback_button_name?: string
+          feedback_date?: string | null
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      feedback_questions: {
+        Row: {
+          created_at: string
+          feedback_form_id: string
+          id: string
+          options_json: Json
+          question_order: number
+          question_text: string
+          question_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feedback_form_id: string
+          id?: string
+          options_json?: Json
+          question_order?: number
+          question_text: string
+          question_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feedback_form_id?: string
+          id?: string
+          options_json?: Json
+          question_order?: number
+          question_text?: string
+          question_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_questions_feedback_form_id_fkey"
+            columns: ["feedback_form_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_responses: {
+        Row: {
+          answers_json: Json
+          feedback_form_id: string
+          id: string
+          participant_email: string
+          participant_name: string
+          submitted_at: string
+        }
+        Insert: {
+          answers_json?: Json
+          feedback_form_id: string
+          id?: string
+          participant_email: string
+          participant_name: string
+          submitted_at?: string
+        }
+        Update: {
+          answers_json?: Json
+          feedback_form_id?: string
+          id?: string
+          participant_email?: string
+          participant_name?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_responses_feedback_form_id_fkey"
+            columns: ["feedback_form_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           account_name: string | null
