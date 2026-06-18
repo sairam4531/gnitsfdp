@@ -24,6 +24,7 @@ import { Route as AdminPaymentSettingsRouteImport } from './routes/admin.payment
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminFeedbackResponsesRouteImport } from './routes/admin.feedback.responses'
 import { Route as AdminFeedbackQuestionsRouteImport } from './routes/admin.feedback.questions'
+import { Route as AdminFeedbackViewFormIdRouteImport } from './routes/admin.feedback.view.$formId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -100,6 +101,11 @@ const AdminFeedbackQuestionsRoute = AdminFeedbackQuestionsRouteImport.update({
   path: '/feedback/questions',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeedbackViewFormIdRoute = AdminFeedbackViewFormIdRouteImport.update({
+  id: '/feedback/view/$formId',
+  path: '/feedback/view/$formId',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/register/': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
   '/admin/feedback/responses': typeof AdminFeedbackResponsesRoute
+  '/admin/feedback/view/$formId': typeof AdminFeedbackViewFormIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
   '/admin/feedback/responses': typeof AdminFeedbackResponsesRoute
+  '/admin/feedback/view/$formId': typeof AdminFeedbackViewFormIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/register/': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
   '/admin/feedback/responses': typeof AdminFeedbackResponsesRoute
+  '/admin/feedback/view/$formId': typeof AdminFeedbackViewFormIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/register/'
     | '/admin/feedback/questions'
     | '/admin/feedback/responses'
+    | '/admin/feedback/view/$formId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/feedback/questions'
     | '/admin/feedback/responses'
+    | '/admin/feedback/view/$formId'
   id:
     | '__root__'
     | '/'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/register/'
     | '/admin/feedback/questions'
     | '/admin/feedback/responses'
+    | '/admin/feedback/view/$formId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -320,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFeedbackQuestionsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/feedback/view/$formId': {
+      id: '/admin/feedback/view/$formId'
+      path: '/feedback/view/$formId'
+      fullPath: '/admin/feedback/view/$formId'
+      preLoaderRoute: typeof AdminFeedbackViewFormIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -334,6 +353,7 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminFeedbackQuestionsRoute: typeof AdminFeedbackQuestionsRoute
   AdminFeedbackResponsesRoute: typeof AdminFeedbackResponsesRoute
+  AdminFeedbackViewFormIdRoute: typeof AdminFeedbackViewFormIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -347,6 +367,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminFeedbackQuestionsRoute: AdminFeedbackQuestionsRoute,
   AdminFeedbackResponsesRoute: AdminFeedbackResponsesRoute,
+  AdminFeedbackViewFormIdRoute: AdminFeedbackViewFormIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
