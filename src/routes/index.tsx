@@ -22,6 +22,8 @@ import {
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { useWebsiteSettings, useSpeakers } from "@/lib/queries";
+import { useEnabledFeedbackForms } from "@/lib/feedback";
+import { MessageSquare } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({

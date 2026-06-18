@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RegisterIndexRouteImport } from './routes/register.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as RegisterSuccessRouteImport } from './routes/register.success'
+import { Route as FeedbackFormIdRouteImport } from './routes/feedback.$formId'
 import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
 import { Route as AdminWebsiteSettingsRouteImport } from './routes/admin.website-settings'
 import { Route as AdminSpeakersRouteImport } from './routes/admin.speakers'
@@ -54,6 +55,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const RegisterSuccessRoute = RegisterSuccessRouteImport.update({
   id: '/register/success',
   path: '/register/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackFormIdRoute = FeedbackFormIdRouteImport.update({
+  id: '/feedback/$formId',
+  path: '/feedback/$formId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWorkshopRoute = AdminWorkshopRouteImport.update({
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/admin/speakers': typeof AdminSpeakersRoute
   '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
+  '/feedback/$formId': typeof FeedbackFormIdRoute
   '/register/success': typeof RegisterSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/register/': typeof RegisterIndexRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/admin/speakers': typeof AdminSpeakersRoute
   '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
+  '/feedback/$formId': typeof FeedbackFormIdRoute
   '/register/success': typeof RegisterSuccessRoute
   '/admin': typeof AdminIndexRoute
   '/register': typeof RegisterIndexRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/admin/speakers': typeof AdminSpeakersRoute
   '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
+  '/feedback/$formId': typeof FeedbackFormIdRoute
   '/register/success': typeof RegisterSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/register/': typeof RegisterIndexRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/admin/speakers'
     | '/admin/website-settings'
     | '/admin/workshop'
+    | '/feedback/$formId'
     | '/register/success'
     | '/admin/'
     | '/register/'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/admin/speakers'
     | '/admin/website-settings'
     | '/admin/workshop'
+    | '/feedback/$formId'
     | '/register/success'
     | '/admin'
     | '/register'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/admin/speakers'
     | '/admin/website-settings'
     | '/admin/workshop'
+    | '/feedback/$formId'
     | '/register/success'
     | '/admin/'
     | '/register/'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FeedbackFormIdRoute: typeof FeedbackFormIdRoute
   RegisterSuccessRoute: typeof RegisterSuccessRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
 }
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/register/success'
       fullPath: '/register/success'
       preLoaderRoute: typeof RegisterSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback/$formId': {
+      id: '/feedback/$formId'
+      path: '/feedback/$formId'
+      fullPath: '/feedback/$formId'
+      preLoaderRoute: typeof FeedbackFormIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/workshop': {
@@ -376,6 +396,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  FeedbackFormIdRoute: FeedbackFormIdRoute,
   RegisterSuccessRoute: RegisterSuccessRoute,
   RegisterIndexRoute: RegisterIndexRoute,
 }
