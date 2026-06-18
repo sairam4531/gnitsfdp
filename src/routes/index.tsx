@@ -22,6 +22,8 @@ import {
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { useWebsiteSettings, useSpeakers } from "@/lib/queries";
+import { useEnabledFeedbackForms } from "@/lib/feedback";
+import { MessageSquare } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
@@ -50,6 +52,8 @@ const outcomes = [
 function Home() {
   const { data: settings } = useWebsiteSettings();
   const { data: speakers = [] } = useSpeakers();
+  const { data: enabledFeedback = [] } = useEnabledFeedbackForms();
+  const feedbackForm = enabledFeedback[0];
   const open = settings?.registration_open ?? true;
 
   return (
@@ -99,6 +103,13 @@ function Home() {
               <Button asChild size="lg" className="bg-gradient-gold text-gold-foreground font-bold shadow-glow hover:opacity-90">
                 <Link to="/register">Register Now</Link>
               </Button>
+              {feedbackForm && (
+                <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+                  <Link to="/feedback/$formId" params={{ formId: feedbackForm.id }}>
+                    <MessageSquare className="mr-2 h-4 w-4" /> {feedbackForm.feedback_button_name}
+                  </Link>
+                </Button>
+              )}
               {settings?.brochure_url && (
                 <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
                   <a href={settings.brochure_url} target="_blank" rel="noreferrer">

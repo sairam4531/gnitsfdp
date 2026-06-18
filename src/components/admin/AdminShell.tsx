@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useEffect } from "react";
 import {
   LayoutDashboard, Users, CreditCard, Settings, Mic, BarChart3, FileText,
-  CalendarCheck, LogOut, GraduationCap,
+  CalendarCheck, LogOut, GraduationCap, MessageSquare, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
@@ -16,9 +16,12 @@ const nav = [
   { to: "/admin/payment-settings", label: "Payment", icon: CreditCard },
   { to: "/admin/website-settings", label: "Website", icon: Settings },
   { to: "/admin/speakers", label: "Speakers", icon: Mic },
+  { to: "/admin/feedback/questions", label: "Feedback Forms", icon: MessageSquare },
+  { to: "/admin/feedback/responses", label: "Feedback Responses", icon: ClipboardList },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/reports", label: "Reports", icon: FileText },
 ];
+
 
 export function AdminShell() {
   const navigate = useNavigate();
