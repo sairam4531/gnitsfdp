@@ -32,7 +32,7 @@ const GNITS_NAME = "G. Narayanamma Institute of Technology and Science";
 const schema = z.object({
   faculty_name: z.string().trim().min(2, "Required").max(100),
   faculty_id: z.string().trim().min(1, "Required").max(50),
-  designation: z.enum(["Professor", "Associate Professor", "Assistant Professor"]),
+  designation: z.enum(["Professor", "Associate Professor", "Assistant Professor", "Teaching Assistant"]),
   department: z.enum(["CSE", "CSE (AI & ML)", "CSE (Data Science)", "IT", "ECE", "EEE", "Others"]),
   custom_department: z.string().trim().max(100).optional(),
   institute: z.enum([GNITS_NAME, "Others"]),
@@ -183,6 +183,7 @@ function RegisterPage() {
                     <SelectItem value="Professor">Professor</SelectItem>
                     <SelectItem value="Associate Professor">Associate Professor</SelectItem>
                     <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
+                    <SelectItem value="Teaching Assistant">Teaching Assistant</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
