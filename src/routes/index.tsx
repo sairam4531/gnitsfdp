@@ -52,6 +52,8 @@ const outcomes = [
 function Home() {
   const { data: settings } = useWebsiteSettings();
   const { data: speakers = [] } = useSpeakers();
+  const { data: enabledFeedback = [] } = useEnabledFeedbackForms();
+  const feedbackForm = enabledFeedback[0];
   const open = settings?.registration_open ?? true;
 
   return (
