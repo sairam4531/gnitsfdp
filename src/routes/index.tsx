@@ -103,6 +103,13 @@ function Home() {
               <Button asChild size="lg" className="bg-gradient-gold text-gold-foreground font-bold shadow-glow hover:opacity-90">
                 <Link to="/register">Register Now</Link>
               </Button>
+              {feedbackForm && (
+                <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+                  <Link to="/feedback/$formId" params={{ formId: feedbackForm.id }}>
+                    <MessageSquare className="mr-2 h-4 w-4" /> {feedbackForm.feedback_button_name}
+                  </Link>
+                </Button>
+              )}
               {settings?.brochure_url && (
                 <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
                   <a href={settings.brochure_url} target="_blank" rel="noreferrer">
