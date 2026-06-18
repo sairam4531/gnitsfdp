@@ -1,15 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { GraduationCap } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground shadow-elegant">
-            <GraduationCap className="h-5 w-5" />
-          </div>
+          <img src={logoUrl} alt="GNITS Logo" className="h-9 w-9 object-contain rounded-md" />
           <div className="leading-tight">
             <div className="text-sm font-bold tracking-tight">GNITS</div>
             <div className="text-[10px] text-muted-foreground">CSE (AI & ML) & CSE (Data Science)</div>

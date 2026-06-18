@@ -2,10 +2,11 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useEffect } from "react";
 import {
   LayoutDashboard, Users, CreditCard, Settings, Mic, BarChart3, FileText,
-  CalendarCheck, LogOut, GraduationCap, MessageSquare, ClipboardList,
+  CalendarCheck, LogOut, MessageSquare, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
+import logoUrl from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -62,9 +63,7 @@ export function AdminShell() {
     <div className="flex min-h-screen bg-muted/30">
       <aside className="hidden w-64 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex items-center gap-2 border-b border-sidebar-border px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-gold text-gold-foreground">
-            <GraduationCap className="h-5 w-5" />
-          </div>
+          <img src={logoUrl} alt="GNITS Logo" className="h-9 w-9 object-contain rounded-md" />
           <div className="leading-tight">
             <div className="text-sm font-bold">GNITS</div>
             <div className="text-[10px] opacity-70">FDP Admin</div>
