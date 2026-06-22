@@ -162,6 +162,18 @@ function FeedbackFormPage() {
                 <Label>Email *</Label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
+              <div>
+                <Label>Employee ID *</Label>
+                <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required />
+              </div>
+              <div>
+                <Label>Department *</Label>
+                <Input value={department} onChange={(e) => setDepartment(e.target.value)} required />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Institution Name *</Label>
+                <Input value={institutionName} onChange={(e) => setInstitutionName(e.target.value)} required />
+              </div>
             </div>
 
             <div className="space-y-6">
