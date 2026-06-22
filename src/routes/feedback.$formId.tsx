@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import {
@@ -28,8 +29,10 @@ function FeedbackFormPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [employeeId, setEmployeeId] = useState("");
-  const [department, setDepartment] = useState("");
-  const [institutionName, setInstitutionName] = useState("");
+  const [deptSelect, setDeptSelect] = useState("");
+  const [customDept, setCustomDept] = useState("");
+  const [instSelect, setInstSelect] = useState("");
+  const [customInst, setCustomInst] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -100,8 +103,10 @@ function FeedbackFormPage() {
     if (!name.trim() || !email.trim()) return toast.error("Name and email are required");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Enter a valid email");
     if (!employeeId.trim()) return toast.error("Employee ID is required");
-    if (!department.trim()) return toast.error("Department is required");
-    if (!institutionName.trim()) return toast.error("Institution Name is required");
+    if (!deptSelect) return toast.error("Department is required");
+    if (deptSelect === "Others" && !customDept.trim()) return toast.error("Please enter your department name");
+    if (!instSelect) return toast.error("Institution Name is required");
+    if (instSelect === "Others" && !customInst.trim()) return toast.error("Please enter your institution name");
 
     for (const q of questions) {
       if (!answers[q.id] || !answers[q.id].trim()) {
@@ -114,8 +119,8 @@ function FeedbackFormPage() {
       participant_name: name.trim(),
       participant_email: email.trim().toLowerCase(),
       employee_id: employeeId.trim(),
-      department: department.trim(),
-      institution_name: institutionName.trim(),
+      department: deptSelect === "Others" ? customDept.trim() : deptSelect,
+      institution_name: instSelect === "Others" ? customInst.trim() : instSelect,
       answers_json: questions.map((q) => ({
         question_id: q.id,
         question_text: q.question_text,
@@ -168,12 +173,39 @@ function FeedbackFormPage() {
               </div>
               <div>
                 <Label>Department *</Label>
-                <Input value={department} onChange={(e) => setDepartment(e.target.value)} required />
+                <Select value={deptSelect} onValueChange={setDeptSelect}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {["CSE", "CSE (AI & ML)", "CSE (Data Science)", "IT", "ECE", "EEE", "Others"].map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="md:col-span-2">
-                <Label>Institution Name *</Label>
-                <Input value={institutionName} onChange={(e) => setInstitutionName(e.target.value)} required />
+              {deptSelect === "Others" && (
+                <div>
+                  <Label>Department Name *</Label>
+                  <Input value={customDept} onChange={(e) => setCustomDept(e.target.value)} placeholder="Enter department name" required />
+                </div>
+              )}
+              <div>
+                <Label>Institute / Organization *</Label>
+                <Select value={instSelect} onValueChange={setInstSelect}>
+                  <SelectTrigger><SelectValue placeholder="Select institute" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="G. Narayanamma Institute of Technology and Science">
+                      G. Narayanamma Institute of Technology and Science
+                    </SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              {instSelect === "Others" && (
+                <div className="md:col-span-2">
+                  <Label>Institute Name *</Label>
+                  <Input value={customInst} onChange={(e) => setCustomInst(e.target.value)} placeholder="Enter institute name" required />
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
