@@ -184,6 +184,7 @@ function RegisterPage() {
                     <SelectItem value="Associate Professor">Associate Professor</SelectItem>
                     <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
                     <SelectItem value="Teaching Assistant">Teaching Assistant</SelectItem>
+                    <SelectItem value="Programmer">Programmer</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
