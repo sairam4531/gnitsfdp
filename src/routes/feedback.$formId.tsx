@@ -27,6 +27,9 @@ function FeedbackFormPage() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [department, setDepartment] = useState("");
+  const [institutionName, setInstitutionName] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -96,6 +99,9 @@ function FeedbackFormPage() {
   async function submit() {
     if (!name.trim() || !email.trim()) return toast.error("Name and email are required");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Enter a valid email");
+    if (!employeeId.trim()) return toast.error("Employee ID is required");
+    if (!department.trim()) return toast.error("Department is required");
+    if (!institutionName.trim()) return toast.error("Institution Name is required");
 
     for (const q of questions) {
       if (!answers[q.id] || !answers[q.id].trim()) {
@@ -107,6 +113,9 @@ function FeedbackFormPage() {
       feedback_form_id: formId,
       participant_name: name.trim(),
       participant_email: email.trim().toLowerCase(),
+      employee_id: employeeId.trim(),
+      department: department.trim(),
+      institution_name: institutionName.trim(),
       answers_json: questions.map((q) => ({
         question_id: q.id,
         question_text: q.question_text,
@@ -152,6 +161,18 @@ function FeedbackFormPage() {
               <div>
                 <Label>Email *</Label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+              <div>
+                <Label>Employee ID *</Label>
+                <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required />
+              </div>
+              <div>
+                <Label>Department *</Label>
+                <Input value={department} onChange={(e) => setDepartment(e.target.value)} required />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Institution Name *</Label>
+                <Input value={institutionName} onChange={(e) => setInstitutionName(e.target.value)} required />
               </div>
             </div>
 

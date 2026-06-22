@@ -33,6 +33,9 @@ export type FeedbackResponse = {
   feedback_form_id: string;
   participant_name: string;
   participant_email: string;
+  employee_id: string | null;
+  department: string | null;
+  institution_name: string | null;
   answers_json: FeedbackAnswer[];
   submitted_at: string;
 };

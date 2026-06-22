@@ -88,24 +88,33 @@ export type Database = {
       feedback_responses: {
         Row: {
           answers_json: Json
+          department: string | null
+          employee_id: string | null
           feedback_form_id: string
           id: string
+          institution_name: string | null
           participant_email: string
           participant_name: string
           submitted_at: string
         }
         Insert: {
           answers_json?: Json
+          department?: string | null
+          employee_id?: string | null
           feedback_form_id: string
           id?: string
+          institution_name?: string | null
           participant_email: string
           participant_name: string
           submitted_at?: string
         }
         Update: {
           answers_json?: Json
+          department?: string | null
+          employee_id?: string | null
           feedback_form_id?: string
           id?: string
+          institution_name?: string | null
           participant_email?: string
           participant_name?: string
           submitted_at?: string
