@@ -27,6 +27,9 @@ function FeedbackFormPage() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [department, setDepartment] = useState("");
+  const [institutionName, setInstitutionName] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
