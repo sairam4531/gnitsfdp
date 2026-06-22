@@ -60,6 +60,9 @@ function ResponsesPage() {
         rows.push({
           "Participant Name": r.participant_name,
           "Participant Email": r.participant_email,
+          "Employee ID": r.employee_id ?? "",
+          Department: r.department ?? "",
+          "Institution Name": r.institution_name ?? "",
           "FDP Title": fdpTitle,
           Question: a.question_text,
           Answer: a.answer,
@@ -80,6 +83,9 @@ function ResponsesPage() {
     const rows = (r.answers_json ?? []).map((a) => ({
       "Participant Name": r.participant_name,
       "Participant Email": r.participant_email,
+      "Employee ID": r.employee_id ?? "",
+      Department: r.department ?? "",
+      "Institution Name": r.institution_name ?? "",
       "FDP Title": r.feedback_forms?.fdp_title ?? "",
       Question: a.question_text,
       Answer: a.answer,
