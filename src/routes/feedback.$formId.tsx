@@ -27,7 +27,6 @@ function FeedbackFormPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [deptSelect, setDeptSelect] = useState("");
   const [customDept, setCustomDept] = useState("");
@@ -100,8 +99,7 @@ function FeedbackFormPage() {
   }
 
   async function submit() {
-    if (!name.trim() || !email.trim()) return toast.error("Name and email are required");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Enter a valid email");
+    if (!name.trim()) return toast.error("Name is required");
     if (!employeeId.trim()) return toast.error("Employee ID is required");
     if (!deptSelect) return toast.error("Department is required");
     if (deptSelect === "Others" && !customDept.trim()) return toast.error("Please enter your department name");
@@ -117,7 +115,7 @@ function FeedbackFormPage() {
     const payload = {
       feedback_form_id: formId,
       participant_name: name.trim(),
-      participant_email: email.trim().toLowerCase(),
+      participant_email: `${employeeId.trim().toLowerCase()}@feedback.temp`,
       employee_id: employeeId.trim(),
       department: deptSelect === "Others" ? customDept.trim() : deptSelect,
       institution_name: instSelect === "Others" ? customInst.trim() : instSelect,
@@ -163,10 +161,7 @@ function FeedbackFormPage() {
                 <Label>Name *</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
-              <div>
-                <Label>Email *</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
+
               <div>
                 <Label>Employee ID *</Label>
                 <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required />
