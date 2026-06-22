@@ -99,6 +99,9 @@ function FeedbackFormPage() {
   async function submit() {
     if (!name.trim() || !email.trim()) return toast.error("Name and email are required");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Enter a valid email");
+    if (!employeeId.trim()) return toast.error("Employee ID is required");
+    if (!department.trim()) return toast.error("Department is required");
+    if (!institutionName.trim()) return toast.error("Institution Name is required");
 
     for (const q of questions) {
       if (!answers[q.id] || !answers[q.id].trim()) {
@@ -110,6 +113,9 @@ function FeedbackFormPage() {
       feedback_form_id: formId,
       participant_name: name.trim(),
       participant_email: email.trim().toLowerCase(),
+      employee_id: employeeId.trim(),
+      department: department.trim(),
+      institution_name: institutionName.trim(),
       answers_json: questions.map((q) => ({
         question_id: q.id,
         question_text: q.question_text,
