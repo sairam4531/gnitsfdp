@@ -232,7 +232,7 @@ function FeedbackFormPage() {
               ))}
             </div>
 
-            <Button onClick={submit} disabled={submitting} className="w-full" size="lg">
+            <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-feedback text-white font-bold shadow-glow hover:opacity-90 border-0" size="lg">
               {submitting ? "Submitting…" : "Submit Feedback"}
             </Button>
           </CardContent>

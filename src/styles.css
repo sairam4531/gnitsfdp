@@ -96,6 +96,7 @@
   --gradient-hero: linear-gradient(135deg, oklch(0.22 0.1 270) 0%, oklch(0.32 0.16 275) 50%, oklch(0.45 0.22 295) 100%);
   --gradient-gold: linear-gradient(135deg, oklch(0.82 0.16 85) 0%, oklch(0.72 0.18 75) 100%);
   --gradient-primary: linear-gradient(135deg, oklch(0.32 0.16 275), oklch(0.55 0.22 295));
+  --gradient-feedback: linear-gradient(135deg, oklch(0.55 0.22 295) 0%, oklch(0.45 0.25 320) 100%);
   --shadow-elegant: 0 20px 50px -20px oklch(0.32 0.16 275 / 0.35);
   --shadow-glow: 0 0 40px oklch(0.55 0.22 295 / 0.4);
 }
@@ -148,5 +149,6 @@
 @utility bg-gradient-hero { background-image: var(--gradient-hero); }
 @utility bg-gradient-gold { background-image: var(--gradient-gold); }
 @utility bg-gradient-primary { background-image: var(--gradient-primary); }
+@utility bg-gradient-feedback { background-image: var(--gradient-feedback); }
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
