@@ -35,7 +35,6 @@ function FeedbackFormPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
 
   if (loadingForm || loadingQ) {
     return (
@@ -81,23 +80,6 @@ function FeedbackFormPage() {
     );
   }
 
-  if (alreadySubmitted) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SiteHeader />
-        <div className="container mx-auto px-4 py-16">
-          <Card className="mx-auto max-w-2xl">
-            <CardContent className="py-12 text-center">
-              <h1 className="text-2xl font-bold">Already Submitted</h1>
-              <p className="mt-2 text-muted-foreground">You have already submitted feedback for this FDP.</p>
-              <Button asChild className="mt-6"><Link to="/">Back to Home</Link></Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   async function submit() {
     if (!name.trim()) return toast.error("Name is required");
     if (!employeeId.trim()) return toast.error("Employee ID is required");
@@ -132,10 +114,6 @@ function FeedbackFormPage() {
     setSubmitting(false);
 
     if (error) {
-      if (error.code === "23505" || /duplicate/i.test(error.message)) {
-        setAlreadySubmitted(true);
-        return;
-      }
       return toast.error(error.message);
     }
     setSubmitted(true);
