@@ -51,6 +51,7 @@ function QuizPage() {
   const [fullscreenViolations, setFullscreenViolations] = useState(0);
   const [showWarningScreen, setShowWarningScreen] = useState(false);
   const [checkingId, setCheckingId] = useState(false);
+  const [showReview, setShowReview] = useState(false);
 
   const submittedRef = useRef(false);
   const stageRef = useRef<Stage>("register");
@@ -269,7 +270,7 @@ function QuizPage() {
     const dept = department === "Others" ? customDepartment : department;
     const coll = college === "Others" ? customCollege : college;
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900 p-4">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-900 p-4 space-y-6">
         <Card className="w-full max-w-lg border-slate-700 bg-slate-800 text-slate-100 shadow-xl shadow-slate-950/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-emerald-400">
@@ -288,9 +289,94 @@ function QuizPage() {
               <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Department:</span> <strong className="text-slate-100">{dept}</strong></div>
               <div className="flex justify-between py-1"><span className="text-slate-400">College:</span> <strong className="text-slate-100">{coll}</strong></div>
             </div>
-            <Button className="w-full bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20" onClick={() => navigate({ to: "/" })}>Back to Home</Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline"
+                className="flex-1 border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 font-bold"
+                onClick={() => setShowReview(!showReview)}
+              >
+                {showReview ? "Hide Review" : "Previous Score"}
+              </Button>
+              <Button 
+                className="flex-1 bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20" 
+                onClick={() => navigate({ to: "/" })}
+              >
+                Back to Home
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        {showReview && (
+          <Card className="w-full max-w-2xl border-slate-700 bg-slate-800 text-slate-100 shadow-xl shadow-slate-950/50 animate-fade-in">
+            <CardHeader>
+              <CardTitle className="text-lg">Question Review</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
+              {questions.map((q, idx) => {
+                const userAnswer = answers[q.id];
+                const isCorrect = userAnswer === q.correct_option;
+                const optionsList = [
+                  { k: "A", v: q.option_a },
+                  { k: "B", v: q.option_b },
+                  { k: "C", v: q.option_c },
+                  { k: "D", v: q.option_d },
+                ];
+                return (
+                  <div key={q.id} className="space-y-3 border-b border-slate-700 pb-4 last:border-0 last:pb-0">
+                    <div className="flex items-start gap-3">
+                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        isCorrect ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <h4 className="font-medium text-slate-100">{q.question_text}</h4>
+                    </div>
+                    <div className="grid gap-2 pl-9">
+                      {optionsList.map((opt) => {
+                        const isUserSel = userAnswer === opt.k;
+                        const isCorrOpt = q.correct_option === opt.k;
+                        let btnStyle = "border-slate-700 bg-slate-900/30 text-slate-300";
+                        
+                        if (isCorrOpt) {
+                          btnStyle = "border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-semibold";
+                        } else if (isUserSel && !isCorrect) {
+                          btnStyle = "border-red-500/50 bg-red-500/10 text-red-300";
+                        }
+
+                        return (
+                          <div
+                            key={opt.k}
+                            className={`flex items-start gap-3 rounded-md border p-2.5 text-xs ${btnStyle}`}
+                          >
+                            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${
+                              isCorrOpt ? "border-emerald-500 bg-emerald-500 text-white" : isUserSel ? "border-red-500 bg-red-500 text-white" : "border-slate-700 bg-slate-800 text-slate-300"
+                            }`}>{opt.k}</span>
+                            <span>{opt.v}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="pl-9 flex gap-4 text-xs">
+                      <div>
+                        <span className="text-slate-400">Your Answer: </span>
+                        <strong className={isCorrect ? "text-emerald-400" : "text-red-400"}>
+                          {userAnswer ? `${userAnswer}` : "Not Answered"}
+                        </strong>
+                      </div>
+                      {!isCorrect && (
+                        <div>
+                          <span className="text-slate-400">Correct Answer: </span>
+                          <strong className="text-emerald-400">{q.correct_option}</strong>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
