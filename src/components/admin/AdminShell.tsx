@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useEffect } from "react";
 import {
   LayoutDashboard, Users, CreditCard, Settings, Mic, BarChart3, FileText,
-  CalendarCheck, LogOut, MessageSquare, ClipboardList,
+  CalendarCheck, LogOut, MessageSquare, ClipboardList, GraduationCap, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
@@ -19,6 +19,8 @@ const nav = [
   { to: "/admin/speakers", label: "Speakers", icon: Mic },
   { to: "/admin/feedback/questions", label: "Feedback Forms", icon: MessageSquare },
   { to: "/admin/feedback/responses", label: "Feedback Responses", icon: ClipboardList },
+  { to: "/admin/quiz/questions", label: "Quiz Questions", icon: GraduationCap },
+  { to: "/admin/quiz/responses", label: "Quiz Responses", icon: ListChecks },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/reports", label: "Reports", icon: FileText },
 ];
