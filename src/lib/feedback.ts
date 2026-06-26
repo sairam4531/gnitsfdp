@@ -76,7 +76,11 @@ export function useFeedbackForm(id: string | undefined) {
   return useQuery({
     queryKey: ["feedback_form", id],
     queryFn: async () => {
-      const { data, error } = await db.from("feedback_forms").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await db
+        .from("feedback_forms")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       if (error) throw error;
       return data as FeedbackForm | null;
     },

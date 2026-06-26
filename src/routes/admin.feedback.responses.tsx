@@ -9,14 +9,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useFeedbackForms, useFeedbackResponses, feedbackDb } from "@/lib/feedback";
 
@@ -74,9 +89,7 @@ function ResponsesPage() {
         "Institute Name": r.institution_name ?? "",
       };
 
-      const answersMap = new Map(
-        (r.answers_json ?? []).map((a) => [a.question_text, a.answer])
-      );
+      const answersMap = new Map((r.answers_json ?? []).map((a) => [a.question_text, a.answer]));
 
       uniqueQuestions.forEach((q, idx) => {
         rowData[`${idx + 1}. ${q}`] = answersMap.get(q) || "";
@@ -120,31 +133,48 @@ function ResponsesPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Feedback Responses</h1>
-          <p className="text-sm text-muted-foreground">Filter, view, and export feedback responses.</p>
+          <p className="text-sm text-muted-foreground">
+            Filter, view, and export feedback responses.
+          </p>
         </div>
-        <Button onClick={exportExcel}><Download className="mr-2 h-4 w-4" /> Export Excel</Button>
+        <Button onClick={exportExcel}>
+          <Download className="mr-2 h-4 w-4" /> Export Excel
+        </Button>
       </div>
 
       <Card>
         <CardContent className="grid gap-3 p-4 md:grid-cols-3">
           <div>
-            <Label className="flex items-center gap-1"><Filter className="h-3 w-3" /> Select Date</Label>
+            <Label className="flex items-center gap-1">
+              <Filter className="h-3 w-3" /> Select Date
+            </Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
             <Label>FDP / Feedback Form</Label>
             <Select value={formId} onValueChange={setFormId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Forms</SelectItem>
                 {forms.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>{f.fdp_title}</SelectItem>
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.fdp_title}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-end">
-            <Button variant="outline" className="w-full" onClick={() => { setDate(""); setFormId("all"); }}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setDate("");
+                setFormId("all");
+              }}
+            >
               Reset Filters
             </Button>
           </div>
@@ -173,38 +203,57 @@ function ResponsesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7 + uniqueQuestions.length} className="text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={7 + uniqueQuestions.length}
+                    className="text-center text-muted-foreground"
+                  >
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7 + uniqueQuestions.length} className="py-8 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={7 + uniqueQuestions.length}
+                    className="py-8 text-center text-muted-foreground"
+                  >
                     No responses found.
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map((r, i) => {
                   const answersMap = new Map(
-                    (r.answers_json ?? []).map((a) => [a.question_text, a.answer])
+                    (r.answers_json ?? []).map((a) => [a.question_text, a.answer]),
                   );
                   return (
                     <TableRow key={r.id}>
                       <TableCell>{i + 1}</TableCell>
-                      <TableCell className="font-medium whitespace-nowrap">{r.participant_name}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {r.participant_name}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">{r.employee_id || "—"}</TableCell>
                       <TableCell className="whitespace-nowrap">{r.department || "—"}</TableCell>
-                      <TableCell className="whitespace-nowrap">{r.institution_name || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {r.institution_name || "—"}
+                      </TableCell>
                       {uniqueQuestions.map((q, idx) => (
-                        <TableCell key={idx} className="max-w-[300px] truncate" title={answersMap.get(q) || "—"}>
+                        <TableCell
+                          key={idx}
+                          className="max-w-[300px] truncate"
+                          title={answersMap.get(q) || "—"}
+                        >
                           {answersMap.get(q) || "—"}
                         </TableCell>
                       ))}
-                      <TableCell className="whitespace-nowrap">{new Date(r.submitted_at).toLocaleString()}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {new Date(r.submitted_at).toLocaleString()}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button asChild variant="ghost" size="sm">
-                            <Link to="/admin/feedback/view/$formId" params={{ formId: r.feedback_form_id }}>
+                            <Link
+                              to="/admin/feedback/view/$formId"
+                              params={{ formId: r.feedback_form_id }}
+                            >
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>

@@ -1,8 +1,19 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import {
-  LayoutDashboard, Users, CreditCard, Settings, Mic, BarChart3, FileText,
-  CalendarCheck, LogOut, MessageSquare, ClipboardList, GraduationCap, ListChecks,
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  Settings,
+  Mic,
+  BarChart3,
+  FileText,
+  CalendarCheck,
+  LogOut,
+  MessageSquare,
+  ClipboardList,
+  GraduationCap,
+  ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
@@ -24,7 +35,6 @@ const nav = [
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/reports", label: "Reports", icon: FileText },
 ];
-
 
 export function AdminShell() {
   const navigate = useNavigate();
@@ -57,7 +67,11 @@ export function AdminShell() {
   }
 
   if (loading || isAdmin === null) {
-    return <div className="flex h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
   if (!user || !isAdmin) return null;
 
@@ -96,7 +110,9 @@ export function AdminShell() {
       <main className="flex-1 overflow-x-hidden">
         <header className="flex h-14 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="font-semibold">FDP Portal — Admin</div>
-          <Button variant="ghost" size="sm" onClick={logout} className="md:hidden"><LogOut className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={logout} className="md:hidden">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </header>
         <div className="p-4 md:p-6">
           <Outlet />

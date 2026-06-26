@@ -8,11 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import {
-  useFeedbackForm, useFeedbackQuestions, useEnabledFeedbackForms, feedbackDb,
+  useFeedbackForm,
+  useFeedbackQuestions,
+  useEnabledFeedbackForms,
+  feedbackDb,
 } from "@/lib/feedback";
 
 export const Route = createFileRoute("/feedback/$formId")({
@@ -40,7 +49,9 @@ function FeedbackFormPage() {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
-        <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">Loading…</div>
+        <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">
+          Loading…
+        </div>
       </div>
     );
   }
@@ -53,8 +64,12 @@ function FeedbackFormPage() {
           <Card className="mx-auto max-w-2xl">
             <CardContent className="py-12 text-center">
               <h1 className="text-2xl font-bold">Feedback not available</h1>
-              <p className="mt-2 text-muted-foreground">This feedback form is not currently open.</p>
-              <Button asChild className="mt-4"><Link to="/">Back to Home</Link></Button>
+              <p className="mt-2 text-muted-foreground">
+                This feedback form is not currently open.
+              </p>
+              <Button asChild className="mt-4">
+                <Link to="/">Back to Home</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -71,8 +86,12 @@ function FeedbackFormPage() {
             <CardContent className="py-12 text-center">
               <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-600" />
               <h1 className="mt-4 text-3xl font-bold">Thank You</h1>
-              <p className="mt-2 text-muted-foreground">Your feedback has been submitted successfully.</p>
-              <Button asChild className="mt-6"><Link to="/">Back to Home</Link></Button>
+              <p className="mt-2 text-muted-foreground">
+                Your feedback has been submitted successfully.
+              </p>
+              <Button asChild className="mt-6">
+                <Link to="/">Back to Home</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -84,9 +103,11 @@ function FeedbackFormPage() {
     if (!name.trim()) return toast.error("Name is required");
     if (!employeeId.trim()) return toast.error("Employee ID is required");
     if (!deptSelect) return toast.error("Department is required");
-    if (deptSelect === "Others" && !customDept.trim()) return toast.error("Please enter your department name");
+    if (deptSelect === "Others" && !customDept.trim())
+      return toast.error("Please enter your department name");
     if (!instSelect) return toast.error("Institution Name is required");
-    if (instSelect === "Others" && !customInst.trim()) return toast.error("Please enter your institution name");
+    if (instSelect === "Others" && !customInst.trim())
+      return toast.error("Please enter your institution name");
 
     for (const q of questions) {
       if (!answers[q.id] || !answers[q.id].trim()) {
@@ -142,15 +163,31 @@ function FeedbackFormPage() {
 
               <div>
                 <Label>Employee ID *</Label>
-                <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required />
+                <Input
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                  required
+                />
               </div>
               <div>
                 <Label>Department *</Label>
                 <Select value={deptSelect} onValueChange={setDeptSelect}>
-                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {["CSE", "CSE (AI & ML)", "CSE (Data Science)", "IT", "ECE", "EEE", "Others"].map((d) => (
-                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    {[
+                      "CSE",
+                      "CSE (AI & ML)",
+                      "CSE (Data Science)",
+                      "IT",
+                      "ECE",
+                      "EEE",
+                      "Others",
+                    ].map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -158,13 +195,20 @@ function FeedbackFormPage() {
               {deptSelect === "Others" && (
                 <div>
                   <Label>Department Name *</Label>
-                  <Input value={customDept} onChange={(e) => setCustomDept(e.target.value)} placeholder="Enter department name" required />
+                  <Input
+                    value={customDept}
+                    onChange={(e) => setCustomDept(e.target.value)}
+                    placeholder="Enter department name"
+                    required
+                  />
                 </div>
               )}
               <div>
                 <Label>Institute / Organization *</Label>
                 <Select value={instSelect} onValueChange={setInstSelect}>
-                  <SelectTrigger><SelectValue placeholder="Select institute" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select institute" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="G. Narayanamma Institute of Technology and Science">
                       G. Narayanamma Institute of Technology and Science
@@ -176,7 +220,12 @@ function FeedbackFormPage() {
               {instSelect === "Others" && (
                 <div className="md:col-span-2">
                   <Label>Institute Name *</Label>
-                  <Input value={customInst} onChange={(e) => setCustomInst(e.target.value)} placeholder="Enter institute name" required />
+                  <Input
+                    value={customInst}
+                    onChange={(e) => setCustomInst(e.target.value)}
+                    placeholder="Enter institute name"
+                    required
+                  />
                 </div>
               )}
             </div>
@@ -195,7 +244,9 @@ function FeedbackFormPage() {
                       {(q.options_json ?? []).map((opt) => (
                         <div key={opt} className="flex items-center gap-2">
                           <RadioGroupItem value={opt} id={`${q.id}-${opt}`} />
-                          <Label htmlFor={`${q.id}-${opt}`} className="font-normal">{opt}</Label>
+                          <Label htmlFor={`${q.id}-${opt}`} className="font-normal">
+                            {opt}
+                          </Label>
                         </div>
                       ))}
                     </RadioGroup>
@@ -210,7 +261,12 @@ function FeedbackFormPage() {
               ))}
             </div>
 
-            <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-feedback text-white font-bold shadow-glow hover:opacity-90 border-0" size="lg">
+            <Button
+              onClick={submit}
+              disabled={submitting}
+              className="w-full bg-gradient-feedback text-white font-bold shadow-glow hover:opacity-90 border-0"
+              size="lg"
+            >
               {submitting ? "Submitting…" : "Submit Feedback"}
             </Button>
           </CardContent>

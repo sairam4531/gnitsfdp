@@ -78,10 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "FDP on Smart Data Visualization using Power BI — GNITS" },
-      { name: "description", content: "One Week Faculty Development Program on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad." },
+      {
+        name: "description",
+        content:
+          "One Week Faculty Development Program on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad.",
+      },
       { name: "author", content: "GNITS" },
       { property: "og:title", content: "FDP on Smart Data Visualization using Power BI — GNITS" },
-      { property: "og:description", content: "One Week Faculty Development Program on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad." },
+      {
+        property: "og:description",
+        content:
+          "One Week Faculty Development Program on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://gnitsfdp.vercel.app/" },
       { name: "twitter:card", content: "summary" },

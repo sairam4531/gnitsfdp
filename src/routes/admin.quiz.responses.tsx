@@ -10,10 +10,22 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuizExams, useQuizResponses, quizDb, type QuizResponse } from "@/lib/quiz";
 
 export const Route = createFileRoute("/admin/quiz/responses")({
@@ -30,7 +42,10 @@ function QuizResponsesPage() {
   const qc = useQueryClient();
   const { data: exams = [] } = useQuizExams();
   const [filterDate, setFilterDate] = useState<string>("");
-  const examForDate = useMemo(() => exams.find((e) => e.exam_date === filterDate) ?? null, [exams, filterDate]);
+  const examForDate = useMemo(
+    () => exams.find((e) => e.exam_date === filterDate) ?? null,
+    [exams, filterDate],
+  );
   const { data: responses = [], isLoading } = useQuizResponses(examForDate?.id);
   const [deleting, setDeleting] = useState<QuizResponse | null>(null);
 
@@ -49,9 +64,9 @@ function QuizResponsesPage() {
       "S.No": i + 1,
       "Faculty Name": r.faculty_name,
       "Faculty ID": r.faculty_id,
-      "Department": r.department === "Others" ? r.custom_department ?? "Others" : r.department,
-      "College Name": r.college_name === "Others" ? r.custom_college ?? "Others" : r.college_name,
-      "Score": `${r.score}/${r.total_questions}`,
+      Department: r.department === "Others" ? (r.custom_department ?? "Others") : r.department,
+      "College Name": r.college_name === "Others" ? (r.custom_college ?? "Others") : r.college_name,
+      Score: `${r.score}/${r.total_questions}`,
       "Time Taken": fmtDuration(r.time_taken_seconds),
       "Auto Submitted": r.auto_submitted ? "Yes" : "No",
       "Submitted At": new Date(r.submitted_at).toLocaleString(),
@@ -72,12 +87,19 @@ function QuizResponsesPage() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[200px]">
             <Label className="text-xs">Exam Date</Label>
-            <Select value={filterDate || "__none"} onValueChange={(v) => setFilterDate(v === "__none" ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Select an exam date" /></SelectTrigger>
+            <Select
+              value={filterDate || "__none"}
+              onValueChange={(v) => setFilterDate(v === "__none" ? "" : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an exam date" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none">— Select date —</SelectItem>
                 {exams.map((e) => (
-                  <SelectItem key={e.id} value={e.exam_date}>{e.exam_date} — {e.title}</SelectItem>
+                  <SelectItem key={e.id} value={e.exam_date}>
+                    {e.exam_date} — {e.title}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -89,11 +111,19 @@ function QuizResponsesPage() {
       </div>
 
       {!examForDate ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Select an exam date to view responses.</CardContent></Card>
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Select an exam date to view responses.
+          </CardContent>
+        </Card>
       ) : isLoading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : responses.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">No responses yet for this exam.</CardContent></Card>
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            No responses yet for this exam.
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="overflow-x-auto p-0">
@@ -117,16 +147,30 @@ function QuizResponsesPage() {
                     <td className="px-3 py-2">{i + 1}</td>
                     <td className="px-3 py-2 font-medium">{r.faculty_name}</td>
                     <td className="px-3 py-2">{r.faculty_id}</td>
-                    <td className="px-3 py-2">{r.department === "Others" ? r.custom_department ?? "Others" : r.department}</td>
-                    <td className="px-3 py-2">{r.college_name === "Others" ? r.custom_college ?? "Others" : r.college_name}</td>
                     <td className="px-3 py-2">
-                      <Badge variant="secondary">{r.score}/{r.total_questions}</Badge>
+                      {r.department === "Others" ? (r.custom_department ?? "Others") : r.department}
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.college_name === "Others"
+                        ? (r.custom_college ?? "Others")
+                        : r.college_name}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge variant="secondary">
+                        {r.score}/{r.total_questions}
+                      </Badge>
                     </td>
                     <td className="px-3 py-2">
                       {fmtDuration(r.time_taken_seconds)}
-                      {r.auto_submitted && <Badge variant="destructive" className="ml-2 text-[10px]">Auto</Badge>}
+                      {r.auto_submitted && (
+                        <Badge variant="destructive" className="ml-2 text-[10px]">
+                          Auto
+                        </Badge>
+                      )}
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.submitted_at).toLocaleString()}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {new Date(r.submitted_at).toLocaleString()}
+                    </td>
                     <td className="px-3 py-2 text-right">
                       <Button variant="destructive" size="sm" onClick={() => setDeleting(r)}>
                         <Trash2 className="h-3.5 w-3.5" />

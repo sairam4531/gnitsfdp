@@ -1,8 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRegistrations, useWebsiteSettings } from "@/lib/queries";
-import { Users, IndianRupee, CalendarDays, CheckCircle2, Clock, GraduationCap, Building2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Users,
+  IndianRupee,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  GraduationCap,
+  Building2,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { format, startOfDay, subDays } from "date-fns";
 
 export const Route = createFileRoute("/admin/")({
@@ -19,7 +41,9 @@ function Dashboard() {
     internal: regs.filter((r) => r.category === "Internal").length,
     external: regs.filter((r) => r.category === "External").length,
     today: regs.filter((r) => new Date(r.created_at) >= today).length,
-    revenue: regs.filter((r) => r.payment_status === "Approved").reduce((s, r) => s + (r.registration_fee || 0), 0),
+    revenue: regs
+      .filter((r) => r.payment_status === "Approved")
+      .reduce((s, r) => s + (r.registration_fee || 0), 0),
     pending: regs.filter((r) => r.payment_status === "Pending").length,
     approved: regs.filter((r) => r.payment_status === "Approved").length,
   };
@@ -46,7 +70,7 @@ function Dashboard() {
       const k = r.department === "Others" ? r.custom_department || "Others" : r.department;
       acc[k] = (acc[k] || 0) + 1;
       return acc;
-    }, {})
+    }, {}),
   ).map(([name, value]) => ({ name, value }));
 
   const COLORS = ["#7c3aed", "#a855f7", "#facc15", "#22d3ee", "#f97316", "#ec4899"];
@@ -59,19 +83,51 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={Users} label="Total Registrations" value={stats.total} color="bg-gradient-primary" />
+        <Stat
+          icon={Users}
+          label="Total Registrations"
+          value={stats.total}
+          color="bg-gradient-primary"
+        />
         <Stat icon={GraduationCap} label="Internal" value={stats.internal} color="bg-secondary" />
-        <Stat icon={Building2} label="External" value={stats.external} color="bg-gradient-gold text-gold-foreground" />
+        <Stat
+          icon={Building2}
+          label="External"
+          value={stats.external}
+          color="bg-gradient-gold text-gold-foreground"
+        />
         <Stat icon={CalendarDays} label="Today" value={stats.today} color="bg-navy text-white" />
-        <Stat icon={IndianRupee} label="Total Revenue" value={`₹${stats.revenue.toLocaleString()}`} color="bg-gradient-primary" />
-        <Stat icon={Clock} label="Pending Payments" value={stats.pending} color="bg-destructive text-white" />
-        <Stat icon={CheckCircle2} label="Approved Payments" value={stats.approved} color="bg-emerald-600 text-white" />
-        <Stat icon={Users} label="Seats Left" value={Math.max(0, (settings?.seat_limit ?? 0) - stats.total)} color="bg-secondary" />
+        <Stat
+          icon={IndianRupee}
+          label="Total Revenue"
+          value={`₹${stats.revenue.toLocaleString()}`}
+          color="bg-gradient-primary"
+        />
+        <Stat
+          icon={Clock}
+          label="Pending Payments"
+          value={stats.pending}
+          color="bg-destructive text-white"
+        />
+        <Stat
+          icon={CheckCircle2}
+          label="Approved Payments"
+          value={stats.approved}
+          color="bg-emerald-600 text-white"
+        />
+        <Stat
+          icon={Users}
+          label="Seats Left"
+          value={Math.max(0, (settings?.seat_limit ?? 0) - stats.total)}
+          color="bg-secondary"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>Daily Registrations (last 14 days)</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Daily Registrations (last 14 days)</CardTitle>
+          </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer>
               <BarChart data={daily}>
@@ -85,7 +141,9 @@ function Dashboard() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Revenue Trend</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Revenue Trend</CardTitle>
+          </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer>
               <LineChart data={daily}>
@@ -93,26 +151,46 @@ function Dashboard() {
                 <XAxis dataKey="date" fontSize={11} />
                 <YAxis fontSize={11} />
                 <Tooltip />
-                <Line type="monotone" dataKey="revenue" stroke="#facc15" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#facc15"
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Internal vs External</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Internal vs External</CardTitle>
+          </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} label>
-                  {byCategory.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                <Pie
+                  data={byCategory}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={50}
+                  outerRadius={90}
+                  label
+                >
+                  {byCategory.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i]} />
+                  ))}
                 </Pie>
-                <Tooltip /><Legend />
+                <Tooltip />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Department-wise</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Department-wise</CardTitle>
+          </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer>
               <BarChart data={byDept}>
@@ -130,11 +208,23 @@ function Dashboard() {
   );
 }
 
-function Stat({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  color: string;
+}) {
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-5">
-        <div className={`flex h-11 w-11 items-center justify-center rounded-lg text-white ${color}`}>
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-lg text-white ${color}`}
+        >
           <Icon className="h-5 w-5" />
         </div>
         <div>

@@ -6,8 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useQuizQuestions, quizDb, type QuizExam, type QuizQuestion } from "@/lib/quiz";
 import { useQuery } from "@tanstack/react-query";
 
@@ -26,7 +38,11 @@ function QuizPage() {
   const { data: exam } = useQuery({
     queryKey: ["quiz_exam", examId],
     queryFn: async () => {
-      const { data, error } = await quizDb.from("quiz_exams").select("*").eq("id", examId).maybeSingle();
+      const { data, error } = await quizDb
+        .from("quiz_exams")
+        .select("*")
+        .eq("id", examId)
+        .maybeSingle();
       if (error) throw error;
       return data as QuizExam | null;
     },
@@ -58,9 +74,15 @@ function QuizPage() {
   const violationsRef = useRef(0);
   const showWarningScreenRef = useRef(false);
 
-  useEffect(() => { stageRef.current = stage; }, [stage]);
-  useEffect(() => { violationsRef.current = fullscreenViolations; }, [fullscreenViolations]);
-  useEffect(() => { showWarningScreenRef.current = showWarningScreen; }, [showWarningScreen]);
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
+  useEffect(() => {
+    violationsRef.current = fullscreenViolations;
+  }, [fullscreenViolations]);
+  useEffect(() => {
+    showWarningScreenRef.current = showWarningScreen;
+  }, [showWarningScreen]);
 
   // Timer
   useEffect(() => {
@@ -162,11 +184,13 @@ function QuizPage() {
 
     setCheckingId(true);
     try {
-      const { data: existingResponse, error: checkError } = await quizDb
-        .rpc("get_participant_quiz_response", {
+      const { data: existingResponse, error: checkError } = await quizDb.rpc(
+        "get_participant_quiz_response",
+        {
           _exam_id: examId,
           _faculty_id: facultyId.trim(),
-        });
+        },
+      );
 
       if (checkError) {
         console.error("Error checking existing response:", checkError);
@@ -183,15 +207,15 @@ function QuizPage() {
         setCollege(resp.college_name);
         if (resp.custom_department) setCustomDepartment(resp.custom_department);
         if (resp.custom_college) setCustomCollege(resp.custom_college);
-        
+
         setResult({
           score: resp.score,
           total: resp.total_questions,
-          time: resp.time_taken_seconds
+          time: resp.time_taken_seconds,
         });
-        
+
         setAnswers(resp.answers_json || {});
-        
+
         toast.info("Showing your previous scorecard and answers review.");
         setStage("done");
         setCheckingId(false);
@@ -265,7 +289,11 @@ function QuizPage() {
       return;
     }
     if (document.fullscreenElement) {
-      try { await document.exitFullscreen(); } catch {}
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // ignore fullscreen exit errors
+      }
     }
     setShowWarningScreen(false);
     setResult({ score, total, time: timeTaken });
@@ -280,7 +308,11 @@ function QuizPage() {
   }
 
   if (!exam) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
 
   if (stage === "done" && result) {
@@ -296,26 +328,44 @@ function QuizPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-gradient-feedback p-6 text-center text-white shadow-lg shadow-purple-950/30">
-              <div className="text-sm opacity-80 uppercase tracking-wider font-semibold">Your Score</div>
-              <div className="mt-1 text-5xl font-black">{result.score} / {result.total}</div>
-              <div className="mt-2 text-xs opacity-80 font-mono">Time taken: {Math.floor(result.time / 60)}m {result.time % 60}s</div>
+              <div className="text-sm opacity-80 uppercase tracking-wider font-semibold">
+                Your Score
+              </div>
+              <div className="mt-1 text-5xl font-black">
+                {result.score} / {result.total}
+              </div>
+              <div className="mt-2 text-xs opacity-80 font-mono">
+                Time taken: {Math.floor(result.time / 60)}m {result.time % 60}s
+              </div>
             </div>
             <div className="space-y-2 rounded-md border border-slate-700 bg-slate-900/50 p-4 text-sm">
-              <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Name:</span> <strong className="text-slate-100">{facultyName}</strong></div>
-              <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Faculty ID:</span> <strong className="text-slate-100">{facultyId}</strong></div>
-              <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Department:</span> <strong className="text-slate-100">{dept}</strong></div>
-              <div className="flex justify-between py-1"><span className="text-slate-400">College:</span> <strong className="text-slate-100">{coll}</strong></div>
+              <div className="flex justify-between py-1 border-b border-slate-700/50">
+                <span className="text-slate-400">Name:</span>{" "}
+                <strong className="text-slate-100">{facultyName}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-700/50">
+                <span className="text-slate-400">Faculty ID:</span>{" "}
+                <strong className="text-slate-100">{facultyId}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-700/50">
+                <span className="text-slate-400">Department:</span>{" "}
+                <strong className="text-slate-100">{dept}</strong>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-400">College:</span>{" "}
+                <strong className="text-slate-100">{coll}</strong>
+              </div>
             </div>
             <div className="flex gap-3">
-              <Button 
+              <Button
                 variant="outline"
                 className="flex-1 border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 font-bold"
                 onClick={() => setShowReview(!showReview)}
               >
                 {showReview ? "Hide Review" : "Previous Score"}
               </Button>
-              <Button 
-                className="flex-1 bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20" 
+              <Button
+                className="flex-1 bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20"
                 onClick={() => navigate({ to: "/" })}
               >
                 Back to Home
@@ -340,11 +390,18 @@ function QuizPage() {
                   { k: "D", v: q.option_d },
                 ];
                 return (
-                  <div key={q.id} className="space-y-3 border-b border-slate-700 pb-4 last:border-0 last:pb-0">
+                  <div
+                    key={q.id}
+                    className="space-y-3 border-b border-slate-700 pb-4 last:border-0 last:pb-0"
+                  >
                     <div className="flex items-start gap-3">
-                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                        isCorrect ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
-                      }`}>
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                          isCorrect
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-red-500/20 text-red-400 border border-red-500/30"
+                        }`}
+                      >
                         {idx + 1}
                       </span>
                       <h4 className="font-medium text-slate-100">{q.question_text}</h4>
@@ -354,9 +411,10 @@ function QuizPage() {
                         const isUserSel = userAnswer === opt.k;
                         const isCorrOpt = q.correct_option === opt.k;
                         let btnStyle = "border-slate-700 bg-slate-900/30 text-slate-300";
-                        
+
                         if (isCorrOpt) {
-                          btnStyle = "border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-semibold";
+                          btnStyle =
+                            "border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-semibold";
                         } else if (isUserSel && !isCorrect) {
                           btnStyle = "border-red-500/50 bg-red-500/10 text-red-300";
                         }
@@ -366,9 +424,17 @@ function QuizPage() {
                             key={opt.k}
                             className={`flex items-start gap-3 rounded-md border p-2.5 text-xs ${btnStyle}`}
                           >
-                            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${
-                              isCorrOpt ? "border-emerald-500 bg-emerald-500 text-white" : isUserSel ? "border-red-500 bg-red-500 text-white" : "border-slate-700 bg-slate-800 text-slate-300"
-                            }`}>{opt.k}</span>
+                            <span
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${
+                                isCorrOpt
+                                  ? "border-emerald-500 bg-emerald-500 text-white"
+                                  : isUserSel
+                                    ? "border-red-500 bg-red-500 text-white"
+                                    : "border-slate-700 bg-slate-800 text-slate-300"
+                              }`}
+                            >
+                              {opt.k}
+                            </span>
                             <span>{opt.v}</span>
                           </div>
                         );
@@ -411,13 +477,15 @@ function QuizPage() {
               <AlertTriangle className="mx-auto h-20 w-20 text-white animate-pulse" />
               <h1 className="text-3xl font-bold tracking-tight">Warning: Fullscreen Exited!</h1>
               <p className="text-lg opacity-90">
-                Exiting fullscreen is a violation of the exam rules. This is your **first and ONLY warning**.
+                Exiting fullscreen is a violation of the exam rules. This is your **first and ONLY
+                warning**.
               </p>
               <p className="text-sm bg-red-700/50 p-3 rounded-md border border-red-500">
-                If you exit fullscreen again, your exam will be <strong>automatically submitted immediately</strong>.
+                If you exit fullscreen again, your exam will be{" "}
+                <strong>automatically submitted immediately</strong>.
               </p>
-              <Button 
-                onClick={resumeFullscreen} 
+              <Button
+                onClick={resumeFullscreen}
                 className="w-full bg-white text-red-600 hover:bg-white/90 font-bold text-base py-6 shadow-lg transition-transform active:scale-95"
               >
                 Resume Exam (Enter Fullscreen)
@@ -427,24 +495,35 @@ function QuizPage() {
         )}
         <div className="w-full max-w-3xl space-y-4">
           <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800/80 p-3 text-slate-100">
-            <div className="text-sm font-medium">Question {currentIdx + 1} of {questions.length}</div>
+            <div className="text-sm font-medium">
+              Question {currentIdx + 1} of {questions.length}
+            </div>
             <div className="flex items-center gap-2 rounded-md bg-indigo-500/10 px-3 py-1.5 font-mono text-sm font-bold text-indigo-400">
-              <Clock className="h-4 w-4" /> {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+              <Clock className="h-4 w-4" /> {String(mins).padStart(2, "0")}:
+              {String(secs).padStart(2, "0")}
             </div>
           </div>
 
           <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            Do not switch tabs, open new windows, or exit fullscreen. Your exam will be auto-submitted. (1 Warning allowed for fullscreen exit)
+            Do not switch tabs, open new windows, or exit fullscreen. Your exam will be
+            auto-submitted. (1 Warning allowed for fullscreen exit)
           </div>
 
-          {q && <QuestionCard q={q} selected={answers[q.id]} onSelect={(o) => selectAnswer(q.id, o)} index={currentIdx + 1} />}
+          {q && (
+            <QuestionCard
+              q={q}
+              selected={answers[q.id]}
+              onSelect={(o) => selectAnswer(q.id, o)}
+              index={currentIdx + 1}
+            />
+          )}
 
           <div className="flex justify-between items-center pt-2">
-            <Button 
-              onClick={prev} 
-              disabled={currentIdx === 0} 
-              variant="outline" 
+            <Button
+              onClick={prev}
+              disabled={currentIdx === 0}
+              variant="outline"
               className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-50"
             >
               Previous
@@ -453,11 +532,19 @@ function QuizPage() {
               Answered: {Object.keys(answers).length} / {questions.length}
             </div>
             {isLast ? (
-              <Button onClick={() => setConfirmSubmit(true)} className="bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20">
+              <Button
+                onClick={() => setConfirmSubmit(true)}
+                className="bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20"
+              >
                 Submit Exam
               </Button>
             ) : (
-              <Button onClick={next} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg shadow-indigo-600/20">Next Question</Button>
+              <Button
+                onClick={next}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg shadow-indigo-600/20"
+              >
+                Next Question
+              </Button>
             )}
           </div>
         </div>
@@ -468,11 +555,21 @@ function QuizPage() {
               <DialogTitle>Submit Exam?</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Do you want to submit the exam? You have answered {Object.keys(answers).length} out of {questions.length} questions.
+              Do you want to submit the exam? You have answered {Object.keys(answers).length} out of{" "}
+              {questions.length} questions.
             </p>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirmSubmit(false)}>Cancel</Button>
-              <Button onClick={() => { setConfirmSubmit(false); submit(false); }}>Yes, Submit</Button>
+              <Button variant="outline" onClick={() => setConfirmSubmit(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirmSubmit(false);
+                  submit(false);
+                }}
+              >
+                Yes, Submit
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -487,7 +584,8 @@ function QuizPage() {
         <CardHeader>
           <CardTitle>{exam.title}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {exam.exam_date} · Duration: {exam.duration_minutes} minutes · {questions.length} questions
+            {exam.exam_date} · Duration: {exam.duration_minutes} minutes · {questions.length}{" "}
+            questions
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -502,32 +600,55 @@ function QuizPage() {
           <div>
             <Label>Department</Label>
             <Select value={department} onValueChange={setDepartment}>
-              <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
               <SelectContent>
-                {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                {DEPARTMENTS.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {department === "Others" && (
-              <Input className="mt-2" placeholder="Enter Department" value={customDepartment} onChange={(e) => setCustomDepartment(e.target.value)} />
+              <Input
+                className="mt-2"
+                placeholder="Enter Department"
+                value={customDepartment}
+                onChange={(e) => setCustomDepartment(e.target.value)}
+              />
             )}
           </div>
           <div>
             <Label>College Name</Label>
             <Select value={college} onValueChange={setCollege}>
-              <SelectTrigger><SelectValue placeholder="Select college" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Select college" />
+              </SelectTrigger>
               <SelectContent>
-                {COLLEGES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {COLLEGES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {college === "Others" && (
-              <Input className="mt-2" placeholder="Enter College Name" value={customCollege} onChange={(e) => setCustomCollege(e.target.value)} />
+              <Input
+                className="mt-2"
+                placeholder="Enter College Name"
+                value={customCollege}
+                onChange={(e) => setCustomCollege(e.target.value)}
+              />
             )}
           </div>
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-            <strong>Important:</strong> The exam runs in fullscreen. Switching tabs, opening new windows, or exiting fullscreen will auto-submit your exam.
+            <strong>Important:</strong> The exam runs in fullscreen. Switching tabs, opening new
+            windows, or exiting fullscreen will auto-submit your exam.
           </div>
-          <Button 
-            className="w-full bg-gradient-gold text-gold-foreground font-bold disabled:opacity-70 disabled:cursor-not-allowed" 
+          <Button
+            className="w-full bg-gradient-gold text-gold-foreground font-bold disabled:opacity-70 disabled:cursor-not-allowed"
             onClick={startExam}
             disabled={checkingId}
           >
@@ -540,7 +661,10 @@ function QuizPage() {
 }
 
 function QuestionCard({
-  q, selected, onSelect, index,
+  q,
+  selected,
+  onSelect,
+  index,
 }: {
   q: QuizQuestion;
   selected: "A" | "B" | "C" | "D" | undefined;
@@ -548,13 +672,17 @@ function QuestionCard({
   index: number;
 }) {
   const options: Array<{ k: "A" | "B" | "C" | "D"; v: string }> = [
-    { k: "A", v: q.option_a }, { k: "B", v: q.option_b },
-    { k: "C", v: q.option_c }, { k: "D", v: q.option_d },
+    { k: "A", v: q.option_a },
+    { k: "B", v: q.option_b },
+    { k: "C", v: q.option_c },
+    { k: "D", v: q.option_d },
   ];
   return (
     <Card>
       <CardContent className="space-y-3 p-5">
-        <h3 className="text-base font-semibold">{index}. {q.question_text}</h3>
+        <h3 className="text-base font-semibold">
+          {index}. {q.question_text}
+        </h3>
         <div className="grid gap-2">
           {options.map((o) => (
             <button
@@ -564,9 +692,15 @@ function QuestionCard({
                 selected === o.k ? "border-primary bg-primary/10" : "border-border"
               }`}
             >
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
-                selected === o.k ? "border-primary bg-primary text-primary-foreground" : "border-border"
-              }`}>{o.k}</span>
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                  selected === o.k
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border"
+                }`}
+              >
+                {o.k}
+              </span>
               <span>{o.v}</span>
             </button>
           ))}

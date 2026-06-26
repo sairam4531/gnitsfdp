@@ -25,7 +25,10 @@ function AuthPage() {
     const loginEmail = email.includes("@") ? email.trim() : `${email.trim()}@gnits.ac.in`;
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Signed in");
     navigate({ to: "/admin" });
   }
@@ -44,21 +47,21 @@ function AuthPage() {
           <form onSubmit={signIn} className="space-y-4">
             <div>
               <Label>Username or Email</Label>
-              <Input 
-                type="text" 
-                required 
-                placeholder="e.g. csmcsd" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
+              <Input
+                type="text"
+                required
+                placeholder="e.g. csmcsd"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
               <Label>Password</Label>
-              <Input 
-                type="password" 
-                required 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
+              <Input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-gradient-primary">

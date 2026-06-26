@@ -1,6 +1,14 @@
 import { Link } from "@tanstack/react-router";
 
-export function SiteFooter({ footerText, email, phone }: { footerText?: string | null; email?: string | null; phone?: string | null }) {
+export function SiteFooter({
+  footerText,
+  email,
+  phone,
+}: {
+  footerText?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}) {
   return (
     <footer id="contact" className="border-t bg-navy text-navy-foreground">
       <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-3">
@@ -18,7 +26,9 @@ export function SiteFooter({ footerText, email, phone }: { footerText?: string |
         <div>
           <h4 className="mb-2 font-bold">Quick Links</h4>
           <div className="flex flex-col gap-1 text-sm opacity-80">
-            <Link to="/register" className="hover:text-gold">Register</Link>
+            <Link to="/register" className="hover:text-gold">
+              Register
+            </Link>
             {/* <Link to="/auth" className="hover:text-gold">Admin Login</Link> */}
           </div>
         </div>

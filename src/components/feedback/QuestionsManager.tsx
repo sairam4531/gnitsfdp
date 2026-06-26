@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useFeedbackQuestions, feedbackDb, type FeedbackQuestion } from "@/lib/feedback";
@@ -55,7 +61,9 @@ export function QuestionsManager({ formId }: { formId: string }) {
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">Q{i + 1}</span>
                         <Badge variant="outline">
-                          {q.question_type === "multiple_choice" ? "Multiple Choice" : "Short Answer"}
+                          {q.question_type === "multiple_choice"
+                            ? "Multiple Choice"
+                            : "Short Answer"}
                         </Badge>
                       </div>
                       <p className="mt-2 font-medium">{q.question_text}</p>
@@ -120,9 +128,11 @@ function QuestionEditor({
   onCancel: () => void;
 }) {
   const [text, setText] = useState(initial?.question_text ?? "");
-  const [type, setType] = useState<"multiple_choice" | "short_answer">(initial?.question_type ?? "multiple_choice");
+  const [type, setType] = useState<"multiple_choice" | "short_answer">(
+    initial?.question_type ?? "multiple_choice",
+  );
   const [options, setOptions] = useState<string[]>(
-    initial?.options_json && initial.options_json.length > 0 ? initial.options_json : ["", ""]
+    initial?.options_json && initial.options_json.length > 0 ? initial.options_json : ["", ""],
   );
   const [saving, setSaving] = useState(false);
 
@@ -159,7 +169,9 @@ function QuestionEditor({
       <div>
         <Label>Question Type</Label>
         <Select value={type} onValueChange={(v) => setType(v as any)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
             <SelectItem value="short_answer">Short Answer</SelectItem>
@@ -198,8 +210,12 @@ function QuestionEditor({
         </div>
       )}
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}><X className="mr-1 h-4 w-4" /> Cancel</Button>
-        <Button onClick={save} disabled={saving}><Save className="mr-1 h-4 w-4" /> Save</Button>
+        <Button variant="outline" onClick={onCancel}>
+          <X className="mr-1 h-4 w-4" /> Cancel
+        </Button>
+        <Button onClick={save} disabled={saving}>
+          <Save className="mr-1 h-4 w-4" /> Save
+        </Button>
       </div>
     </div>
   );

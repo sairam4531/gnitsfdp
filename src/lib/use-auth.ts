@@ -33,7 +33,7 @@ export function useIsAdmin(userId: string | undefined) {
       setState({ isAdmin: false, userId: undefined });
       return;
     }
-    
+
     console.log("[useIsAdmin] Effect: Fetching role for", userId);
     supabase
       .from("user_roles")
@@ -54,7 +54,13 @@ export function useIsAdmin(userId: string | undefined) {
 
   // Synchronous loading check during render
   if (state.userId !== userId) {
-    console.log("[useIsAdmin] Render check: userId mismatch. state.userId:", state.userId, "requested:", userId, "-> returning null (loading)");
+    console.log(
+      "[useIsAdmin] Render check: userId mismatch. state.userId:",
+      state.userId,
+      "requested:",
+      userId,
+      "-> returning null (loading)",
+    );
     return null;
   }
 

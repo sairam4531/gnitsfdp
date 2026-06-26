@@ -23,8 +23,12 @@ function SuccessPage() {
               <CheckCircle2 className="h-8 w-8" />
             </div>
             <h1 className="mt-6 text-3xl font-bold">Successfully registered for FDP!</h1>
-            <p className="mt-2 text-muted-foreground">Thank you. Your registration has been received and successfully approved.</p>
-            <Button asChild className="mt-8"><Link to="/">Back to home</Link></Button>
+            <p className="mt-2 text-muted-foreground">
+              Thank you. Your registration has been received and successfully approved.
+            </p>
+            <Button asChild className="mt-8">
+              <Link to="/">Back to home</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

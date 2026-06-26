@@ -8,10 +8,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useFeedbackForms, feedbackDb, type FeedbackForm } from "@/lib/feedback";
@@ -53,7 +65,9 @@ function FeedbackFormsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Feedback Questions</h1>
-          <p className="text-sm text-muted-foreground">Create feedback forms and manage their questions.</p>
+          <p className="text-sm text-muted-foreground">
+            Create feedback forms and manage their questions.
+          </p>
         </div>
         <Button onClick={() => setCreating(true)}>
           <Plus className="mr-2 h-4 w-4" /> New Feedback Form
@@ -83,7 +97,9 @@ function FeedbackFormsPage() {
                     )}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span>Button: <strong>{f.feedback_button_name}</strong></span>
+                    <span>
+                      Button: <strong>{f.feedback_button_name}</strong>
+                    </span>
                     {f.feedback_date && <span>Date: {f.feedback_date}</span>}
                   </div>
                 </div>
@@ -123,7 +139,10 @@ function FeedbackFormsPage() {
         onSaved={() => qc.invalidateQueries({ queryKey: ["feedback_forms"] })}
       />
 
-      <Dialog open={!!managingQuestionsFor} onOpenChange={(o) => !o && setManagingQuestionsFor(null)}>
+      <Dialog
+        open={!!managingQuestionsFor}
+        onOpenChange={(o) => !o && setManagingQuestionsFor(null)}
+      >
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Questions — {managingQuestionsFor?.fdp_title}</DialogTitle>
@@ -215,11 +234,19 @@ function FormDialog({
         <div className="space-y-4">
           <div>
             <Label>FDP Title</Label>
-            <Input value={fdpTitle} onChange={(e) => setFdpTitle(e.target.value)} placeholder="e.g. Smart Data Visualization using Power BI…" />
+            <Input
+              value={fdpTitle}
+              onChange={(e) => setFdpTitle(e.target.value)}
+              placeholder="e.g. Smart Data Visualization using Power BI…"
+            />
           </div>
           <div>
             <Label>Feedback Button Name</Label>
-            <Input value={btnName} onChange={(e) => setBtnName(e.target.value)} placeholder="Submit FDP Feedback" />
+            <Input
+              value={btnName}
+              onChange={(e) => setBtnName(e.target.value)}
+              placeholder="Submit FDP Feedback"
+            />
           </div>
           <div>
             <Label>Date</Label>
@@ -228,14 +255,20 @@ function FormDialog({
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
               <Label>Enable Feedback</Label>
-              <p className="text-xs text-muted-foreground">If ON, the feedback button is shown on the user side.</p>
+              <p className="text-xs text-muted-foreground">
+                If ON, the feedback button is shown on the user side.
+              </p>
             </div>
             <Switch checked={enabled} onCheckedChange={setEnabled} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

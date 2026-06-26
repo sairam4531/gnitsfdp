@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRegistrations } from "@/lib/queries";
 import { startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import * as XLSX from "xlsx";
@@ -19,11 +25,12 @@ export const Route = createFileRoute("/admin/reports")({
 function ReportsPage() {
   const { data: regs = [] } = useRegistrations();
   const [range, setRange] = useState("all");
-  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const filtered = useMemo(() => {
     const now = new Date();
-    return regs.filter(r => {
+    return regs.filter((r) => {
       const d = new Date(r.created_at);
       if (range === "today") return d >= startOfDay(now);
       if (range === "week") return d >= startOfWeek(now);
@@ -38,25 +45,35 @@ function ReportsPage() {
 
   function excel() {
     const ws = XLSX.utils.json_to_sheet(filtered);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Report");
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
     XLSX.writeFile(wb, `fdp-report-${Date.now()}.xlsx`);
   }
   function csv() {
     const ws = XLSX.utils.json_to_sheet(filtered);
     const c = XLSX.utils.sheet_to_csv(ws);
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([c], { type: "text/csv" })); a.download = `fdp-report-${Date.now()}.csv`; a.click();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([c], { type: "text/csv" }));
+    a.download = `fdp-report-${Date.now()}.csv`;
+    a.click();
   }
   function pdf() {
     const doc = new jsPDF({ orientation: "landscape" });
     doc.text("GNITS FDP — Report", 14, 14);
     autoTable(doc, {
-      startY: 20, styles: { fontSize: 7 }, headStyles: { fillColor: [124, 58, 237] },
+      startY: 20,
+      styles: { fontSize: 7 },
+      headStyles: { fillColor: [124, 58, 237] },
       head: [["Reg ID", "Name", "Dept", "Institute", "Category", "Fee", "Status", "Date"]],
-      body: filtered.map(r => [
-        r.registration_id, r.faculty_name,
+      body: filtered.map((r) => [
+        r.registration_id,
+        r.faculty_name,
         r.department === "Others" ? r.custom_department : r.department,
         r.institute === "Others" ? r.custom_institute : "GNITS",
-        r.category, `₹${r.registration_fee}`, r.payment_status, new Date(r.created_at).toLocaleDateString(),
+        r.category,
+        `₹${r.registration_fee}`,
+        r.payment_status,
+        new Date(r.created_at).toLocaleDateString(),
       ]),
     });
     doc.save(`fdp-report-${Date.now()}.pdf`);
@@ -64,15 +81,23 @@ function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">Reports</h1><p className="text-sm text-muted-foreground">Export filtered registration data.</p></div>
+      <div>
+        <h1 className="text-2xl font-bold">Reports</h1>
+        <p className="text-sm text-muted-foreground">Export filtered registration data.</p>
+      </div>
       <Card>
-        <CardHeader><CardTitle>Filter</CardTitle><CardDescription>{filtered.length} records match the current filter.</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle>Filter</CardTitle>
+          <CardDescription>{filtered.length} records match the current filter.</CardDescription>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <Label>Date Range</Label>
               <Select value={range} onValueChange={setRange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
@@ -84,15 +109,30 @@ function ReportsPage() {
             </div>
             {range === "custom" && (
               <>
-                <div><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-                <div><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+                <div>
+                  <Label>From</Label>
+                  <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+                </div>
+                <div>
+                  <Label>To</Label>
+                  <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+                </div>
               </>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={excel} className="bg-gradient-primary"><FileSpreadsheet className="mr-2 h-4 w-4" />Excel</Button>
-            <Button onClick={csv} variant="outline"><Download className="mr-2 h-4 w-4" />CSV</Button>
-            <Button onClick={pdf} variant="outline"><FileText className="mr-2 h-4 w-4" />PDF</Button>
+            <Button onClick={excel} className="bg-gradient-primary">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Excel
+            </Button>
+            <Button onClick={csv} variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              CSV
+            </Button>
+            <Button onClick={pdf} variant="outline">
+              <FileText className="mr-2 h-4 w-4" />
+              PDF
+            </Button>
           </div>
         </CardContent>
       </Card>
