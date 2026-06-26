@@ -162,21 +162,38 @@ function QuizPage() {
 
     setCheckingId(true);
     try {
-      const { data: isDuplicate, error: checkError } = await quizDb
-        .rpc("check_duplicate_quiz_response", {
+      const { data: existingResponse, error: checkError } = await quizDb
+        .rpc("get_participant_quiz_response", {
           _exam_id: examId,
           _faculty_id: facultyId.trim(),
         });
 
       if (checkError) {
-        console.error("Error checking duplicate response:", checkError);
+        console.error("Error checking existing response:", checkError);
         toast.error("Unable to verify exam eligibility. Please try again.");
         setCheckingId(false);
         return;
       }
 
-      if (isDuplicate) {
-        toast.error("You have already submitted this exam. Multiple attempts are not allowed.");
+      if (existingResponse && existingResponse.length > 0) {
+        const resp = existingResponse[0];
+        setFacultyName(resp.faculty_name);
+        setFacultyId(resp.faculty_id);
+        setDepartment(resp.department);
+        setCollege(resp.college_name);
+        if (resp.custom_department) setCustomDepartment(resp.custom_department);
+        if (resp.custom_college) setCustomCollege(resp.custom_college);
+        
+        setResult({
+          score: resp.score,
+          total: resp.total_questions,
+          time: resp.time_taken_seconds
+        });
+        
+        setAnswers(resp.answers_json || {});
+        
+        toast.info("Showing your previous scorecard and answers review.");
+        setStage("done");
         setCheckingId(false);
         return;
       }
