@@ -210,6 +210,10 @@ function QuizPage() {
     if (currentIdx < questions.length - 1) setCurrentIdx((i) => i + 1);
   }
 
+  function prev() {
+    if (currentIdx > 0) setCurrentIdx((i) => i - 1);
+  }
+
   async function submit(auto: boolean, reason?: string) {
     if (submittedRef.current) return;
     submittedRef.current = true;
@@ -265,26 +269,26 @@ function QuizPage() {
     const dept = department === "Others" ? customDepartment : department;
     const coll = college === "Others" ? customCollege : college;
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-        <Card className="w-full max-w-lg">
+      <div className="flex min-h-screen items-center justify-center bg-slate-900 p-4">
+        <Card className="w-full max-w-lg border-slate-700 bg-slate-800 text-slate-100 shadow-xl shadow-slate-950/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-600">
+            <CardTitle className="flex items-center gap-2 text-emerald-400">
               <CheckCircle2 className="h-6 w-6" /> Exam Submitted
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-gradient-to-br from-primary to-secondary p-6 text-center text-primary-foreground">
-              <div className="text-sm opacity-80">Your Score</div>
+            <div className="rounded-lg bg-gradient-feedback p-6 text-center text-white shadow-lg shadow-purple-950/30">
+              <div className="text-sm opacity-80 uppercase tracking-wider font-semibold">Your Score</div>
               <div className="mt-1 text-5xl font-black">{result.score} / {result.total}</div>
-              <div className="mt-2 text-xs opacity-80">Time taken: {Math.floor(result.time / 60)}m {result.time % 60}s</div>
+              <div className="mt-2 text-xs opacity-80 font-mono">Time taken: {Math.floor(result.time / 60)}m {result.time % 60}s</div>
             </div>
-            <div className="space-y-1 text-sm">
-              <div><span className="text-muted-foreground">Name:</span> <strong>{facultyName}</strong></div>
-              <div><span className="text-muted-foreground">Faculty ID:</span> <strong>{facultyId}</strong></div>
-              <div><span className="text-muted-foreground">Department:</span> <strong>{dept}</strong></div>
-              <div><span className="text-muted-foreground">College:</span> <strong>{coll}</strong></div>
+            <div className="space-y-2 rounded-md border border-slate-700 bg-slate-900/50 p-4 text-sm">
+              <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Name:</span> <strong className="text-slate-100">{facultyName}</strong></div>
+              <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Faculty ID:</span> <strong className="text-slate-100">{facultyId}</strong></div>
+              <div className="flex justify-between py-1 border-b border-slate-700/50"><span className="text-slate-400">Department:</span> <strong className="text-slate-100">{dept}</strong></div>
+              <div className="flex justify-between py-1"><span className="text-slate-400">College:</span> <strong className="text-slate-100">{coll}</strong></div>
             </div>
-            <Button className="w-full" onClick={() => navigate({ to: "/" })}>Back to Home</Button>
+            <Button className="w-full bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20" onClick={() => navigate({ to: "/" })}>Back to Home</Button>
           </CardContent>
         </Card>
       </div>
@@ -334,6 +338,14 @@ function QuizPage() {
           {q && <QuestionCard q={q} selected={answers[q.id]} onSelect={(o) => selectAnswer(q.id, o)} index={currentIdx + 1} />}
 
           <div className="flex justify-between items-center pt-2">
+            <Button 
+              onClick={prev} 
+              disabled={currentIdx === 0} 
+              variant="outline" 
+              className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+            >
+              Previous
+            </Button>
             <div className="text-xs text-slate-400 font-medium">
               Answered: {Object.keys(answers).length} / {questions.length}
             </div>
