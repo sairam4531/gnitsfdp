@@ -297,7 +297,7 @@ function QuizPage() {
     const mins = Math.floor(remaining / 60);
     const secs = remaining % 60;
     return (
-      <div className="min-h-screen bg-slate-50 p-4 select-none">
+      <div className="flex min-h-screen items-center justify-center bg-slate-900 p-4 select-none">
         {showWarningScreen && (
           <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-red-600 text-white p-6 text-center select-none animate-fade-in">
             <div className="max-w-md space-y-6">
@@ -318,31 +318,31 @@ function QuizPage() {
             </div>
           </div>
         )}
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-4 flex items-center justify-between rounded-lg border bg-card p-3">
+        <div className="w-full max-w-3xl space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800/80 p-3 text-slate-100">
             <div className="text-sm font-medium">Question {currentIdx + 1} of {questions.length}</div>
-            <div className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-1.5 font-mono text-sm font-bold text-primary">
+            <div className="flex items-center gap-2 rounded-md bg-indigo-500/10 px-3 py-1.5 font-mono text-sm font-bold text-indigo-400">
               <Clock className="h-4 w-4" /> {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
             </div>
           </div>
 
-          <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+          <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             Do not switch tabs, open new windows, or exit fullscreen. Your exam will be auto-submitted. (1 Warning allowed for fullscreen exit)
           </div>
 
           {q && <QuestionCard q={q} selected={answers[q.id]} onSelect={(o) => selectAnswer(q.id, o)} index={currentIdx + 1} />}
 
-          <div className="mt-4 flex justify-between">
-            <div className="text-xs text-muted-foreground self-center">
+          <div className="flex justify-between items-center pt-2">
+            <div className="text-xs text-slate-400 font-medium">
               Answered: {Object.keys(answers).length} / {questions.length}
             </div>
             {isLast ? (
-              <Button onClick={() => setConfirmSubmit(true)} className="bg-gradient-gold text-gold-foreground font-bold">
+              <Button onClick={() => setConfirmSubmit(true)} className="bg-gradient-gold text-gold-foreground font-bold shadow-lg shadow-gold/20">
                 Submit Exam
               </Button>
             ) : (
-              <Button onClick={next}>Next Question</Button>
+              <Button onClick={next} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg shadow-indigo-600/20">Next Question</Button>
             )}
           </div>
         </div>
