@@ -159,6 +159,145 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_exams: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          exam_date: string
+          id: string
+          is_enabled: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number
+          exam_date: string
+          id?: string
+          is_enabled?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          exam_date?: string
+          id?: string
+          is_enabled?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          correct_option: string
+          created_at: string
+          exam_id: string
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_order: number
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          correct_option: string
+          created_at?: string
+          exam_id: string
+          id?: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_order?: number
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          correct_option?: string
+          created_at?: string
+          exam_id?: string
+          id?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question_order?: number
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_responses: {
+        Row: {
+          answers_json: Json
+          auto_submitted: boolean
+          college_name: string
+          custom_college: string | null
+          custom_department: string | null
+          department: string
+          exam_id: string
+          faculty_id: string
+          faculty_name: string
+          id: string
+          score: number
+          submitted_at: string
+          time_taken_seconds: number
+          total_questions: number
+        }
+        Insert: {
+          answers_json?: Json
+          auto_submitted?: boolean
+          college_name: string
+          custom_college?: string | null
+          custom_department?: string | null
+          department: string
+          exam_id: string
+          faculty_id: string
+          faculty_name: string
+          id?: string
+          score?: number
+          submitted_at?: string
+          time_taken_seconds?: number
+          total_questions?: number
+        }
+        Update: {
+          answers_json?: Json
+          auto_submitted?: boolean
+          college_name?: string
+          custom_college?: string | null
+          custom_department?: string | null
+          department?: string
+          exam_id?: string
+          faculty_id?: string
+          faculty_name?: string
+          id?: string
+          score?: number
+          submitted_at?: string
+          time_taken_seconds?: number
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_responses_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registrations: {
         Row: {
           category: string

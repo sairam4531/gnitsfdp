@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RegisterIndexRouteImport } from './routes/register.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as RegisterSuccessRouteImport } from './routes/register.success'
+import { Route as QuizExamIdRouteImport } from './routes/quiz.$examId'
 import { Route as FeedbackFormIdRouteImport } from './routes/feedback.$formId'
 import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
 import { Route as AdminWebsiteSettingsRouteImport } from './routes/admin.website-settings'
@@ -23,6 +24,8 @@ import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AdminPaymentSettingsRouteImport } from './routes/admin.payment-settings'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminQuizResponsesRouteImport } from './routes/admin.quiz.responses'
+import { Route as AdminQuizQuestionsRouteImport } from './routes/admin.quiz.questions'
 import { Route as AdminFeedbackResponsesRouteImport } from './routes/admin.feedback.responses'
 import { Route as AdminFeedbackQuestionsRouteImport } from './routes/admin.feedback.questions'
 import { Route as AdminFeedbackViewFormIdRouteImport } from './routes/admin.feedback.view.$formId'
@@ -55,6 +58,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const RegisterSuccessRoute = RegisterSuccessRouteImport.update({
   id: '/register/success',
   path: '/register/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizExamIdRoute = QuizExamIdRouteImport.update({
+  id: '/quiz/$examId',
+  path: '/quiz/$examId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbackFormIdRoute = FeedbackFormIdRouteImport.update({
@@ -97,6 +105,16 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminQuizResponsesRoute = AdminQuizResponsesRouteImport.update({
+  id: '/quiz/responses',
+  path: '/quiz/responses',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQuizQuestionsRoute = AdminQuizQuestionsRouteImport.update({
+  id: '/quiz/questions',
+  path: '/quiz/questions',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFeedbackResponsesRoute = AdminFeedbackResponsesRouteImport.update({
   id: '/feedback/responses',
   path: '/feedback/responses',
@@ -125,11 +143,14 @@ export interface FileRoutesByFullPath {
   '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
   '/feedback/$formId': typeof FeedbackFormIdRoute
+  '/quiz/$examId': typeof QuizExamIdRoute
   '/register/success': typeof RegisterSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
   '/admin/feedback/responses': typeof AdminFeedbackResponsesRoute
+  '/admin/quiz/questions': typeof AdminQuizQuestionsRoute
+  '/admin/quiz/responses': typeof AdminQuizResponsesRoute
   '/admin/feedback/view/$formId': typeof AdminFeedbackViewFormIdRoute
 }
 export interface FileRoutesByTo {
@@ -143,11 +164,14 @@ export interface FileRoutesByTo {
   '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
   '/feedback/$formId': typeof FeedbackFormIdRoute
+  '/quiz/$examId': typeof QuizExamIdRoute
   '/register/success': typeof RegisterSuccessRoute
   '/admin': typeof AdminIndexRoute
   '/register': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
   '/admin/feedback/responses': typeof AdminFeedbackResponsesRoute
+  '/admin/quiz/questions': typeof AdminQuizQuestionsRoute
+  '/admin/quiz/responses': typeof AdminQuizResponsesRoute
   '/admin/feedback/view/$formId': typeof AdminFeedbackViewFormIdRoute
 }
 export interface FileRoutesById {
@@ -163,11 +187,14 @@ export interface FileRoutesById {
   '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
   '/feedback/$formId': typeof FeedbackFormIdRoute
+  '/quiz/$examId': typeof QuizExamIdRoute
   '/register/success': typeof RegisterSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
   '/admin/feedback/responses': typeof AdminFeedbackResponsesRoute
+  '/admin/quiz/questions': typeof AdminQuizQuestionsRoute
+  '/admin/quiz/responses': typeof AdminQuizResponsesRoute
   '/admin/feedback/view/$formId': typeof AdminFeedbackViewFormIdRoute
 }
 export interface FileRouteTypes {
@@ -184,11 +211,14 @@ export interface FileRouteTypes {
     | '/admin/website-settings'
     | '/admin/workshop'
     | '/feedback/$formId'
+    | '/quiz/$examId'
     | '/register/success'
     | '/admin/'
     | '/register/'
     | '/admin/feedback/questions'
     | '/admin/feedback/responses'
+    | '/admin/quiz/questions'
+    | '/admin/quiz/responses'
     | '/admin/feedback/view/$formId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -202,11 +232,14 @@ export interface FileRouteTypes {
     | '/admin/website-settings'
     | '/admin/workshop'
     | '/feedback/$formId'
+    | '/quiz/$examId'
     | '/register/success'
     | '/admin'
     | '/register'
     | '/admin/feedback/questions'
     | '/admin/feedback/responses'
+    | '/admin/quiz/questions'
+    | '/admin/quiz/responses'
     | '/admin/feedback/view/$formId'
   id:
     | '__root__'
@@ -221,11 +254,14 @@ export interface FileRouteTypes {
     | '/admin/website-settings'
     | '/admin/workshop'
     | '/feedback/$formId'
+    | '/quiz/$examId'
     | '/register/success'
     | '/admin/'
     | '/register/'
     | '/admin/feedback/questions'
     | '/admin/feedback/responses'
+    | '/admin/quiz/questions'
+    | '/admin/quiz/responses'
     | '/admin/feedback/view/$formId'
   fileRoutesById: FileRoutesById
 }
@@ -234,6 +270,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   FeedbackFormIdRoute: typeof FeedbackFormIdRoute
+  QuizExamIdRoute: typeof QuizExamIdRoute
   RegisterSuccessRoute: typeof RegisterSuccessRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
 }
@@ -280,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/register/success'
       fullPath: '/register/success'
       preLoaderRoute: typeof RegisterSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quiz/$examId': {
+      id: '/quiz/$examId'
+      path: '/quiz/$examId'
+      fullPath: '/quiz/$examId'
+      preLoaderRoute: typeof QuizExamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedback/$formId': {
@@ -338,6 +382,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/quiz/responses': {
+      id: '/admin/quiz/responses'
+      path: '/quiz/responses'
+      fullPath: '/admin/quiz/responses'
+      preLoaderRoute: typeof AdminQuizResponsesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/quiz/questions': {
+      id: '/admin/quiz/questions'
+      path: '/quiz/questions'
+      fullPath: '/admin/quiz/questions'
+      preLoaderRoute: typeof AdminQuizQuestionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/feedback/responses': {
       id: '/admin/feedback/responses'
       path: '/feedback/responses'
@@ -373,6 +431,8 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminFeedbackQuestionsRoute: typeof AdminFeedbackQuestionsRoute
   AdminFeedbackResponsesRoute: typeof AdminFeedbackResponsesRoute
+  AdminQuizQuestionsRoute: typeof AdminQuizQuestionsRoute
+  AdminQuizResponsesRoute: typeof AdminQuizResponsesRoute
   AdminFeedbackViewFormIdRoute: typeof AdminFeedbackViewFormIdRoute
 }
 
@@ -387,6 +447,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminFeedbackQuestionsRoute: AdminFeedbackQuestionsRoute,
   AdminFeedbackResponsesRoute: AdminFeedbackResponsesRoute,
+  AdminQuizQuestionsRoute: AdminQuizQuestionsRoute,
+  AdminQuizResponsesRoute: AdminQuizResponsesRoute,
   AdminFeedbackViewFormIdRoute: AdminFeedbackViewFormIdRoute,
 }
 
@@ -397,6 +459,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   FeedbackFormIdRoute: FeedbackFormIdRoute,
+  QuizExamIdRoute: QuizExamIdRoute,
   RegisterSuccessRoute: RegisterSuccessRoute,
   RegisterIndexRoute: RegisterIndexRoute,
 }

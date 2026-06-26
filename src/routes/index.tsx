@@ -23,7 +23,8 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { useWebsiteSettings, useSpeakers } from "@/lib/queries";
 import { useEnabledFeedbackForms } from "@/lib/feedback";
-import { MessageSquare } from "lucide-react";
+import { useEnabledQuizExam } from "@/lib/quiz";
+import { MessageSquare, GraduationCap } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
@@ -53,6 +54,7 @@ function Home() {
   const { data: settings } = useWebsiteSettings();
   const { data: speakers = [] } = useSpeakers();
   const { data: enabledFeedback = [] } = useEnabledFeedbackForms();
+  const { data: enabledQuiz } = useEnabledQuizExam();
   const feedbackForm = enabledFeedback[0];
   const open = settings?.registration_open ?? true;
 
@@ -103,6 +105,13 @@ function Home() {
               <Button asChild size="lg" className="bg-gradient-gold text-gold-foreground font-bold shadow-glow hover:opacity-90">
                 <Link to="/register">Register Now</Link>
               </Button>
+              {enabledQuiz && (
+                <Button asChild size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold shadow-glow hover:opacity-90 border-0">
+                  <Link to="/quiz/$examId" params={{ examId: enabledQuiz.id }}>
+                    <GraduationCap className="mr-2 h-4 w-4" /> Quiz Exam
+                  </Link>
+                </Button>
+              )}
               {feedbackForm && (
                 <Button asChild size="lg" className="bg-gradient-feedback text-white font-bold shadow-glow hover:opacity-90 border-0">
                   <Link to="/feedback/$formId" params={{ formId: feedbackForm.id }}>
