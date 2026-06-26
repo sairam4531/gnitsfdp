@@ -48,9 +48,18 @@ function QuizPage() {
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number; time: number } | null>(null);
 
+  const [fullscreenViolations, setFullscreenViolations] = useState(0);
+  const [showWarningScreen, setShowWarningScreen] = useState(false);
+  const [checkingId, setCheckingId] = useState(false);
+
   const submittedRef = useRef(false);
   const stageRef = useRef<Stage>("register");
+  const violationsRef = useRef(0);
+  const showWarningScreenRef = useRef(false);
+
   useEffect(() => { stageRef.current = stage; }, [stage]);
+  useEffect(() => { violationsRef.current = fullscreenViolations; }, [fullscreenViolations]);
+  useEffect(() => { showWarningScreenRef.current = showWarningScreen; }, [showWarningScreen]);
 
   // Timer
   useEffect(() => {
@@ -73,15 +82,25 @@ function QuizPage() {
   useEffect(() => {
     if (stage !== "exam") return;
     function onVis() {
-      if (document.hidden) autoSubmit("Tab switched");
+      if (document.hidden && stageRef.current === "exam" && !showWarningScreenRef.current) {
+        autoSubmit("Tab switched");
+      }
     }
     function onBlur() {
       // window blur (alt-tab)
-      if (stageRef.current === "exam") autoSubmit("Window left focus");
+      if (stageRef.current === "exam" && !showWarningScreenRef.current) {
+        autoSubmit("Window left focus");
+      }
     }
     function onFsChange() {
       if (!document.fullscreenElement && stageRef.current === "exam") {
-        autoSubmit("Exited fullscreen");
+        const nextViolations = violationsRef.current + 1;
+        setFullscreenViolations(nextViolations);
+        if (nextViolations >= 2) {
+          autoSubmit("Exited fullscreen second time");
+        } else {
+          setShowWarningScreen(true);
+        }
       }
     }
     document.addEventListener("visibilitychange", onVis);
@@ -94,6 +113,34 @@ function QuizPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
+
+  // Disable copy-paste & text selection during exam
+  useEffect(() => {
+    if (stage !== "exam") return;
+    function preventDefault(e: Event) {
+      e.preventDefault();
+      toast.error("Copying, pasting, and right-clicking are disabled during the exam.");
+    }
+    document.addEventListener("copy", preventDefault);
+    document.addEventListener("paste", preventDefault);
+    document.addEventListener("cut", preventDefault);
+    document.addEventListener("contextmenu", preventDefault);
+    return () => {
+      document.removeEventListener("copy", preventDefault);
+      document.removeEventListener("paste", preventDefault);
+      document.removeEventListener("cut", preventDefault);
+      document.removeEventListener("contextmenu", preventDefault);
+    };
+  }, [stage]);
+
+  async function resumeFullscreen() {
+    try {
+      await document.documentElement.requestFullscreen();
+      setShowWarningScreen(false);
+    } catch {
+      toast.error("Please enable fullscreen to continue the exam");
+    }
+  }
 
   function validateRegister() {
     if (!facultyName.trim()) return "Faculty Name is required";
@@ -112,6 +159,34 @@ function QuizPage() {
     if (!exam.is_enabled) return toast.error("This exam is not enabled");
     if (questions.length === 0) return toast.error("No questions available");
 
+    setCheckingId(true);
+    try {
+      const { data: isDuplicate, error: checkError } = await quizDb
+        .rpc("check_duplicate_quiz_response", {
+          _exam_id: examId,
+          _faculty_id: facultyId.trim(),
+        });
+
+      if (checkError) {
+        console.error("Error checking duplicate response:", checkError);
+        toast.error("Unable to verify exam eligibility. Please try again.");
+        setCheckingId(false);
+        return;
+      }
+
+      if (isDuplicate) {
+        toast.error("You have already submitted this exam. Multiple attempts are not allowed.");
+        setCheckingId(false);
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Error checking registration status.");
+      setCheckingId(false);
+      return;
+    }
+    setCheckingId(false);
+
     try {
       await document.documentElement.requestFullscreen();
     } catch {
@@ -121,6 +196,8 @@ function QuizPage() {
     setRemaining(exam.duration_minutes * 60);
     setCurrentIdx(0);
     setAnswers({});
+    setFullscreenViolations(0);
+    setShowWarningScreen(false);
     submittedRef.current = false;
     setStage("exam");
   }
@@ -168,6 +245,7 @@ function QuizPage() {
     if (document.fullscreenElement) {
       try { await document.exitFullscreen(); } catch {}
     }
+    setShowWarningScreen(false);
     setResult({ score, total, time: timeTaken });
     setStage("done");
     if (auto) toast.warning(`Exam auto-submitted: ${reason ?? ""}`);
@@ -219,7 +297,27 @@ function QuizPage() {
     const mins = Math.floor(remaining / 60);
     const secs = remaining % 60;
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-slate-50 p-4 select-none">
+        {showWarningScreen && (
+          <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-red-600 text-white p-6 text-center select-none animate-fade-in">
+            <div className="max-w-md space-y-6">
+              <AlertTriangle className="mx-auto h-20 w-20 text-white animate-pulse" />
+              <h1 className="text-3xl font-bold tracking-tight">Warning: Fullscreen Exited!</h1>
+              <p className="text-lg opacity-90">
+                Exiting fullscreen is a violation of the exam rules. This is your **first and ONLY warning**.
+              </p>
+              <p className="text-sm bg-red-700/50 p-3 rounded-md border border-red-500">
+                If you exit fullscreen again, your exam will be <strong>automatically submitted immediately</strong>.
+              </p>
+              <Button 
+                onClick={resumeFullscreen} 
+                className="w-full bg-white text-red-600 hover:bg-white/90 font-bold text-base py-6 shadow-lg transition-transform active:scale-95"
+              >
+                Resume Exam (Enter Fullscreen)
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 flex items-center justify-between rounded-lg border bg-card p-3">
             <div className="text-sm font-medium">Question {currentIdx + 1} of {questions.length}</div>
@@ -230,7 +328,7 @@ function QuizPage() {
 
           <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            Do not switch tabs, open new windows, or exit fullscreen. Your exam will be auto-submitted.
+            Do not switch tabs, open new windows, or exit fullscreen. Your exam will be auto-submitted. (1 Warning allowed for fullscreen exit)
           </div>
 
           {q && <QuestionCard q={q} selected={answers[q.id]} onSelect={(o) => selectAnswer(q.id, o)} index={currentIdx + 1} />}
@@ -313,8 +411,12 @@ function QuizPage() {
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
             <strong>Important:</strong> The exam runs in fullscreen. Switching tabs, opening new windows, or exiting fullscreen will auto-submit your exam.
           </div>
-          <Button className="w-full bg-gradient-gold text-gold-foreground font-bold" onClick={startExam}>
-            Start Exam
+          <Button 
+            className="w-full bg-gradient-gold text-gold-foreground font-bold disabled:opacity-70 disabled:cursor-not-allowed" 
+            onClick={startExam}
+            disabled={checkingId}
+          >
+            {checkingId ? "Verifying eligibility..." : "Start Exam"}
           </Button>
         </CardContent>
       </Card>
