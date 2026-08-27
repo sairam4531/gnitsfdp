@@ -20,6 +20,8 @@ import {
   useRegistrations,
   usePaymentSettings,
   useSpeakers,
+  useCoordinators,
+  Coordinator,
 } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -72,6 +74,7 @@ function WorkshopPage() {
   const { data: regs = [] } = useRegistrations();
   const { data: ps } = usePaymentSettings();
   const { data: speakers = [] } = useSpeakers();
+  const { data: coords = [] } = useCoordinators();
 
   // Registration states
   const [open, setOpen] = useState(true);
@@ -94,6 +97,7 @@ function WorkshopPage() {
 
   // Speakers states
   const [editingSpeaker, setEditingSpeaker] = useState<Partial<SpeakerRow> | null>(null);
+  const [editingCoordinator, setEditingCoordinator] = useState<Partial<Coordinator> | null>(null);
 
   // Sync settings
   useEffect(() => {
@@ -256,6 +260,51 @@ function WorkshopPage() {
     }
   }
 
+  // --- Coordinators actions ---
+  async function saveCoordinator() {
+    if (!editingCoordinator) return;
+    const { name, department, phone, type, sort_order } = editingCoordinator;
+    if (!name || !department || !phone || !type) {
+      toast.error("Please fill Name, Department, Mobile, and Category");
+      return;
+    }
+    const payload = {
+      name,
+      department,
+      phone,
+      type,
+      sort_order: sort_order || 0,
+    };
+
+    const isEdit = !!editingCoordinator.id;
+    const { error } = isEdit
+      ? await supabase
+          .from("coordinators" as never)
+          .update(payload)
+          .eq("id", editingCoordinator.id)
+      : await supabase.from("coordinators" as never).insert(payload);
+
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Coordinator saved");
+      setEditingCoordinator(null);
+      qc.invalidateQueries({ queryKey: ["coordinators"] });
+    }
+  }
+
+  async function deleteCoordinator(id: string) {
+    if (!confirm("Delete this coordinator?")) return;
+    const { error } = await supabase
+      .from("coordinators" as never)
+      .delete()
+      .eq("id", id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["coordinators"] });
+    }
+  }
+
   const left = Math.max(0, seatLimit - regs.length);
 
   if (!settings || !ps) {
@@ -276,7 +325,7 @@ function WorkshopPage() {
       </div>
 
       <Tabs defaultValue="registration" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
           <TabsTrigger value="registration" className="flex items-center gap-1.5">
             <CalendarCheck className="h-4 w-4" /> Registration
           </TabsTrigger>
@@ -288,6 +337,9 @@ function WorkshopPage() {
           </TabsTrigger>
           <TabsTrigger value="speakers" className="flex items-center gap-1.5">
             <Mic className="h-4 w-4" /> Speakers
+          </TabsTrigger>
+          <TabsTrigger value="coordinators" className="flex items-center gap-1.5">
+            <Users className="h-4 w-4" /> Coordinators
           </TabsTrigger>
         </TabsList>
 
@@ -721,6 +773,207 @@ function WorkshopPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        {/* --- COORDINATORS TAB --- */}
+        <TabsContent value="coordinators" className="space-y-6 animate-fade-in">
+          <div className="flex items-center justify-between border-b pb-4">
+            <div>
+              <CardTitle className="text-lg">Co-ordinators</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {coords.length} co-ordinators registered
+              </p>
+            </div>
+            <Dialog
+              open={!!editingCoordinator}
+              onOpenChange={(o) => !o && setEditingCoordinator(null)}
+            >
+              <DialogTrigger asChild>
+                <Button onClick={() => setEditingCoordinator({})} className="bg-gradient-primary">
+                  <Plus className="mr-2 h-4 w-4" /> Add Co-ordinator
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingCoordinator?.id ? "Edit" : "Add"} Co-ordinator</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={editingCoordinator?.name || ""}
+                      onChange={(e) =>
+                        setEditingCoordinator((p) => ({ ...p, name: e.target.value }))
+                      }
+                      placeholder="e.g. Dr. A. Faculty"
+                    />
+                  </div>
+                  <div>
+                    <Label>Department</Label>
+                    <Select
+                      onValueChange={(v) => setEditingCoordinator((p) => ({ ...p, department: v }))}
+                      value={editingCoordinator?.department || ""}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["CSE", "CSE(AI&ML)", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
+                          <SelectItem key={d} value={d}>
+                            {d}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Mobile Number</Label>
+                    <Input
+                      value={editingCoordinator?.phone || ""}
+                      onChange={(e) =>
+                        setEditingCoordinator((p) => ({ ...p, phone: e.target.value }))
+                      }
+                      placeholder="10-digit mobile number"
+                    />
+                  </div>
+                  <div>
+                    <Label>Co-ordinator Category</Label>
+                    <Select
+                      onValueChange={(v) =>
+                        setEditingCoordinator((p) => ({ ...p, type: v as Coordinator["type"] }))
+                      }
+                      value={editingCoordinator?.type || ""}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Faculty">Faculty Co-ordinator</SelectItem>
+                        <SelectItem value="Student">Student Co-ordinator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Sort Order</Label>
+                    <Input
+                      type="number"
+                      value={editingCoordinator?.sort_order || 0}
+                      onChange={(e) =>
+                        setEditingCoordinator((p) => ({
+                          ...p,
+                          sort_order: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingCoordinator(null)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={saveCoordinator} className="bg-gradient-primary">
+                    Save Co-ordinator
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-md font-bold mb-3 text-secondary">Faculty Co-ordinators</h3>
+              {coords.filter((c) => c.type === "Faculty").length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  No faculty co-ordinators added yet.
+                </p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {coords
+                    .filter((c) => c.type === "Faculty")
+                    .map((c) => (
+                      <Card key={c.id}>
+                        <CardContent className="p-4 flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-sm text-white">{c.name}</h4>
+                            <p className="text-xs text-secondary mt-0.5">
+                              {c.department} Department
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 font-mono">
+                              {c.phone}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => setEditingCoordinator(c)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => deleteCoordinator(c.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-md font-bold mb-3 text-secondary">Student Co-ordinators</h3>
+              {coords.filter((c) => c.type === "Student").length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  No student co-ordinators added yet.
+                </p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {coords
+                    .filter((c) => c.type === "Student")
+                    .map((c) => (
+                      <Card key={c.id}>
+                        <CardContent className="p-4 flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-sm text-white">{c.name}</h4>
+                            <p className="text-xs text-secondary mt-0.5">
+                              {c.department} Department
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 font-mono">
+                              {c.phone}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => setEditingCoordinator(c)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => deleteCoordinator(c.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
       </Tabs>

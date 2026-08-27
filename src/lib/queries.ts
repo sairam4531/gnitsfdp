@@ -55,3 +55,38 @@ export function useRegistrations() {
     },
   });
 }
+
+export interface Coordinator {
+  id: string;
+  name: string;
+  department: string;
+  phone: string;
+  type: "Faculty" | "Student";
+  sort_order: number;
+  created_at: string;
+}
+
+export function useCoordinators() {
+  return useQuery<Coordinator[]>({
+    queryKey: ["coordinators"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("coordinators" as never)
+          .select("*")
+          .order("sort_order");
+        if (error) {
+          console.warn(
+            "Could not fetch coordinators table, returning empty array. Make sure the coordinators table is created via SQL migrations.",
+            error,
+          );
+          return [];
+        }
+        return data ?? [];
+      } catch (err) {
+        console.warn("Failed to fetch coordinators:", err);
+        return [];
+      }
+    },
+  });
+}
