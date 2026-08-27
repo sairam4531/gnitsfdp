@@ -73,6 +73,7 @@ type WS = {
   contact_email?: string | null;
   contact_phone?: string | null;
   footer_text?: string | null;
+  timings?: string | null;
 };
 
 function WorkshopPage() {
@@ -441,6 +442,13 @@ function WorkshopPage() {
                   <Input
                     value={String(s.fdp_dates ?? "")}
                     onChange={(e) => up("fdp_dates", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Timings</Label>
+                  <Input
+                    value={String(s.timings ?? "")}
+                    onChange={(e) => up("timings", e.target.value)}
                   />
                 </div>
                 <div>

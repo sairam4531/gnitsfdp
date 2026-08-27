@@ -18,6 +18,7 @@ import {
   Eye,
   Target,
   Brain,
+  Clock,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -88,6 +89,7 @@ function Home() {
   const defaultSubtitle =
     "under GNITS CSI Student Chapter — Gain hands-on experience in AI-powered humanoid robot technologies with BionicBot Hardware, Python SDK programming, Servo Control, and Computer Vision.";
   const defaultDates = "10 September 2026 – 11 September 2026";
+  const defaultTimings = "9:00 AM to 4:00 PM";
   const defaultVenue = "CL-12 & 13, 4th Floor, Admin Block, GNITS, Hyderabad";
   const defaultDescription =
     "The Department of CSE (Data Science), GNITS, Hyderabad is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter. III B.Tech. I-Sem students of CSE, CSE(DS), and IT are encouraged to actively participate and utilize this opportunity to gain hands-on experience in AI-powered humanoid robot technologies, thereby enhancing their technical skills for future academic and professional endeavors.";
@@ -138,6 +140,12 @@ function Home() {
                 <Calendar className="h-5 w-5 text-gold" />
                 <span className="font-medium">{settings?.fdp_dates || defaultDates}</span>
               </div>
+              {(settings?.timings || defaultTimings) && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-gold" />
+                  <span className="font-medium">{settings?.timings || defaultTimings}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-gold" />
                 <span className="font-medium">{settings?.venue || defaultVenue}</span>

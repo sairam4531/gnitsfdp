@@ -417,6 +417,7 @@ export type Database = {
           id: string;
           registration_open: boolean;
           seat_limit: number;
+          timings: string | null;
           updated_at: string;
           venue: string;
         };
@@ -435,6 +436,7 @@ export type Database = {
           seat_limit?: number;
           updated_at?: string;
           venue?: string;
+          timings?: string | null;
         };
         Update: {
           brochure_url?: string | null;
@@ -451,6 +453,7 @@ export type Database = {
           seat_limit?: number;
           updated_at?: string;
           venue?: string;
+          timings?: string | null;
         };
         Relationships: [];
       };
