@@ -83,7 +83,7 @@ function WebsiteSettingsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>FDP Details</CardTitle>
+            <CardTitle>Workshop Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>

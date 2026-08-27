@@ -151,7 +151,7 @@ function ResponsesPage() {
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
-            <Label>FDP / Feedback Form</Label>
+            <Label>Workshop / Feedback Form</Label>
             <Select value={formId} onValueChange={setFormId}>
               <SelectTrigger>
                 <SelectValue />

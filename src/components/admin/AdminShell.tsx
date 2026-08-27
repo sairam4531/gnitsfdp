@@ -82,7 +82,7 @@ export function AdminShell() {
           <img src={logoUrl} alt="GNITS Logo" className="h-9 w-9 object-contain rounded-md" />
           <div className="leading-tight">
             <div className="text-sm font-bold">GNITS</div>
-            <div className="text-[10px] opacity-70">FDP Admin</div>
+            <div className="text-[10px] opacity-70">Workshop Admin</div>
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -109,7 +109,7 @@ export function AdminShell() {
       </aside>
       <main className="flex-1 overflow-x-hidden">
         <header className="flex h-14 items-center justify-between border-b bg-background px-4 md:px-6">
-          <div className="font-semibold">FDP Portal — Admin</div>
+          <div className="font-semibold">Workshop Portal — Admin</div>
           <Button variant="ghost" size="sm" onClick={logout} className="md:hidden">
             <LogOut className="h-4 w-4" />
           </Button>

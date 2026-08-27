@@ -1,6 +1,6 @@
-# FDP on Smart Data Visualization using Power BI — GNITS
+# Workshop on Smart Data Visualization using Power BI — GNITS
 
-One Week Faculty Development Program (FDP) on **Smart Data Visualization using Power BI with Prompt Engineering and Generative AI** at G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad.
+One Week Workshop on **Smart Data Visualization using Power BI with Prompt Engineering and Generative AI** at G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad.
 
 <!-- Trigger Vercel Build -->
 

@@ -22,7 +22,7 @@ function SuccessPage() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h1 className="mt-6 text-3xl font-bold">Successfully registered for FDP!</h1>
+            <h1 className="mt-6 text-3xl font-bold">Successfully registered for the Workshop!</h1>
             <p className="mt-2 text-muted-foreground">
               Thank you. Your registration has been received and successfully approved.
             </p>

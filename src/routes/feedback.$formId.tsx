@@ -26,7 +26,7 @@ import {
 
 export const Route = createFileRoute("/feedback/$formId")({
   component: FeedbackFormPage,
-  head: () => ({ meta: [{ title: "Submit Feedback — GNITS FDP" }] }),
+  head: () => ({ meta: [{ title: "Submit Feedback — GNITS Workshop" }] }),
 });
 
 function FeedbackFormPage() {

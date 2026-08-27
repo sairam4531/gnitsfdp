@@ -26,10 +26,10 @@ import { Loader2, IndianRupee, Upload, QrCode } from "lucide-react";
 export const Route = createFileRoute("/register/")({
   head: () => ({
     meta: [
-      { title: "Register — FDP at GNITS" },
+      { title: "Register — Workshop at GNITS" },
       {
         name: "description",
-        content: "Register for the One Week FDP on Smart Data Visualization at GNITS.",
+        content: "Register for the One Week Workshop on Smart Data Visualization at GNITS.",
       },
     ],
   }),
@@ -139,7 +139,7 @@ function RegisterPage() {
         .upload(path, file, { contentType: file.type });
       if (upErr) throw upErr;
 
-      const regId = `GNITS-FDP-${Math.floor(100000 + Math.random() * 900000)}`;
+      const regId = `GNITS-WRK-${Math.floor(100000 + Math.random() * 900000)}`;
 
       const { error } = await supabase.from("registrations").insert({
         faculty_name: values.faculty_name,
@@ -160,7 +160,7 @@ function RegisterPage() {
       } as never);
       if (error) throw error;
 
-      toast.success("Successfully registered for FDP");
+      toast.success("Successfully registered for the Workshop");
       navigate({ to: "/register/success", search: { id: regId } });
     } catch (e: any) {
       console.error("Submission error details:", e);
@@ -189,7 +189,7 @@ function RegisterPage() {
         <div className="container mx-auto max-w-2xl px-4 py-24 text-center">
           <h1 className="text-3xl font-bold">Registration Closed</h1>
           <p className="mt-3 text-muted-foreground">
-            Registrations for this FDP are currently closed. Please check back later.
+            Registrations for this Workshop are currently closed. Please check back later.
           </p>
           <Button asChild className="mt-6">
             <Link to="/">Back to home</Link>
@@ -205,8 +205,8 @@ function RegisterPage() {
       <SiteHeader />
       <div className="container mx-auto max-w-3xl px-4 py-12">
         <div className="mb-8 text-center">
-          <Badge className="bg-gradient-primary text-primary-foreground">FDP Registration</Badge>
-          <h1 className="mt-3 text-3xl font-bold md:text-4xl">Register for the FDP</h1>
+          <Badge className="bg-gradient-primary text-primary-foreground">Workshop Registration</Badge>
+          <h1 className="mt-3 text-3xl font-bold md:text-4xl">Register for the Workshop</h1>
           <p className="mt-2 text-muted-foreground">
             {settings?.fdp_dates} · {settings?.venue}
           </p>

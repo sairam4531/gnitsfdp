@@ -141,7 +141,7 @@ function RegistrationsPage() {
   }
   function exportPDF() {
     const doc = new jsPDF({ orientation: "landscape" });
-    doc.text("GNITS FDP — Registrations", 14, 14);
+    doc.text("GNITS Workshop — Registrations", 14, 14);
     autoTable(doc, {
       startY: 20,
       head: [

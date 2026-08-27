@@ -30,14 +30,14 @@ import heroBg from "@/assets/hero-bg.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FDP on Smart Data Visualization using Power BI — GNITS" },
+      { title: "Workshop on Smart Data Visualization using Power BI — GNITS" },
       {
         name: "description",
         content:
-          "One Week Faculty Development Program on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad. 22–27 June 2026.",
+          "One Week Workshop on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad. 22–27 June 2026.",
       },
-      { property: "og:title", content: "FDP on Smart Data Visualization — GNITS" },
-      { property: "og:description", content: "One Week FDP at GNITS Hyderabad. Register now." },
+      { property: "og:title", content: "Workshop on Smart Data Visualization — GNITS" },
+      { property: "og:description", content: "One Week Workshop at GNITS Hyderabad. Register now." },
     ],
   }),
   component: Home,
@@ -106,7 +106,7 @@ function Home() {
               </Badge>
             </div>
             <h1 className="bg-gradient-to-r from-white via-white to-gold bg-clip-text text-4xl font-black leading-tight text-transparent md:text-6xl">
-              {settings?.fdp_title ?? "One Week Faculty Development Program (FDP)"}
+              {settings?.fdp_title ?? "One Week Workshop"}
             </h1>
             <p className="mx-auto mt-4 max-w-3xl text-lg text-white/90 md:text-xl">
               {settings?.fdp_subtitle ??
@@ -177,7 +177,7 @@ function Home() {
       <section id="about" className="container mx-auto px-4 py-20">
         <div className="mx-auto max-w-4xl text-center">
           <Badge variant="outline" className="border-secondary/30 text-secondary">
-            About the FDP
+            About the Workshop
           </Badge>
           <h2 className="mt-4 text-3xl font-bold md:text-4xl">
             A week of immersive learning in modern analytics & AI

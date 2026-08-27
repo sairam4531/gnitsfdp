@@ -181,7 +181,7 @@ function FormDialog({
   onSaved: () => void;
 }) {
   const [fdpTitle, setFdpTitle] = useState(form?.fdp_title ?? "");
-  const [btnName, setBtnName] = useState(form?.feedback_button_name ?? "Submit FDP Feedback");
+  const [btnName, setBtnName] = useState(form?.feedback_button_name ?? "Submit Workshop Feedback");
   const [date, setDate] = useState(form?.feedback_date ?? "");
   const [enabled, setEnabled] = useState(form?.is_enabled ?? false);
   const [saving, setSaving] = useState(false);
@@ -189,13 +189,13 @@ function FormDialog({
   // Reset on open
   useState(() => {
     setFdpTitle(form?.fdp_title ?? "");
-    setBtnName(form?.feedback_button_name ?? "Submit FDP Feedback");
+    setBtnName(form?.feedback_button_name ?? "Submit Workshop Feedback");
     setDate(form?.feedback_date ?? "");
     setEnabled(form?.is_enabled ?? false);
   });
 
   async function save() {
-    if (!fdpTitle.trim()) return toast.error("FDP Title is required");
+    if (!fdpTitle.trim()) return toast.error("Workshop Title is required");
     if (!btnName.trim()) return toast.error("Button name is required");
     setSaving(true);
     const payload = {
@@ -221,7 +221,7 @@ function FormDialog({
         if (!o) onClose();
         else {
           setFdpTitle(form?.fdp_title ?? "");
-          setBtnName(form?.feedback_button_name ?? "Submit FDP Feedback");
+          setBtnName(form?.feedback_button_name ?? "Submit Workshop Feedback");
           setDate(form?.feedback_date ?? "");
           setEnabled(form?.is_enabled ?? false);
         }
@@ -233,7 +233,7 @@ function FormDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>FDP Title</Label>
+            <Label>Workshop Title</Label>
             <Input
               value={fdpTitle}
               onChange={(e) => setFdpTitle(e.target.value)}
@@ -245,7 +245,7 @@ function FormDialog({
             <Input
               value={btnName}
               onChange={(e) => setBtnName(e.target.value)}
-              placeholder="Submit FDP Feedback"
+              placeholder="Submit Workshop Feedback"
             />
           </div>
           <div>

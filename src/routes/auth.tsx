@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Admin Sign In — GNITS FDP" }] }),
+  head: () => ({ meta: [{ title: "Admin Sign In — GNITS Workshop" }] }),
   component: AuthPage,
 });
 
@@ -41,7 +41,7 @@ function AuthPage() {
             <ShieldCheck className="h-6 w-6" />
           </div>
           <CardTitle className="mt-3">Admin Portal</CardTitle>
-          <CardDescription>GNITS FDP Management</CardDescription>
+          <CardDescription>GNITS Workshop Management</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={signIn} className="space-y-4">

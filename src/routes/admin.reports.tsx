@@ -47,19 +47,19 @@ function ReportsPage() {
     const ws = XLSX.utils.json_to_sheet(filtered);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Report");
-    XLSX.writeFile(wb, `fdp-report-${Date.now()}.xlsx`);
+    XLSX.writeFile(wb, `workshop-report-${Date.now()}.xlsx`);
   }
   function csv() {
     const ws = XLSX.utils.json_to_sheet(filtered);
     const c = XLSX.utils.sheet_to_csv(ws);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([c], { type: "text/csv" }));
-    a.download = `fdp-report-${Date.now()}.csv`;
+    a.download = `workshop-report-${Date.now()}.csv`;
     a.click();
   }
   function pdf() {
     const doc = new jsPDF({ orientation: "landscape" });
-    doc.text("GNITS FDP — Report", 14, 14);
+    doc.text("GNITS Workshop — Report", 14, 14);
     autoTable(doc, {
       startY: 20,
       styles: { fontSize: 7 },
@@ -76,7 +76,7 @@ function ReportsPage() {
         new Date(r.created_at).toLocaleDateString(),
       ]),
     });
-    doc.save(`fdp-report-${Date.now()}.pdf`);
+    doc.save(`workshop-report-${Date.now()}.pdf`);
   }
 
   return (
