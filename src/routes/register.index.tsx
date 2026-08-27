@@ -238,11 +238,11 @@ function RegisterPage() {
       <SiteHeader />
       <div className="container mx-auto max-w-3xl px-4 py-8">
         {/* Workshop Banner */}
-        <div className="mb-8 overflow-hidden rounded-2xl border border-border/40 bg-navy shadow-elegant">
+        <div className="mb-8 overflow-hidden rounded-2xl border border-border/40 bg-navy/20 shadow-elegant">
           <img
             src={settings?.hero_banner_url || heroBg}
             alt="Workshop Banner"
-            className="h-48 w-full object-cover md:h-64"
+            className="w-full h-auto object-contain rounded-2xl"
           />
         </div>
 
