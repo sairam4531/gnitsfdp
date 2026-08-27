@@ -20,7 +20,7 @@ ALTER TABLE public.coordinators ENABLE ROW LEVEL SECURITY;
 -- Policies
 CREATE POLICY "Public can read coordinators" ON public.coordinators FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "Admins manage coordinators" ON public.coordinators FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  USING (private.has_role(auth.uid(), 'admin')) WITH CHECK (private.has_role(auth.uid(), 'admin'));
 
 -- Insert default rows (only if the table is empty)
 INSERT INTO public.coordinators (name, department, phone, type, sort_order)
