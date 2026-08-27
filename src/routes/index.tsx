@@ -4,20 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  BarChart3,
-  Brain,
   Calendar,
   CheckCircle2,
   Cpu,
   Download,
-  LineChart,
   MapPin,
   Sparkles,
   TrendingUp,
   Users,
-  Wand2,
   Workflow,
-  Database,
+  Terminal,
+  Sliders,
+  Eye,
+  Target,
+  Brain,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -30,16 +30,11 @@ import heroBg from "@/assets/hero-bg.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Workshop on Smart Data Visualization using Power BI — GNITS" },
+      { title: "Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' — GNITS" },
       {
         name: "description",
         content:
-          "One Week Workshop on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad. 22–27 June 2026.",
-      },
-      { property: "og:title", content: "Workshop on Smart Data Visualization — GNITS" },
-      {
-        property: "og:description",
-        content: "One Week Workshop at GNITS Hyderabad. Register now.",
+          "Department of CSE (Data Science) is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter.",
       },
     ],
   }),
@@ -48,21 +43,35 @@ export const Route = createFileRoute("/")({
 
 const outcomes = [
   {
-    icon: BarChart3,
-    title: "Power BI Dashboard Design",
-    desc: "Build production-grade dashboards.",
+    icon: Cpu,
+    title: "BionicBot Hardware Setup",
+    desc: "Gain hands-on understanding of humanoid robot components and setup configuration.",
   },
   {
-    icon: LineChart,
-    title: "Data Visualization Techniques",
-    desc: "Visual storytelling with data.",
+    icon: Terminal,
+    title: "Python SDK Programming",
+    desc: "Program humanoid robots using Python and block coding languages.",
   },
-  { icon: Wand2, title: "Prompt Engineering", desc: "Get more from LLMs effectively." },
-  { icon: Sparkles, title: "Generative AI", desc: "Apply GenAI to analytics workflows." },
-  { icon: Brain, title: "AI-Assisted Analytics", desc: "Augment analysis with AI copilots." },
-  { icon: Database, title: "Data Engineering", desc: "Model and prepare data at scale." },
-  { icon: TrendingUp, title: "Business Intelligence", desc: "Drive decisions with BI." },
-  { icon: Workflow, title: "Real-World Use Cases", desc: "Industry applications across domains." },
+  {
+    icon: Sliders,
+    title: "Servo & Movement Control",
+    desc: "Configure motor controls for wheels, arms, and head movements.",
+  },
+  {
+    icon: Eye,
+    title: "Computer Vision Integration",
+    desc: "Implement object tracking and detection algorithms on humanoid hardware.",
+  },
+  {
+    icon: Brain,
+    title: "AI Concepts in Robotics",
+    desc: "Apply advanced AI decision-making concepts to humanoid robots.",
+  },
+  {
+    icon: Target,
+    title: "YOLO Simulation & Projects",
+    desc: "Develop YOLO tracking simulations in custom robotics projects.",
+  },
 ];
 
 function Home() {
@@ -72,6 +81,14 @@ function Home() {
   const { data: enabledQuiz } = useEnabledQuizExam();
   const feedbackForm = enabledFeedback[0];
   const open = settings?.registration_open ?? true;
+
+  const defaultTitle = "Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT'";
+  const defaultSubtitle =
+    "under GNITS CSI Student Chapter — Gain hands-on experience in AI-powered humanoid robot technologies with BionicBot Hardware, Python SDK programming, Servo Control, and Computer Vision.";
+  const defaultDates = "10 September 2026 – 11 September 2026";
+  const defaultVenue = "CL-12 & 13, 4th Floor, Admin Block, GNITS, Hyderabad";
+  const defaultDescription =
+    "The Department of CSE (Data Science), GNITS, Hyderabad is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter. III B.Tech. I-Sem students of CSE, CSE(AI&ML), CSE(DS), and IT are encouraged to actively participate and utilize this opportunity to gain hands-on experience in AI-powered humanoid robot technologies, thereby enhancing their technical skills for future academic and professional endeavors.";
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,32 +125,27 @@ function Home() {
                 {settings?.seat_limit ?? 500} Seats Available
               </Badge>
             </div>
-            <h1 className="bg-gradient-to-r from-white via-white to-gold bg-clip-text text-4xl font-black leading-tight text-transparent md:text-6xl">
-              {settings?.fdp_title ?? "One Week Workshop"}
+            <h1 className="bg-gradient-to-r from-white via-white to-gold bg-clip-text text-4xl font-black leading-tight text-transparent md:text-5xl">
+              {settings?.fdp_title || defaultTitle}
             </h1>
             <p className="mx-auto mt-4 max-w-3xl text-lg text-white/90 md:text-xl">
-              {settings?.fdp_subtitle ??
-                "Smart Data Visualization using Power BI with Prompt Engineering and Generative AI"}
+              {settings?.fdp_subtitle || defaultSubtitle}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-white/90">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-gold" />
-                <span className="font-medium">
-                  {settings?.fdp_dates ?? "22 June 2026 – 27 June 2026"}
-                </span>
+                <span className="font-medium">{settings?.fdp_dates || defaultDates}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-gold" />
-                <span className="font-medium">
-                  {settings?.venue ?? "CL-11, CSE Block, GNITS, Hyderabad"}
-                </span>
+                <span className="font-medium">{settings?.venue || defaultVenue}</span>
               </div>
             </div>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Button
                 asChild
                 size="lg"
-                className="bg-gradient-gold text-gold-foreground font-bold shadow-glow hover:opacity-90"
+                className="bg-gradient-gold text-gold-foreground font-bold shadow-glow hover:opacity-90 animate-pulse-gentle"
               >
                 <Link to="/register">Register Now</Link>
               </Button>
@@ -183,21 +195,21 @@ function Home() {
             About the Workshop
           </Badge>
           <h2 className="mt-4 text-3xl font-bold md:text-4xl">
-            A week of immersive learning in modern analytics & AI
+            Two Days Hands-on Workathon in Humanoid Robotics & AI
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            {settings?.description}
+            {settings?.description || defaultDescription}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-2">
             {[
-              "Power BI",
-              "Data Visualization",
-              "Prompt Engineering",
-              "Generative AI",
-              "AI Tools",
-              "Data Engineering",
-              "Business Intelligence",
-              "Industry Applications",
+              "AI Humanoid Robot",
+              "BionicBot Hardware",
+              "Python SDK Programming",
+              "Block Coding",
+              "Servo & Movement Control",
+              "Computer Vision",
+              "YOLO Model Simulation",
+              "Object Tracking",
             ].map((t) => (
               <Badge key={t} variant="secondary" className="px-3 py-1 text-sm">
                 {t}
@@ -216,7 +228,7 @@ function Home() {
             </Badge>
             <h2 className="mt-4 text-3xl font-bold md:text-4xl">What you'll take away</h2>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
             {outcomes.map((o, i) => (
               <motion.div
                 key={o.title}
@@ -228,7 +240,7 @@ function Home() {
                 <Card className="group h-full border-border/60 transition hover:-translate-y-1 hover:border-secondary/50 hover:shadow-elegant">
                   <CardContent className="p-6">
                     <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
-                      <o.icon className="h-5 w-5" />
+                      <o.icon className="h-5 w-5 animate-pulse-gentle" />
                     </div>
                     <h3 className="font-semibold">{o.title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{o.desc}</p>
@@ -279,7 +291,10 @@ function Home() {
       <section className="bg-gradient-hero py-16 text-navy-foreground">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold md:text-4xl">Reserve your seat today</h2>
-          <p className="mt-3 text-white/80">Limited seats. Open to faculty across institutions.</p>
+          <p className="mt-3 text-white/80">
+            Limited seats. Open to III B.Tech. students of CSE, CSE(AI&ML), CSE(DS), and IT at
+            GNITS.
+          </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button
               asChild
