@@ -25,7 +25,7 @@ import { useWebsiteSettings, useSpeakers } from "@/lib/queries";
 import { useEnabledFeedbackForms } from "@/lib/feedback";
 import { useEnabledQuizExam } from "@/lib/quiz";
 import { MessageSquare, GraduationCap } from "lucide-react";
-import heroBg from "@/assets/hero-bg.jpg";
+import heroBg from "@/assets/hero-bg.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
