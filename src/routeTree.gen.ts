@@ -18,11 +18,8 @@ import { Route as RegisterSuccessRouteImport } from './routes/register.success'
 import { Route as QuizExamIdRouteImport } from './routes/quiz.$examId'
 import { Route as FeedbackFormIdRouteImport } from './routes/feedback.$formId'
 import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
-import { Route as AdminWebsiteSettingsRouteImport } from './routes/admin.website-settings'
-import { Route as AdminSpeakersRouteImport } from './routes/admin.speakers'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
-import { Route as AdminPaymentSettingsRouteImport } from './routes/admin.payment-settings'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminQuizResponsesRouteImport } from './routes/admin.quiz.responses'
 import { Route as AdminQuizQuestionsRouteImport } from './routes/admin.quiz.questions'
@@ -75,16 +72,6 @@ const AdminWorkshopRoute = AdminWorkshopRouteImport.update({
   path: '/workshop',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminWebsiteSettingsRoute = AdminWebsiteSettingsRouteImport.update({
-  id: '/website-settings',
-  path: '/website-settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSpeakersRoute = AdminSpeakersRouteImport.update({
-  id: '/speakers',
-  path: '/speakers',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -93,11 +80,6 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
 const AdminRegistrationsRoute = AdminRegistrationsRouteImport.update({
   id: '/registrations',
   path: '/registrations',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPaymentSettingsRoute = AdminPaymentSettingsRouteImport.update({
-  id: '/payment-settings',
-  path: '/payment-settings',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -136,11 +118,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
-  '/admin/payment-settings': typeof AdminPaymentSettingsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
-  '/admin/speakers': typeof AdminSpeakersRoute
-  '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
   '/feedback/$formId': typeof FeedbackFormIdRoute
   '/quiz/$examId': typeof QuizExamIdRoute
@@ -157,11 +136,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
-  '/admin/payment-settings': typeof AdminPaymentSettingsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
-  '/admin/speakers': typeof AdminSpeakersRoute
-  '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
   '/feedback/$formId': typeof FeedbackFormIdRoute
   '/quiz/$examId': typeof QuizExamIdRoute
@@ -180,11 +156,8 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
-  '/admin/payment-settings': typeof AdminPaymentSettingsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
-  '/admin/speakers': typeof AdminSpeakersRoute
-  '/admin/website-settings': typeof AdminWebsiteSettingsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
   '/feedback/$formId': typeof FeedbackFormIdRoute
   '/quiz/$examId': typeof QuizExamIdRoute
@@ -204,11 +177,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/admin/analytics'
-    | '/admin/payment-settings'
     | '/admin/registrations'
     | '/admin/reports'
-    | '/admin/speakers'
-    | '/admin/website-settings'
     | '/admin/workshop'
     | '/feedback/$formId'
     | '/quiz/$examId'
@@ -225,11 +195,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin/analytics'
-    | '/admin/payment-settings'
     | '/admin/registrations'
     | '/admin/reports'
-    | '/admin/speakers'
-    | '/admin/website-settings'
     | '/admin/workshop'
     | '/feedback/$formId'
     | '/quiz/$examId'
@@ -247,11 +214,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/admin/analytics'
-    | '/admin/payment-settings'
     | '/admin/registrations'
     | '/admin/reports'
-    | '/admin/speakers'
-    | '/admin/website-settings'
     | '/admin/workshop'
     | '/feedback/$formId'
     | '/quiz/$examId'
@@ -340,20 +304,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWorkshopRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/website-settings': {
-      id: '/admin/website-settings'
-      path: '/website-settings'
-      fullPath: '/admin/website-settings'
-      preLoaderRoute: typeof AdminWebsiteSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/speakers': {
-      id: '/admin/speakers'
-      path: '/speakers'
-      fullPath: '/admin/speakers'
-      preLoaderRoute: typeof AdminSpeakersRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -366,13 +316,6 @@ declare module '@tanstack/react-router' {
       path: '/registrations'
       fullPath: '/admin/registrations'
       preLoaderRoute: typeof AdminRegistrationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/payment-settings': {
-      id: '/admin/payment-settings'
-      path: '/payment-settings'
-      fullPath: '/admin/payment-settings'
-      preLoaderRoute: typeof AdminPaymentSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -422,11 +365,8 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
-  AdminPaymentSettingsRoute: typeof AdminPaymentSettingsRoute
   AdminRegistrationsRoute: typeof AdminRegistrationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
-  AdminSpeakersRoute: typeof AdminSpeakersRoute
-  AdminWebsiteSettingsRoute: typeof AdminWebsiteSettingsRoute
   AdminWorkshopRoute: typeof AdminWorkshopRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminFeedbackQuestionsRoute: typeof AdminFeedbackQuestionsRoute
@@ -438,11 +378,8 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
-  AdminPaymentSettingsRoute: AdminPaymentSettingsRoute,
   AdminRegistrationsRoute: AdminRegistrationsRoute,
   AdminReportsRoute: AdminReportsRoute,
-  AdminSpeakersRoute: AdminSpeakersRoute,
-  AdminWebsiteSettingsRoute: AdminWebsiteSettingsRoute,
   AdminWorkshopRoute: AdminWorkshopRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminFeedbackQuestionsRoute: AdminFeedbackQuestionsRoute,

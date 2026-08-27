@@ -84,7 +84,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "One Week Workshop on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad.",
       },
       { name: "author", content: "GNITS" },
-      { property: "og:title", content: "Workshop on Smart Data Visualization using Power BI — GNITS" },
+      {
+        property: "og:title",
+        content: "Workshop on Smart Data Visualization using Power BI — GNITS",
+      },
       {
         property: "og:description",
         content:

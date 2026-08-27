@@ -205,7 +205,9 @@ function RegisterPage() {
       <SiteHeader />
       <div className="container mx-auto max-w-3xl px-4 py-12">
         <div className="mb-8 text-center">
-          <Badge className="bg-gradient-primary text-primary-foreground">Workshop Registration</Badge>
+          <Badge className="bg-gradient-primary text-primary-foreground">
+            Workshop Registration
+          </Badge>
           <h1 className="mt-3 text-3xl font-bold md:text-4xl">Register for the Workshop</h1>
           <p className="mt-2 text-muted-foreground">
             {settings?.fdp_dates} · {settings?.venue}

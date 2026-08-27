@@ -37,7 +37,10 @@ export const Route = createFileRoute("/")({
           "One Week Workshop on Power BI, Prompt Engineering & Generative AI at GNITS, Hyderabad. 22–27 June 2026.",
       },
       { property: "og:title", content: "Workshop on Smart Data Visualization — GNITS" },
-      { property: "og:description", content: "One Week Workshop at GNITS Hyderabad. Register now." },
+      {
+        property: "og:description",
+        content: "One Week Workshop at GNITS Hyderabad. Register now.",
+      },
     ],
   }),
   component: Home,
