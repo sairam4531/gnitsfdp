@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { useWebsiteSettings, useSpeakers } from "@/lib/queries";
+import { useWebsiteSettings, useSpeakers, useRegistrationCount } from "@/lib/queries";
 import { useEnabledFeedbackForms } from "@/lib/feedback";
 import { useEnabledQuizExam } from "@/lib/quiz";
 import { MessageSquare, GraduationCap } from "lucide-react";
@@ -79,8 +79,10 @@ function Home() {
   const { data: speakers = [] } = useSpeakers();
   const { data: enabledFeedback = [] } = useEnabledFeedbackForms();
   const { data: enabledQuiz } = useEnabledQuizExam();
+  const { data: regCount = 0 } = useRegistrationCount();
   const feedbackForm = enabledFeedback[0];
   const open = settings?.registration_open ?? true;
+  const remainingSeats = Math.max(0, (settings?.seat_limit ?? 500) - regCount);
 
   const defaultTitle = "Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT'";
   const defaultSubtitle =
@@ -121,8 +123,8 @@ function Home() {
               ) : (
                 <Badge variant="destructive">Registration Closed</Badge>
               )}
-              <Badge variant="outline" className="border-gold/50 text-gold">
-                {settings?.seat_limit ?? 500} Seats Available
+              <Badge variant="outline" className="border-gold/50 text-gold font-bold">
+                {remainingSeats} / {settings?.seat_limit ?? 500} Seats Remaining
               </Badge>
             </div>
             <h1 className="bg-gradient-to-r from-white via-white to-gold bg-clip-text text-4xl font-black leading-tight text-transparent md:text-5xl">

@@ -90,3 +90,23 @@ export function useCoordinators() {
     },
   });
 }
+
+export function useRegistrationCount() {
+  return useQuery({
+    queryKey: ["registration_count"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_registration_count" as any);
+        if (error) {
+          console.warn("Could not fetch registration count via RPC, falling back to 0:", error);
+          return 0;
+        }
+        return (data as number) ?? 0;
+      } catch (err) {
+        console.warn("Failed to fetch registration count:", err);
+        return 0;
+      }
+    },
+    refetchInterval: 10000,
+  });
+}

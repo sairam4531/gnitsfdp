@@ -96,8 +96,32 @@ function RegisterPage() {
       "email",
       "phone",
     ]);
-    if (isValid) {
+    if (!isValid) return;
+
+    setSubmitting(true);
+    try {
+      const rollNumber = form.getValues("faculty_id").trim();
+      const { data: isDuplicate, error: checkErr } = await supabase.rpc(
+        "check_duplicate_registration",
+        { _roll_number: rollNumber },
+      );
+      if (checkErr) throw checkErr;
+
+      if (isDuplicate) {
+        form.setError("faculty_id", {
+          type: "manual",
+          message: "This Roll Number has already been registered",
+        });
+        toast.error("This Roll Number has already submitted a registration!");
+        return;
+      }
+
       setStep(2);
+    } catch (err) {
+      console.warn("Duplicate check error (falling back to step 2):", err);
+      setStep(2);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -112,17 +136,21 @@ function RegisterPage() {
     }
     setSubmitting(true);
     try {
-      // Check if registration already exists with this Roll Number
-      const { data: existing, error: checkErr } = await supabase
-        .from("registrations")
-        .select("id")
-        .eq("faculty_id", values.faculty_id.trim())
-        .maybeSingle();
+      // Check if registration already exists with this Roll Number via RPC
+      const { data: isDuplicate, error: checkErr } = await supabase.rpc(
+        "check_duplicate_registration",
+        { _roll_number: values.faculty_id.trim() },
+      );
 
       if (checkErr) throw checkErr;
-      if (existing) {
+      if (isDuplicate) {
+        form.setError("faculty_id", {
+          type: "manual",
+          message: "This Roll Number has already been registered",
+        });
         toast.error("This Roll Number has already submitted a registration!");
         setSubmitting(false);
+        setStep(1);
         return;
       }
 
