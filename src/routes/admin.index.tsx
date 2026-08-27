@@ -1,15 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRegistrations, useWebsiteSettings } from "@/lib/queries";
-import {
-  Users,
-  IndianRupee,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  GraduationCap,
-  Building2,
-} from "lucide-react";
+import { Users, IndianRupee, CalendarDays, CheckCircle2, Clock } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -38,8 +30,6 @@ function Dashboard() {
   const today = startOfDay(new Date());
   const stats = {
     total: regs.length,
-    internal: regs.filter((r) => r.category === "Internal").length,
-    external: regs.filter((r) => r.category === "External").length,
     today: regs.filter((r) => new Date(r.created_at) >= today).length,
     revenue: regs
       .filter((r) => r.payment_status === "Approved")
@@ -60,10 +50,13 @@ function Dashboard() {
     };
   });
 
-  const byCategory = [
-    { name: "Internal", value: stats.internal },
-    { name: "External", value: stats.external },
-  ];
+  const byYear = Object.entries(
+    regs.reduce<Record<string, number>>((acc, r) => {
+      const k = r.designation || "Unknown";
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {}),
+  ).map(([name, value]) => ({ name, value }));
 
   const byDept: { name: string; value: number }[] = Object.entries(
     regs.reduce<Record<string, number>>((acc, r) => {
@@ -82,26 +75,19 @@ function Dashboard() {
         <p className="text-sm text-muted-foreground">Live overview of Workshop registrations.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Stat
           icon={Users}
           label="Total Registrations"
           value={stats.total}
-          color="bg-gradient-primary"
-        />
-        <Stat icon={GraduationCap} label="Internal" value={stats.internal} color="bg-secondary" />
-        <Stat
-          icon={Building2}
-          label="External"
-          value={stats.external}
-          color="bg-gradient-gold text-gold-foreground"
+          color="bg-gradient-primary text-white"
         />
         <Stat icon={CalendarDays} label="Today" value={stats.today} color="bg-navy text-white" />
         <Stat
           icon={IndianRupee}
           label="Total Revenue"
           value={`₹${stats.revenue.toLocaleString()}`}
-          color="bg-gradient-primary"
+          color="bg-gradient-gold text-gold-foreground animate-pulse"
         />
         <Stat
           icon={Clock}
@@ -164,21 +150,21 @@ function Dashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Internal vs External</CardTitle>
+            <CardTitle>Year-wise Distribution</CardTitle>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer>
               <PieChart>
                 <Pie
-                  data={byCategory}
+                  data={byYear}
                   dataKey="value"
                   nameKey="name"
                   innerRadius={50}
                   outerRadius={90}
                   label
                 >
-                  {byCategory.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i]} />
+                  {byYear.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />

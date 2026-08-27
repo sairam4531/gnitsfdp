@@ -52,18 +52,21 @@ function AnalyticsPage() {
     }, {}),
   ).map(([name, value]) => ({ name, value }));
 
-  const inst = Object.entries(
+  const yearData = Object.entries(
     regs.reduce<Record<string, number>>((a, r) => {
-      const k = r.institute === "Others" ? r.custom_institute || "Others" : "GNITS";
+      const k = r.designation || "Unknown";
       a[k] = (a[k] || 0) + 1;
       return a;
     }, {}),
   ).map(([name, value]) => ({ name, value }));
 
-  const cat = [
-    { name: "Internal", value: regs.filter((r) => r.category === "Internal").length },
-    { name: "External", value: regs.filter((r) => r.category === "External").length },
-  ];
+  const semData = Object.entries(
+    regs.reduce<Record<string, number>>((a, r) => {
+      const k = r.category || "Unknown";
+      a[k] = (a[k] || 0) + 1;
+      return a;
+    }, {}),
+  ).map(([name, value]) => ({ name, value }));
 
   return (
     <div className="space-y-6">
@@ -99,11 +102,18 @@ function AnalyticsPage() {
             <Line type="monotone" dataKey="revenue" stroke="#facc15" strokeWidth={2.5} />
           </LineChart>
         </ChartCard>
-        <ChartCard title="Internal vs External">
+        <ChartCard title="Year-wise Distribution">
           <PieChart>
-            <Pie data={cat} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} label>
-              {cat.map((_, i) => (
-                <Cell key={i} fill={COLORS[i]} />
+            <Pie
+              data={yearData}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={50}
+              outerRadius={90}
+              label
+            >
+              {yearData.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip />
@@ -119,14 +129,23 @@ function AnalyticsPage() {
             <Bar dataKey="value" fill="#7c3aed" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ChartCard>
-        <ChartCard title="Institute-wise">
-          <BarChart data={inst} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-            <XAxis type="number" fontSize={10} allowDecimals={false} />
-            <YAxis dataKey="name" type="category" fontSize={10} width={120} />
+        <ChartCard title="Semester-wise Distribution">
+          <PieChart>
+            <Pie
+              data={semData}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={50}
+              outerRadius={90}
+              label
+            >
+              {semData.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
             <Tooltip />
-            <Bar dataKey="value" fill="#a855f7" radius={[0, 4, 4, 0]} />
-          </BarChart>
+            <Legend />
+          </PieChart>
         </ChartCard>
       </div>
     </div>
