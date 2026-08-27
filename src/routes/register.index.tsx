@@ -23,6 +23,7 @@ import { usePaymentSettings, useWebsiteSettings } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, IndianRupee, Upload, QrCode, ArrowRight, ArrowLeft } from "lucide-react";
+import heroBg from "@/assets/hero-bg.png";
 
 export const Route = createFileRoute("/register/")({
   head: () => ({
@@ -235,7 +236,16 @@ function RegisterPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <div className="container mx-auto max-w-3xl px-4 py-12">
+      <div className="container mx-auto max-w-3xl px-4 py-8">
+        {/* Workshop Banner */}
+        <div className="mb-8 overflow-hidden rounded-2xl border border-border/40 bg-navy shadow-elegant">
+          <img
+            src={settings?.hero_banner_url || heroBg}
+            alt="Workshop Banner"
+            className="h-48 w-full object-cover md:h-64"
+          />
+        </div>
+
         <div className="mb-8 text-center">
           <Badge className="bg-gradient-primary text-primary-foreground">
             Workshop Registration
