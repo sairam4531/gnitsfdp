@@ -124,7 +124,7 @@ function Home() {
                 <Badge variant="destructive">Registration Closed</Badge>
               )}
               <Badge variant="outline" className="border-gold/50 text-gold font-bold">
-                {remainingSeats} / {settings?.seat_limit ?? 500} Seats Remaining
+                {remainingSeats} Seats Left
               </Badge>
             </div>
             <h1 className="bg-gradient-to-r from-white via-white to-gold bg-clip-text text-4xl font-black leading-tight text-transparent md:text-5xl">
