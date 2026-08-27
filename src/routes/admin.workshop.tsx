@@ -826,7 +826,7 @@ function WorkshopPage() {
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
                       <SelectContent>
-                        {["CSE", "CSE(AI&ML)", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
+                        {["CSE", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
                           <SelectItem key={d} value={d}>
                             {d}
                           </SelectItem>

@@ -176,15 +176,7 @@ function FeedbackFormPage() {
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[
-                      "CSE",
-                      "CSE (AI & ML)",
-                      "CSE (Data Science)",
-                      "IT",
-                      "ECE",
-                      "EEE",
-                      "Others",
-                    ].map((d) => (
+                    {["CSE", "CSE (Data Science)", "IT", "ECE", "EEE", "Others"].map((d) => (
                       <SelectItem key={d} value={d}>
                         {d}
                       </SelectItem>

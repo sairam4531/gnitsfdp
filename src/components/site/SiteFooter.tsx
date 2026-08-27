@@ -20,7 +20,7 @@ export function SiteFooter({
     <footer id="contact" className="border-t bg-navy text-navy-foreground">
       <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-3">
         <div>
-          <h4 className="mb-2 font-bold">GNITS — CSE (AI & ML) & CSE (Data Science)</h4>
+          <h4 className="mb-2 font-bold">GNITS — CSE (Data Science)</h4>
           <p className="text-sm opacity-80">
             G. Narayanamma Institute of Technology and Science, Hyderabad
           </p>

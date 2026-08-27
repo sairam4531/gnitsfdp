@@ -88,7 +88,7 @@ function Home() {
   const defaultDates = "10 September 2026 – 11 September 2026";
   const defaultVenue = "CL-12 & 13, 4th Floor, Admin Block, GNITS, Hyderabad";
   const defaultDescription =
-    "The Department of CSE (Data Science), GNITS, Hyderabad is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter. III B.Tech. I-Sem students of CSE, CSE(AI&ML), CSE(DS), and IT are encouraged to actively participate and utilize this opportunity to gain hands-on experience in AI-powered humanoid robot technologies, thereby enhancing their technical skills for future academic and professional endeavors.";
+    "The Department of CSE (Data Science), GNITS, Hyderabad is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter. III B.Tech. I-Sem students of CSE, CSE(DS), and IT are encouraged to actively participate and utilize this opportunity to gain hands-on experience in AI-powered humanoid robot technologies, thereby enhancing their technical skills for future academic and professional endeavors.";
 
   return (
     <div className="min-h-screen bg-background">
@@ -292,8 +292,7 @@ function Home() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold md:text-4xl">Reserve your seat today</h2>
           <p className="mt-3 text-white/80">
-            Limited seats. Open to III B.Tech. students of CSE, CSE(AI&ML), CSE(DS), and IT at
-            GNITS.
+            Limited seats. Open to III B.Tech. students of CSE, CSE(DS), and IT at GNITS.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button

@@ -10,9 +10,7 @@ export function SiteHeader() {
           <img src={logoUrl} alt="GNITS Logo" className="h-9 w-9 object-contain rounded-md" />
           <div className="leading-tight">
             <div className="text-sm font-bold tracking-tight">GNITS</div>
-            <div className="text-[10px] text-muted-foreground">
-              CSE (AI & ML) & CSE (Data Science)
-            </div>
+            <div className="text-[10px] text-muted-foreground">CSE (Data Science)</div>
           </div>
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">

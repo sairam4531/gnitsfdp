@@ -27,7 +27,7 @@ export const Route = createFileRoute("/quiz/$examId")({
   component: QuizPage,
 });
 
-const DEPARTMENTS = ["CSE", "CSE(AI&ML)", "H&M", "CSE(Data Science)", "ECE", "IT", "EEE", "Others"];
+const DEPARTMENTS = ["CSE", "H&M", "CSE(Data Science)", "ECE", "IT", "EEE", "Others"];
 const COLLEGES = ["GNITS", "Others"];
 
 type Stage = "register" | "exam" | "done";

@@ -43,7 +43,7 @@ const schema = z.object({
   designation: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year"], {
     errorMap: () => ({ message: "Year is required" }),
   }),
-  department: z.enum(["CSE", "CSE(AI&ML)", "CSE(DS)", "IT", "ECE", "EEE"], {
+  department: z.enum(["CSE", "CSE(DS)", "IT", "ECE", "EEE"], {
     errorMap: () => ({ message: "Department is required" }),
   }),
   category: z.enum(["Sem I", "Sem II"], {
@@ -265,7 +265,7 @@ function RegisterPage() {
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
                       <SelectContent>
-                        {["CSE", "CSE(AI&ML)", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
+                        {["CSE", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
                           <SelectItem key={d} value={d}>
                             {d}
                           </SelectItem>
