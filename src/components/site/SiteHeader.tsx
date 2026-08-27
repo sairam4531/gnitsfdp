@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import logoUrl from "@/assets/logo.png";
+import csiLogoUrl from "@/assets/csi-logo.png";
+import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 
 export function SiteHeader() {
   return (
@@ -27,10 +29,17 @@ export function SiteHeader() {
             Contact
           </a>
         </nav>
-        <div className="flex items-center gap-2">
-          {/* <Button asChild size="sm" className="bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-90">
-            <Link to="/register">Register</Link>
-          </Button> */}
+        <div className="flex items-center gap-2.5">
+          <img
+            src={csiLogoUrl}
+            alt="CSI Logo"
+            className="h-10 w-auto object-contain bg-white rounded-md p-0.5 shadow-elegant"
+          />
+          <img
+            src={excellenceLogoUrl}
+            alt="Excellence Logo"
+            className="h-10 w-auto object-contain bg-white rounded-md p-0.5 shadow-elegant"
+          />
         </div>
       </div>
     </header>

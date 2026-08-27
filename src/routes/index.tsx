@@ -292,7 +292,8 @@ function Home() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold md:text-4xl">Reserve your seat today</h2>
           <p className="mt-3 text-white/80">
-            Limited seats. Open to All III B.Tech. students of CSE, CSE(AI&ML), CSE(DS), and IT at GNITS.
+            Limited seats. Open to All III B.Tech. students of CSE, CSE(AI&ML), CSE(DS), and IT at
+            GNITS.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button
