@@ -44,7 +44,8 @@ function RegistrationsPage() {
   const { data: regs = [], isLoading } = useRegistrations();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [semesterFilter, setSemesterFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const pageSize = 15;
@@ -55,16 +56,17 @@ function RegistrationsPage() {
         const q = search.trim().toLowerCase();
         if (
           q &&
-          !`${r.registration_id} ${r.faculty_name} ${r.email} ${r.phone || ""} ${r.faculty_id} ${r.utr_number}`
+          !`${r.registration_id} ${r.faculty_name} ${r.email} ${r.phone || ""} ${r.faculty_id} ${r.utr_number} ${r.designation}`
             .toLowerCase()
             .includes(q)
         )
           return false;
         if (statusFilter !== "all" && r.payment_status !== statusFilter) return false;
-        if (categoryFilter !== "all" && r.category !== categoryFilter) return false;
+        if (semesterFilter !== "all" && r.category !== semesterFilter) return false;
+        if (yearFilter !== "all" && r.designation !== yearFilter) return false;
         return true;
       }),
-    [regs, search, statusFilter, categoryFilter],
+    [regs, search, statusFilter, semesterFilter, yearFilter],
   );
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -77,6 +79,7 @@ function RegistrationsPage() {
     if (error || !data) return toast.error("Couldn't open file");
     window.open(data.signedUrl, "_blank");
   }
+
   async function setStatus(id: string, payment_status: string) {
     const { error } = await supabase.from("registrations").update({ payment_status }).eq("id", id);
     if (error) toast.error(error.message);
@@ -85,6 +88,7 @@ function RegistrationsPage() {
       qc.invalidateQueries({ queryKey: ["registrations"] });
     }
   }
+
   async function deleteOne(id: string) {
     if (!confirm("Delete this registration?")) return;
     const { error } = await supabase.from("registrations").delete().eq("id", id);
@@ -94,6 +98,7 @@ function RegistrationsPage() {
       qc.invalidateQueries({ queryKey: ["registrations"] });
     }
   }
+
   async function bulkDelete() {
     if (selected.size === 0) return;
     if (!confirm(`Delete ${selected.size} registrations?`)) return;
@@ -109,13 +114,14 @@ function RegistrationsPage() {
   function getExportData() {
     return filtered.map((r, index) => ({
       "S.No": index + 1,
-      "Faculty ID": r.faculty_id,
-      "Faculty Name": r.faculty_name,
-      Email: r.email,
-      Phone: r.phone,
-      Department: r.department === "Others" ? r.custom_department : r.department,
-      Institute: r.institute === "Others" ? r.custom_institute : "GNITS",
-      Category: r.category,
+      "Roll Number": r.faculty_id,
+      "Student Name": r.faculty_name,
+      Year: r.designation,
+      Department: r.department,
+      Semester: r.category,
+      Section: r.institute,
+      "Gmail ID": r.email,
+      "Mobile Number": r.phone,
       Fee: r.registration_fee,
       "UTR Number": r.utr_number,
       "Payment Status": r.payment_status,
@@ -130,15 +136,19 @@ function RegistrationsPage() {
     XLSX.utils.book_append_sheet(wb, ws, "Registrations");
     XLSX.writeFile(wb, "registrations.xlsx");
   }
+
+  type CSVRow = Record<string, string | number>;
+
   function exportCSV() {
     const ws = XLSX.utils.json_to_sheet(getExportData());
-    const csv = XLSX.utils.sheet_to_csv(ws);
-    const blob = new Blob([csv], { type: "text/csv" });
+    const csvContent = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "registrations.csv";
     a.click();
   }
+
   function exportPDF() {
     const doc = new jsPDF({ orientation: "landscape" });
     doc.text("GNITS Workshop — Registrations", 14, 14);
@@ -147,11 +157,12 @@ function RegistrationsPage() {
       head: [
         [
           "S.No",
-          "Faculty ID",
-          "Name",
+          "Roll Number",
+          "Student Name",
+          "Year",
           "Dept",
-          "Institute",
-          "Category",
+          "Sem",
+          "Sec",
           "Fee",
           "UTR",
           "Status",
@@ -162,9 +173,10 @@ function RegistrationsPage() {
         index + 1,
         r.faculty_id,
         r.faculty_name,
-        r.department === "Others" ? r.custom_department : r.department,
-        r.institute === "Others" ? r.custom_institute : "GNITS",
+        r.designation,
+        r.department,
         r.category,
+        r.institute,
         `₹${r.registration_fee}`,
         r.utr_number,
         r.payment_status,
@@ -209,9 +221,9 @@ function RegistrationsPage() {
 
       <Card>
         <CardHeader className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-4">
             <Input
-              placeholder="Search by name, email, UTR…"
+              placeholder="Search by name, roll no, UTR…"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -236,9 +248,9 @@ function RegistrationsPage() {
               </SelectContent>
             </Select>
             <Select
-              value={categoryFilter}
+              value={semesterFilter}
               onValueChange={(v) => {
-                setCategoryFilter(v);
+                setSemesterFilter(v);
                 setPage(1);
               }}
             >
@@ -246,9 +258,27 @@ function RegistrationsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Internal">Internal</SelectItem>
-                <SelectItem value="External">External</SelectItem>
+                <SelectItem value="all">All Semesters</SelectItem>
+                <SelectItem value="Sem I">Sem I</SelectItem>
+                <SelectItem value="Sem II">Sem II</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={yearFilter}
+              onValueChange={(v) => {
+                setYearFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
+                <SelectItem value="1st Year">1st Year</SelectItem>
+                <SelectItem value="2nd Year">2nd Year</SelectItem>
+                <SelectItem value="3rd Year">3rd Year</SelectItem>
+                <SelectItem value="4th Year">4th Year</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -271,11 +301,11 @@ function RegistrationsPage() {
                     />
                   </TableHead>
                   <TableHead>S.No</TableHead>
-                  <TableHead>Faculty ID</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Roll Number</TableHead>
+                  <TableHead>Student Details</TableHead>
                   <TableHead>Dept</TableHead>
-                  <TableHead>Institute</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>Sem</TableHead>
+                  <TableHead>Sec</TableHead>
                   <TableHead>Fee</TableHead>
                   <TableHead>UTR</TableHead>
                   <TableHead>Status</TableHead>
@@ -314,25 +344,16 @@ function RegistrationsPage() {
                       <TableCell className="text-sm">{(page - 1) * pageSize + index + 1}</TableCell>
                       <TableCell className="font-mono text-xs">{r.faculty_id}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{r.faculty_name}</div>
-                        <div className="text-xs text-muted-foreground">{r.email}</div>
-                        <div className="text-xs text-muted-foreground">{r.phone}</div>
+                        <div className="font-medium text-sm">{r.faculty_name}</div>
+                        <div className="text-xs text-secondary font-semibold">{r.designation}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {r.email} · {r.phone}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {r.department === "Others" ? r.custom_department : r.department}
-                      </TableCell>
-                      <TableCell
-                        className="max-w-[180px] truncate text-sm"
-                        title={r.institute === "Others" ? r.custom_institute || "" : r.institute}
-                      >
-                        {r.institute === "Others" ? r.custom_institute : "GNITS"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={r.category === "Internal" ? "secondary" : "outline"}>
-                          {r.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>₹{r.registration_fee}</TableCell>
+                      <TableCell className="text-sm">{r.department}</TableCell>
+                      <TableCell className="text-sm">{r.category}</TableCell>
+                      <TableCell className="text-sm font-semibold">Section {r.institute}</TableCell>
+                      <TableCell className="text-sm">₹{r.registration_fee}</TableCell>
                       <TableCell className="font-mono text-xs">{r.utr_number}</TableCell>
                       <TableCell>
                         <Select value={r.payment_status} onValueChange={(v) => setStatus(r.id, v)}>

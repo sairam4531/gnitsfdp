@@ -43,20 +43,41 @@ function ReportsPage() {
     });
   }, [regs, range, from, to]);
 
+  function getExportData() {
+    return filtered.map((r, index) => ({
+      "S.No": index + 1,
+      "Roll Number": r.faculty_id,
+      "Student Name": r.faculty_name,
+      Year: r.designation,
+      Department: r.department,
+      Semester: r.category,
+      Section: r.institute,
+      "Gmail ID": r.email,
+      "Mobile Number": r.phone,
+      Fee: r.registration_fee,
+      "UTR Number": r.utr_number,
+      "Payment Status": r.payment_status,
+      "Registration ID": r.registration_id,
+      Date: new Date(r.created_at).toLocaleDateString(),
+    }));
+  }
+
   function excel() {
-    const ws = XLSX.utils.json_to_sheet(filtered);
+    const ws = XLSX.utils.json_to_sheet(getExportData());
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Report");
     XLSX.writeFile(wb, `workshop-report-${Date.now()}.xlsx`);
   }
+
   function csv() {
-    const ws = XLSX.utils.json_to_sheet(filtered);
+    const ws = XLSX.utils.json_to_sheet(getExportData());
     const c = XLSX.utils.sheet_to_csv(ws);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([c], { type: "text/csv" }));
     a.download = `workshop-report-${Date.now()}.csv`;
     a.click();
   }
+
   function pdf() {
     const doc = new jsPDF({ orientation: "landscape" });
     doc.text("GNITS Workshop — Report", 14, 14);
@@ -64,14 +85,31 @@ function ReportsPage() {
       startY: 20,
       styles: { fontSize: 7 },
       headStyles: { fillColor: [124, 58, 237] },
-      head: [["Reg ID", "Name", "Dept", "Institute", "Category", "Fee", "Status", "Date"]],
+      head: [
+        [
+          "Reg ID",
+          "Roll Number",
+          "Student Name",
+          "Year",
+          "Dept",
+          "Sem",
+          "Sec",
+          "Fee",
+          "UTR",
+          "Status",
+          "Date",
+        ],
+      ],
       body: filtered.map((r) => [
         r.registration_id,
+        r.faculty_id,
         r.faculty_name,
-        r.department === "Others" ? r.custom_department : r.department,
-        r.institute === "Others" ? r.custom_institute : "GNITS",
+        r.designation,
+        r.department,
         r.category,
+        r.institute,
         `₹${r.registration_fee}`,
+        r.utr_number,
         r.payment_status,
         new Date(r.created_at).toLocaleDateString(),
       ]),

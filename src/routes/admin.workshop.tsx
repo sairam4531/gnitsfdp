@@ -200,7 +200,7 @@ function WorkshopPage() {
         account_name: acct,
         qr_code_url: qrUrl,
         internal_fee: internalFee,
-        external_fee: externalFee,
+        external_fee: internalFee,
         updated_at: new Date().toISOString(),
       })
       .eq("id", ps.id);
@@ -528,23 +528,17 @@ function WorkshopPage() {
                     placeholder="GNITS Workshop"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Internal Fee (₹)</Label>
-                    <Input
-                      type="number"
-                      value={internalFee}
-                      onChange={(e) => setInternalFee(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div>
-                    <Label>External Fee (₹)</Label>
-                    <Input
-                      type="number"
-                      value={externalFee}
-                      onChange={(e) => setExternalFee(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
+                <div>
+                  <Label>Registration Fee (₹)</Label>
+                  <Input
+                    type="number"
+                    value={internalFee}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setInternalFee(val);
+                      setExternalFee(val);
+                    }}
+                  />
                 </div>
                 <Button
                   onClick={savePayment}
