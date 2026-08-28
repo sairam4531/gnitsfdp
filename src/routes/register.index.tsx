@@ -23,6 +23,7 @@ import { usePaymentSettings, useWebsiteSettings } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, IndianRupee, Upload, QrCode, ArrowRight, ArrowLeft } from "lucide-react";
+import { useEffect } from "react";
 import heroBg from "@/assets/hero-bg.png";
 
 export const Route = createFileRoute("/register/")({
@@ -30,8 +31,12 @@ export const Route = createFileRoute("/register/")({
     meta: [
       { title: "Register — Workshop at GNITS" },
       {
+        name: "viewport",
+        content: "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
+      },
+      {
         name: "description",
-        content: "Register for the One Week Workshop on Smart Data Visualization at GNITS.",
+        content: "Register for the Workshop on AI Humanoid Robot at GNITS.",
       },
     ],
   }),
@@ -76,6 +81,20 @@ function RegisterPage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'viewport');
+      document.head.appendChild(meta);
+    }
+    const prevContent = meta.getAttribute('content');
+    meta.setAttribute('content', 'width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes');
+    return () => {
+      if (prevContent) meta.setAttribute('content', prevContent);
+    };
+  }, []);
 
   const form = useForm<FormVals>({
     resolver: zodResolver(schema),
