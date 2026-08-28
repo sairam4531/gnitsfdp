@@ -910,8 +910,8 @@ function WorkshopPage() {
                       <Card key={c.id}>
                         <CardContent className="p-4 flex justify-between items-start">
                           <div>
-                            <h4 className="font-bold text-sm text-white">{c.name}</h4>
-                            <p className="text-xs text-secondary mt-0.5">
+                            <h4 className="font-bold text-base text-foreground">{c.name}</h4>
+                            <p className="text-xs text-secondary mt-0.5 font-medium">
                               {c.department} Department
                             </p>
                             <p className="text-xs text-muted-foreground mt-1 font-mono">
@@ -957,8 +957,8 @@ function WorkshopPage() {
                       <Card key={c.id}>
                         <CardContent className="p-4 flex justify-between items-start">
                           <div>
-                            <h4 className="font-bold text-sm text-white">{c.name}</h4>
-                            <p className="text-xs text-secondary mt-0.5">
+                            <h4 className="font-bold text-base text-foreground">{c.name}</h4>
+                            <p className="text-xs text-secondary mt-0.5 font-medium">
                               {c.department} Department
                             </p>
                             <p className="text-xs text-muted-foreground mt-1 font-mono">
