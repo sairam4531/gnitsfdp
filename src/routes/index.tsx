@@ -99,63 +99,73 @@ function Home() {
       <SiteHeader />
 
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero" />
+      <section className="relative overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-navy/90 to-purple-950/80" />
         <img
           src={heroBg}
           alt=""
           width={1920}
           height={1080}
-          className="absolute inset-0 h-full w-full object-cover opacity-40 mix-blend-screen"
+          className="absolute inset-0 h-full w-full object-cover opacity-25 filter contrast-125 brightness-75"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-background" />
 
-        <div className="container relative mx-auto px-4 py-24 md:py-32">
+        <div className="container relative mx-auto px-4 py-20 md:py-28">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mx-auto max-w-4xl text-center text-navy-foreground"
+            className="mx-auto max-w-4xl text-center"
           >
-            <div className="mb-6 flex flex-wrap justify-center gap-2">
+            <div className="mb-6 flex flex-wrap justify-center gap-3">
               {open ? (
-                <Badge className="border-0 bg-gradient-gold text-gold-foreground">
+                <Badge className="border-0 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black px-4 py-1.5 text-xs md:text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20">
                   ● Registration Open
                 </Badge>
               ) : (
-                <Badge variant="destructive">Registration Closed</Badge>
+                <Badge variant="destructive" className="font-bold px-4 py-1.5">
+                  Registration Closed
+                </Badge>
               )}
-              <Badge variant="outline" className="border-gold/50 text-gold font-bold">
+              <Badge variant="outline" className="border-amber-400/60 bg-slate-900/80 text-amber-300 font-bold px-4 py-1.5 text-xs md:text-sm backdrop-blur-md shadow-lg">
                 {remainingSeats} Seats Left
               </Badge>
             </div>
-            <h1 className="bg-gradient-to-r from-white via-white to-gold bg-clip-text text-4xl font-black leading-tight text-transparent md:text-5xl">
-              {settings?.fdp_title || defaultTitle}
+
+            <h1 className="text-3xl font-black leading-tight tracking-tight md:text-5xl lg:text-6xl drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
+              <span className="bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-400 bg-clip-text text-transparent">
+                {settings?.fdp_title || defaultTitle}
+              </span>
             </h1>
-            <p className="mx-auto mt-4 max-w-3xl text-lg text-white/90 md:text-xl">
-              {settings?.fdp_subtitle || defaultSubtitle}
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-white/90">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-gold" />
-                <span className="font-medium">{settings?.fdp_dates || defaultDates}</span>
+
+            <div className="mx-auto mt-6 max-w-3xl rounded-2xl bg-slate-950/75 border border-amber-400/30 p-5 md:p-6 backdrop-blur-md shadow-2xl">
+              <p className="text-base md:text-lg leading-relaxed text-slate-100 font-medium drop-shadow-sm">
+                {settings?.fdp_subtitle || defaultSubtitle}
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 md:gap-4">
+              <div className="flex items-center gap-2.5 rounded-xl bg-slate-900/90 border border-amber-400/40 px-4 py-2.5 text-amber-200 shadow-xl backdrop-blur-sm font-semibold text-sm md:text-base">
+                <Calendar className="h-5 w-5 text-amber-400" />
+                <span>{settings?.fdp_dates || defaultDates}</span>
               </div>
               {(settings?.timings || defaultTimings) && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-gold" />
-                  <span className="font-medium">{settings?.timings || defaultTimings}</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-900/90 border border-cyan-400/40 px-4 py-2.5 text-cyan-200 shadow-xl backdrop-blur-sm font-semibold text-sm md:text-base">
+                  <Clock className="h-5 w-5 text-cyan-400" />
+                  <span>{settings?.timings || defaultTimings}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-gold" />
-                <span className="font-medium">{settings?.venue || defaultVenue}</span>
+              <div className="flex items-center gap-2.5 rounded-xl bg-slate-900/90 border border-emerald-400/40 px-4 py-2.5 text-emerald-200 shadow-xl backdrop-blur-sm font-semibold text-sm md:text-base">
+                <MapPin className="h-5 w-5 text-emerald-400" />
+                <span>{settings?.venue || defaultVenue}</span>
               </div>
             </div>
-            <div className="mt-10 flex flex-wrap justify-center gap-3">
+
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Button
                 asChild
                 size="lg"
-                className="bg-gradient-gold text-gold-foreground font-bold shadow-glow hover:opacity-90 animate-pulse-gentle"
+                className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-base px-8 py-6 shadow-xl shadow-amber-500/25 hover:scale-105 transition-all"
               >
                 <Link to="/register">Register Now</Link>
               </Button>
@@ -163,10 +173,10 @@ function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold shadow-glow hover:opacity-90 border-0"
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-base px-6 py-6 shadow-xl shadow-indigo-600/25 hover:scale-105 transition-all border-0"
                 >
                   <Link to="/quiz/$examId" params={{ examId: enabledQuiz.id }}>
-                    <GraduationCap className="mr-2 h-4 w-4" /> Quiz Exam
+                    <GraduationCap className="mr-2 h-5 w-5 text-indigo-200" /> Quiz Exam
                   </Link>
                 </Button>
               )}
@@ -174,10 +184,10 @@ function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gradient-feedback text-white font-bold shadow-glow hover:opacity-90 border-0"
+                  className="bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-base px-6 py-6 shadow-xl shadow-purple-600/25 hover:scale-105 transition-all border-0"
                 >
                   <Link to="/feedback/$formId" params={{ formId: feedbackForm.id }}>
-                    <MessageSquare className="mr-2 h-4 w-4" /> {feedbackForm.feedback_button_name}
+                    <MessageSquare className="mr-2 h-5 w-5 text-pink-200" /> {feedbackForm.feedback_button_name}
                   </Link>
                 </Button>
               )}
@@ -186,10 +196,10 @@ function Home() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                  className="border-amber-400/40 bg-slate-900/80 text-amber-200 backdrop-blur-md hover:bg-amber-400/20 hover:text-white text-base px-6 py-6 transition-all"
                 >
                   <a href={settings.brochure_url} target="_blank" rel="noreferrer">
-                    <Download className="mr-2 h-4 w-4" /> Download Brochure
+                    <Download className="mr-2 h-5 w-5 text-amber-400" /> Download Brochure
                   </a>
                 </Button>
               )}
