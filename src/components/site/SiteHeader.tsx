@@ -1,9 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
 import logoUrl from "@/assets/logo.png";
 import csiLogoUrl from "@/assets/csi-logo.png";
 import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
-import { Sparkles } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -40,32 +38,21 @@ export function SiteHeader() {
           </a>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2">
-            <img
-              src={csiLogoUrl}
-              alt="CSI Logo"
-              className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
-            />
-            <img
-              src={excellenceLogoUrl}
-              alt="Excellence Logo"
-              className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
-            />
-          </div>
-
-          <Button
-            asChild
-            size="sm"
-            className="bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black hover:opacity-90 shadow-md shadow-amber-400/20 text-xs px-4"
-          >
-            <Link to="/register">
-              <Sparkles className="mr-1 h-3.5 w-3.5 fill-slate-950" /> Register
-            </Link>
-          </Button>
+        <div className="flex items-center gap-2">
+          <img
+            src={csiLogoUrl}
+            alt="CSI Logo"
+            className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
+          />
+          <img
+            src={excellenceLogoUrl}
+            alt="Excellence Logo"
+            className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
+          />
         </div>
       </div>
     </header>
   );
 }
+
 
