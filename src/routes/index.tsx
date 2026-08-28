@@ -221,30 +221,34 @@ function Home() {
       </section>
 
       {/* ABOUT */}
-      <section id="about" className="container mx-auto px-4 py-20">
+      <section id="about" className="container mx-auto px-4 py-24">
         <div className="mx-auto max-w-4xl text-center">
-          <Badge variant="outline" className="border-secondary/30 text-secondary">
+          <Badge className="border-amber-400/40 bg-amber-400/10 text-amber-500 font-extrabold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest">
             About the Workshop
           </Badge>
-          <h2 className="mt-4 text-3xl font-bold md:text-4xl">
-            Two Days Hands-on Workathon in Humanoid Robotics & AI
+          <h2 className="mt-4 text-3xl font-black md:text-5xl tracking-tight leading-tight">
+            <span className="bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 dark:from-amber-300 dark:via-yellow-200 dark:to-cyan-300 bg-clip-text text-transparent">
+              Two Days Hands-on Workathon in Humanoid Robotics & AI
+            </span>
           </h2>
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            {settings?.description || defaultDescription}
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <div className="mt-8 rounded-2xl border border-border/60 bg-card/70 p-6 md:p-8 backdrop-blur-md shadow-xl text-left md:text-center">
+            <p className="text-base md:text-lg leading-relaxed text-foreground/90 font-medium">
+              {settings?.description || defaultDescription}
+            </p>
+          </div>
+          <div className="mt-8 flex flex-wrap justify-center gap-2.5">
             {[
-              "AI Humanoid Robot",
-              "BionicBot Hardware",
-              "Python SDK Programming",
-              "Block Coding",
-              "Servo & Movement Control",
-              "Computer Vision",
-              "YOLO Model Simulation",
-              "Object Tracking",
+              { name: "AI Humanoid Robot", color: "border-amber-400/40 bg-amber-400/10 text-amber-600 dark:text-amber-300" },
+              { name: "BionicBot Hardware", color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300" },
+              { name: "Python SDK Programming", color: "border-indigo-400/40 bg-indigo-400/10 text-indigo-600 dark:text-indigo-300" },
+              { name: "Block Coding", color: "border-purple-400/40 bg-purple-400/10 text-purple-600 dark:text-purple-300" },
+              { name: "Servo & Movement Control", color: "border-emerald-400/40 bg-emerald-400/10 text-emerald-600 dark:text-emerald-300" },
+              { name: "Computer Vision", color: "border-pink-400/40 bg-pink-400/10 text-pink-600 dark:text-pink-300" },
+              { name: "YOLO Model Simulation", color: "border-amber-400/40 bg-amber-400/10 text-amber-600 dark:text-amber-300" },
+              { name: "Object Tracking", color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300" },
             ].map((t) => (
-              <Badge key={t} variant="secondary" className="px-3 py-1 text-sm">
-                {t}
+              <Badge key={t.name} variant="outline" className={`px-4 py-1.5 text-xs font-bold rounded-full border shadow-sm ${t.color}`}>
+                {t.name}
               </Badge>
             ))}
           </div>
@@ -252,15 +256,19 @@ function Home() {
       </section>
 
       {/* OUTCOMES */}
-      <section id="outcomes" className="bg-muted/40 py-20">
+      <section id="outcomes" className="bg-slate-950/5 dark:bg-slate-900/40 py-24 border-y border-border/40">
         <div className="container mx-auto px-4">
-          <div className="mb-12 text-center">
-            <Badge variant="outline" className="border-secondary/30 text-secondary">
+          <div className="mb-14 text-center">
+            <Badge className="border-indigo-400/40 bg-indigo-400/10 text-indigo-500 font-extrabold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest">
               Learning Outcomes
             </Badge>
-            <h2 className="mt-4 text-3xl font-bold md:text-4xl">What you'll take away</h2>
+            <h2 className="mt-4 text-3xl font-black md:text-5xl tracking-tight">
+              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-300 dark:via-purple-200 dark:to-pink-300 bg-clip-text text-transparent">
+                What You'll Gain & Master
+              </span>
+            </h2>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
             {outcomes.map((o, i) => (
               <motion.div
                 key={o.title}
@@ -269,13 +277,13 @@ function Home() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className="group h-full border-border/60 transition hover:-translate-y-1 hover:border-secondary/50 hover:shadow-elegant">
+                <Card className="group h-full rounded-2xl border-amber-400/20 bg-card/80 transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-400/60 hover:shadow-2xl hover:shadow-amber-500/10">
                   <CardContent className="p-6">
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
-                      <o.icon className="h-5 w-5 animate-pulse-gentle" />
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                      <o.icon className="h-6 w-6 font-bold" />
                     </div>
-                    <h3 className="font-semibold">{o.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{o.desc}</p>
+                    <h3 className="font-bold text-lg text-foreground group-hover:text-amber-500 transition-colors">{o.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground font-medium">{o.desc}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -285,33 +293,37 @@ function Home() {
       </section>
 
       {/* SPEAKERS */}
-      <section id="speakers" className="container mx-auto px-4 py-20">
-        <div className="mb-12 text-center">
-          <Badge variant="outline" className="border-gold/40 text-gold">
+      <section id="speakers" className="container mx-auto px-4 py-24">
+        <div className="mb-14 text-center">
+          <Badge className="border-amber-400/40 bg-amber-400/10 text-amber-500 font-extrabold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest">
             Resource Persons
           </Badge>
-          <h2 className="mt-4 text-3xl font-bold md:text-4xl">Distinguished Speakers</h2>
+          <h2 className="mt-4 text-3xl font-black md:text-5xl tracking-tight">
+            <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 dark:from-amber-300 dark:to-yellow-200 bg-clip-text text-transparent">
+              Distinguished Speakers & Experts
+            </span>
+          </h2>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
           {speakers.map((s) => (
             <Card
               key={s.id}
-              className="overflow-hidden border-border/60 transition hover:shadow-elegant"
+              className="overflow-hidden rounded-2xl border-border/60 bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-amber-400/40"
             >
-              <div className="aspect-square bg-gradient-primary">
+              <div className="aspect-square bg-gradient-to-br from-slate-900 via-navy to-purple-950 relative overflow-hidden">
                 {s.photo_url ? (
-                  <img src={s.photo_url} alt={s.name} className="h-full w-full object-cover" />
+                  <img src={s.photo_url} alt={s.name} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <Users className="h-16 w-16 text-white/40" />
+                    <Users className="h-16 w-16 text-amber-400/50" />
                   </div>
                 )}
               </div>
               <CardContent className="p-5">
-                <h3 className="font-bold">{s.name}</h3>
-                <p className="mt-1 text-sm text-secondary">{s.designation}</p>
+                <h3 className="font-bold text-base text-foreground">{s.name}</h3>
+                <p className="mt-1 text-xs font-semibold text-amber-600 dark:text-amber-400">{s.designation}</p>
                 {s.organization && (
-                  <p className="mt-1 text-xs text-muted-foreground">{s.organization}</p>
+                  <p className="mt-1 text-xs text-muted-foreground font-medium">{s.organization}</p>
                 )}
               </CardContent>
             </Card>
@@ -320,23 +332,26 @@ function Home() {
       </section>
 
       {/* CTA */}
-      <section className="bg-gradient-hero py-16 text-navy-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">Reserve your seat today</h2>
-          <p className="mt-3 text-white/80">
-            Limited seats. Open to All III B.Tech. students of CSE, CSE(AI&ML), CSE(DS), and IT at
-            GNITS.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button
-              asChild
-              size="lg"
-              className="bg-gradient-gold text-gold-foreground font-bold shadow-glow"
-            >
-              <Link to="/register">
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Register Now
-              </Link>
-            </Button>
+      <section className="container mx-auto px-4 pb-20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-navy to-purple-950 py-16 px-6 md:px-12 text-center text-white border border-amber-400/30 shadow-2xl">
+          <div className="relative z-10 max-w-3xl mx-auto">
+            <h2 className="text-3xl font-black md:text-5xl tracking-tight text-white drop-shadow-md">
+              Reserve Your Seat Today
+            </h2>
+            <p className="mt-4 text-base md:text-lg text-slate-200 font-medium leading-relaxed">
+              Limited seats available. Open to all III B.Tech. students of CSE, CSE(AI&ML), CSE(DS), and IT at GNITS.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Button
+                asChild
+                size="lg"
+                className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-base px-8 py-6 shadow-xl shadow-amber-500/25 hover:scale-105 transition-all"
+              >
+                <Link to="/register">
+                  <CheckCircle2 className="mr-2 h-5 w-5 text-slate-950" /> Register Now
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
