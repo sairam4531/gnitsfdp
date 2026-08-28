@@ -39,37 +39,41 @@ export function AdminShell() {
   const isAdmin = useIsAdmin(user?.id);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  console.log("[AdminShell] Render. user:", user?.id, "loading:", loading, "isAdmin:", isAdmin);
-
   useEffect(() => {
     if (!loading && !user) {
-      console.log("[AdminShell] No user and not loading, redirecting to /auth");
       navigate({ to: "/auth" });
     }
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (isAdmin === false && user) {
-      console.log("[AdminShell] isAdmin is false but user is logged in. LOGGING OUT!");
+    if (!loading && user && isAdmin === false) {
       toast.error("You don't have admin access.");
       supabase.auth.signOut();
       navigate({ to: "/auth" });
     }
-  }, [isAdmin, user, navigate]);
+  }, [isAdmin, user, loading, navigate]);
 
   async function logout() {
-    console.log("[AdminShell] User triggered logout");
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
   }
 
-  if (loading || isAdmin === null) {
+  if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
+      <div className="flex h-screen items-center justify-center text-muted-foreground font-medium">
         Loading…
       </div>
     );
   }
+
+  if (user && isAdmin === null) {
+    return (
+      <div className="flex h-screen items-center justify-center text-muted-foreground font-medium">
+        Verifying permissions…
+      </div>
+    );
+  }
+
   if (!user || !isAdmin) return null;
 
   return (

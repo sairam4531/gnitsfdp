@@ -9,11 +9,20 @@ export function useAuth() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
       setLoading(false);
     });
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("[useAuth] getSession error:", err);
+        setLoading(false);
+      });
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
