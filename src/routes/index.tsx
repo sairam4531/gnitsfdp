@@ -27,6 +27,7 @@ import { useEnabledFeedbackForms } from "@/lib/feedback";
 import { useEnabledQuizExam } from "@/lib/quiz";
 import { MessageSquare, GraduationCap } from "lucide-react";
 import heroBg from "@/assets/hero-bg.png";
+import heroVideo from "@/assets/second_AI_Powered_Humanoid.mp4";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -101,14 +102,25 @@ function Home() {
       {/* HERO */}
       <section className="relative overflow-hidden bg-slate-950">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-navy/90 to-purple-950/80" />
-        <img
-          src={heroBg}
-          alt=""
-          width={1920}
-          height={1080}
-          className="absolute inset-0 h-full w-full object-cover opacity-25 filter contrast-125 brightness-75"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-background" />
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster={heroBg}
+          className="absolute inset-0 h-full w-full object-cover opacity-40 filter contrast-125 brightness-90 pointer-events-none"
+        >
+          <source src={heroVideo} type="video/mp4" />
+          <img
+            src={heroBg}
+            alt=""
+            width={1920}
+            height={1080}
+            className="absolute inset-0 h-full w-full object-cover opacity-25 filter contrast-125 brightness-75"
+          />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/65 to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.55)_100%)] pointer-events-none" />
 
         <div className="container relative mx-auto px-4 py-20 md:py-28">
           <motion.div
