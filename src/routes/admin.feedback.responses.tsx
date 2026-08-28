@@ -194,7 +194,7 @@ function ResponsesPage() {
                 <TableHead className="whitespace-nowrap">Student Name</TableHead>
                 <TableHead className="whitespace-nowrap">Roll Number</TableHead>
                 <TableHead className="whitespace-nowrap">Department</TableHead>
-                <TableHead className="whitespace-nowrap">Year</TableHead>
+                <TableHead className="whitespace-nowrap">Years</TableHead>
                 <TableHead className="whitespace-nowrap">Sem</TableHead>
                 <TableHead className="whitespace-nowrap">Section</TableHead>
                 {uniqueQuestions.map((q, idx) => (

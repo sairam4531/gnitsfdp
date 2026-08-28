@@ -158,14 +158,25 @@ function ShortAnswerCard({ qi, q, responses }: any) {
   const answers = responses
     .map((r: any) => {
       const a = (r.answers_json ?? []).find((x: any) => x.question_id === q.id);
-      return a ? { name: r.participant_name, email: r.participant_email, answer: a.answer } : null;
+      return a
+        ? {
+            name: r.participant_name,
+            roll: r.roll_number || r.employee_id,
+            dept: r.department,
+            year: r.year,
+            sem: r.semester,
+            sec: r.section,
+            answer: a.answer,
+          }
+        : null;
     })
     .filter(Boolean)
     .filter(
       (a: any) =>
         !search ||
         a.answer.toLowerCase().includes(search.toLowerCase()) ||
-        a.name.toLowerCase().includes(search.toLowerCase()),
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        (a.roll && a.roll.toLowerCase().includes(search.toLowerCase())),
     );
 
   return (
@@ -188,7 +199,7 @@ function ShortAnswerCard({ qi, q, responses }: any) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Participant</TableHead>
+              <TableHead>Student Details</TableHead>
               <TableHead>Answer</TableHead>
             </TableRow>
           </TableHeader>
@@ -203,8 +214,10 @@ function ShortAnswerCard({ qi, q, responses }: any) {
               answers.map((a: any, i: number) => (
                 <TableRow key={i}>
                   <TableCell>
-                    {a.name}
-                    <div className="text-xs text-muted-foreground">{a.email}</div>
+                    <div className="font-medium">{a.name}</div>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      {[a.roll, a.dept, a.year, a.sem, a.sec].filter(Boolean).join(" · ")}
+                    </div>
                   </TableCell>
                   <TableCell className="whitespace-pre-wrap">{a.answer}</TableCell>
                 </TableRow>
