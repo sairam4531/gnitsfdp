@@ -46,6 +46,8 @@ function RegistrationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [semesterFilter, setSemesterFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<string>("all");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const pageSize = 15;
@@ -64,9 +66,11 @@ function RegistrationsPage() {
         if (statusFilter !== "all" && r.payment_status !== statusFilter) return false;
         if (semesterFilter !== "all" && r.category !== semesterFilter) return false;
         if (yearFilter !== "all" && r.designation !== yearFilter) return false;
+        if (departmentFilter !== "all" && r.department !== departmentFilter) return false;
+        if (sectionFilter !== "all" && r.institute !== sectionFilter) return false;
         return true;
       }),
-    [regs, search, statusFilter, semesterFilter, yearFilter],
+    [regs, search, statusFilter, semesterFilter, yearFilter, departmentFilter, sectionFilter],
   );
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -221,7 +225,7 @@ function RegistrationsPage() {
 
       <Card>
         <CardHeader className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             <Input
               placeholder="Search by name, roll no, UTR…"
               value={search}
@@ -248,9 +252,9 @@ function RegistrationsPage() {
               </SelectContent>
             </Select>
             <Select
-              value={semesterFilter}
+              value={departmentFilter}
               onValueChange={(v) => {
-                setSemesterFilter(v);
+                setDepartmentFilter(v);
                 setPage(1);
               }}
             >
@@ -258,9 +262,13 @@ function RegistrationsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Semesters</SelectItem>
-                <SelectItem value="Sem I">Sem I</SelectItem>
-                <SelectItem value="Sem II">Sem II</SelectItem>
+                <SelectItem value="all">All Departments</SelectItem>
+                <SelectItem value="CSE">CSE</SelectItem>
+                <SelectItem value="CSE(AI&ML)">CSE(AI&ML)</SelectItem>
+                <SelectItem value="CSE(DS)">CSE(DS)</SelectItem>
+                <SelectItem value="IT">IT</SelectItem>
+                <SelectItem value="ECE">ECE</SelectItem>
+                <SelectItem value="EEE">EEE</SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -279,6 +287,41 @@ function RegistrationsPage() {
                 <SelectItem value="2nd Year">2nd Year</SelectItem>
                 <SelectItem value="3rd Year">3rd Year</SelectItem>
                 <SelectItem value="4th Year">4th Year</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={semesterFilter}
+              onValueChange={(v) => {
+                setSemesterFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Semesters</SelectItem>
+                <SelectItem value="Sem I">Sem I</SelectItem>
+                <SelectItem value="Sem II">Sem II</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={sectionFilter}
+              onValueChange={(v) => {
+                setSectionFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sections</SelectItem>
+                <SelectItem value="A">Section A</SelectItem>
+                <SelectItem value="B">Section B</SelectItem>
+                <SelectItem value="C">Section C</SelectItem>
+                <SelectItem value="D">Section D</SelectItem>
+                <SelectItem value="E">Section E</SelectItem>
               </SelectContent>
             </Select>
           </div>
