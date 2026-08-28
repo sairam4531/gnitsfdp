@@ -590,12 +590,22 @@ function QuizPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Faculty Name</Label>
-            <Input value={facultyName} onChange={(e) => setFacultyName(e.target.value)} />
+            <Label>Student Name</Label>
+            <Input
+              value={facultyName}
+              onChange={(e) => setFacultyName(e.target.value.toUpperCase())}
+              placeholder="ENTER STUDENT NAME"
+              className="uppercase placeholder:normal-case font-semibold"
+            />
           </div>
           <div>
-            <Label>Faculty ID</Label>
-            <Input value={facultyId} onChange={(e) => setFacultyId(e.target.value)} />
+            <Label>Roll Number / ID</Label>
+            <Input
+              value={facultyId}
+              onChange={(e) => setFacultyId(e.target.value.toUpperCase())}
+              placeholder="ENTER ROLL NUMBER"
+              className="uppercase placeholder:normal-case font-semibold"
+            />
           </div>
           <div>
             <Label>Department</Label>

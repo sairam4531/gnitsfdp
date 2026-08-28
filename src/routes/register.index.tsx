@@ -44,8 +44,18 @@ export const Route = createFileRoute("/register/")({
 });
 
 const schema = z.object({
-  faculty_name: z.string().trim().min(2, "Student Name is required").max(100),
-  faculty_id: z.string().trim().min(1, "Roll Number is required").max(50),
+  faculty_name: z
+    .string()
+    .trim()
+    .min(2, "Student Name is required")
+    .max(100)
+    .transform((v) => v.toUpperCase()),
+  faculty_id: z
+    .string()
+    .trim()
+    .min(1, "Roll Number is required")
+    .max(50)
+    .transform((v) => v.toUpperCase()),
   designation: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year"], {
     errorMap: () => ({ message: "Year is required" }),
   }),
@@ -68,7 +78,12 @@ const schema = z.object({
     .string()
     .trim()
     .regex(/^[0-9]{10}$/, "Mobile Number must be exactly 10 digits"),
-  utr_number: z.string().trim().min(8, "Minimum 8 characters").max(50),
+  utr_number: z
+    .string()
+    .trim()
+    .min(8, "Minimum 8 characters")
+    .max(50)
+    .transform((v) => v.toUpperCase()),
   declaration: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
 });
 
@@ -105,6 +120,12 @@ function RegisterPage() {
   const open = settings?.registration_open ?? true;
 
   async function handleNext() {
+    // Auto-uppercase Student Name and Roll Number
+    const nameVal = (form.getValues("faculty_name") || "").toUpperCase().trim();
+    const rollVal = (form.getValues("faculty_id") || "").toUpperCase().trim();
+    form.setValue("faculty_name", nameVal);
+    form.setValue("faculty_id", rollVal);
+
     // Validate all fields for Step 1
     const isValid = await form.trigger([
       "faculty_name",
@@ -120,7 +141,7 @@ function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const rollNumber = form.getValues("faculty_id").trim();
+      const rollNumber = rollVal;
       const { data: isDuplicate, error: checkErr } = await supabase.rpc(
         "check_duplicate_registration",
         { _roll_number: rollNumber },
@@ -154,12 +175,17 @@ function RegisterPage() {
       toast.error("File must be ≤ 10 MB");
       return;
     }
+
+    const studentName = values.faculty_name.toUpperCase().trim();
+    const rollNumber = values.faculty_id.toUpperCase().trim();
+    const utrNumber = values.utr_number.toUpperCase().trim();
+
     setSubmitting(true);
     try {
       // Check if registration already exists with this Roll Number via RPC
       const { data: isDuplicate, error: checkErr } = await supabase.rpc(
         "check_duplicate_registration",
-        { _roll_number: values.faculty_id.trim() },
+        { _roll_number: rollNumber },
       );
 
       if (checkErr) throw checkErr;
@@ -185,8 +211,8 @@ function RegisterPage() {
       const regId = `GNITS-WRK-${Math.floor(100000 + Math.random() * 900000)}`;
 
       const { error } = await supabase.from("registrations").insert({
-        faculty_name: values.faculty_name,
-        faculty_id: values.faculty_id,
+        faculty_name: studentName,
+        faculty_id: rollNumber,
         designation: values.designation,
         department: values.department,
         custom_department: null,
@@ -196,7 +222,7 @@ function RegisterPage() {
         phone: values.phone,
         category: values.category,
         registration_fee: fee,
-        utr_number: values.utr_number,
+        utr_number: utrNumber,
         payment_screenshot_url: path,
         registration_id: regId,
         payment_status: "Approved",
@@ -301,10 +327,28 @@ function RegisterPage() {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Student Name" error={form.formState.errors.faculty_name?.message}>
-                    <Input {...form.register("faculty_name")} placeholder="Enter Student Name" />
+                    <Input
+                      {...form.register("faculty_name")}
+                      placeholder="ENTER STUDENT NAME"
+                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
+                      onChange={(e) => {
+                        form.setValue("faculty_name", e.target.value.toUpperCase(), {
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
                   </Field>
                   <Field label="Roll Number" error={form.formState.errors.faculty_id?.message}>
-                    <Input {...form.register("faculty_id")} placeholder="Enter Roll Number" />
+                    <Input
+                      {...form.register("faculty_id")}
+                      placeholder="ENTER ROLL NUMBER"
+                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
+                      onChange={(e) => {
+                        form.setValue("faculty_id", e.target.value.toUpperCase(), {
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
                   </Field>
                 </div>
 
@@ -481,7 +525,16 @@ function RegisterPage() {
                     label="UTR / Transaction Number"
                     error={form.formState.errors.utr_number?.message}
                   >
-                    <Input {...form.register("utr_number")} placeholder="Minimum 8 characters" />
+                    <Input
+                      {...form.register("utr_number")}
+                      placeholder="Minimum 8 characters"
+                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
+                      onChange={(e) => {
+                        form.setValue("utr_number", e.target.value.toUpperCase(), {
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
                   </Field>
 
                   <div>
