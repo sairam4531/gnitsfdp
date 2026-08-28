@@ -34,7 +34,11 @@ export type FeedbackResponse = {
   participant_name: string;
   participant_email: string;
   employee_id: string | null;
+  roll_number: string | null;
   department: string | null;
+  year: string | null;
+  semester: string | null;
+  section: string | null;
   institution_name: string | null;
   answers_json: FeedbackAnswer[];
   submitted_at: string;

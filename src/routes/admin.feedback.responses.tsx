@@ -83,10 +83,12 @@ function ResponsesPage() {
     const rows = filtered.map((r, i) => {
       const rowData: any = {
         "S.No": i + 1,
-        Name: r.participant_name,
-        "Employee ID": r.employee_id ?? "",
+        "Student Name": r.participant_name,
+        "Roll Number": r.roll_number || r.employee_id || "",
         Department: r.department ?? "",
-        "Institute Name": r.institution_name ?? "",
+        Year: r.year ?? "",
+        Semester: r.semester ?? "",
+        Section: r.section ?? "",
       };
 
       const answersMap = new Map((r.answers_json ?? []).map((a) => [a.question_text, a.answer]));
@@ -110,10 +112,12 @@ function ResponsesPage() {
     const r = responses.find((x) => x.id === id);
     if (!r) return;
     const rowData: any = {
-      Name: r.participant_name,
-      "Employee ID": r.employee_id ?? "",
+      "Student Name": r.participant_name,
+      "Roll Number": r.roll_number || r.employee_id || "",
       Department: r.department ?? "",
-      "Institute Name": r.institution_name ?? "",
+      Year: r.year ?? "",
+      Semester: r.semester ?? "",
+      Section: r.section ?? "",
     };
 
     (r.answers_json ?? []).forEach((a, idx) => {
@@ -187,10 +191,12 @@ function ResponsesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="whitespace-nowrap">S.No</TableHead>
-                <TableHead className="whitespace-nowrap">Name</TableHead>
-                <TableHead className="whitespace-nowrap">Employee ID</TableHead>
+                <TableHead className="whitespace-nowrap">Student Name</TableHead>
+                <TableHead className="whitespace-nowrap">Roll Number</TableHead>
                 <TableHead className="whitespace-nowrap">Department</TableHead>
-                <TableHead className="whitespace-nowrap">Institute Name</TableHead>
+                <TableHead className="whitespace-nowrap">Year</TableHead>
+                <TableHead className="whitespace-nowrap">Sem</TableHead>
+                <TableHead className="whitespace-nowrap">Section</TableHead>
                 {uniqueQuestions.map((q, idx) => (
                   <TableHead key={idx} className="min-w-[150px] max-w-[300px] truncate" title={q}>
                     {idx + 1}. {q}
@@ -204,7 +210,7 @@ function ResponsesPage() {
               {isLoading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7 + uniqueQuestions.length}
+                    colSpan={9 + uniqueQuestions.length}
                     className="text-center text-muted-foreground"
                   >
                     Loading…
@@ -213,7 +219,7 @@ function ResponsesPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7 + uniqueQuestions.length}
+                    colSpan={9 + uniqueQuestions.length}
                     className="py-8 text-center text-muted-foreground"
                   >
                     No responses found.
@@ -230,11 +236,13 @@ function ResponsesPage() {
                       <TableCell className="font-medium whitespace-nowrap">
                         {r.participant_name}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{r.employee_id || "—"}</TableCell>
-                      <TableCell className="whitespace-nowrap">{r.department || "—"}</TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {r.institution_name || "—"}
+                        {r.roll_number || r.employee_id || "—"}
                       </TableCell>
+                      <TableCell className="whitespace-nowrap">{r.department || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{r.year || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{r.semester || "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{r.section || "—"}</TableCell>
                       {uniqueQuestions.map((q, idx) => (
                         <TableCell
                           key={idx}

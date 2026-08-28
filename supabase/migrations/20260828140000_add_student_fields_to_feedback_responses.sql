@@ -1,0 +1,5 @@
+ALTER TABLE public.feedback_responses
+  ADD COLUMN IF NOT EXISTS roll_number TEXT,
+  ADD COLUMN IF NOT EXISTS year TEXT,
+  ADD COLUMN IF NOT EXISTS semester TEXT,
+  ADD COLUMN IF NOT EXISTS section TEXT;

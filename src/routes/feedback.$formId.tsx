@@ -36,11 +36,12 @@ function FeedbackFormPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
   const [deptSelect, setDeptSelect] = useState("");
   const [customDept, setCustomDept] = useState("");
-  const [instSelect, setInstSelect] = useState("");
-  const [customInst, setCustomInst] = useState("");
+  const [yearSelect, setYearSelect] = useState("");
+  const [semSelect, setSemSelect] = useState("");
+  const [sectionSelect, setSectionSelect] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -100,14 +101,14 @@ function FeedbackFormPage() {
   }
 
   async function submit() {
-    if (!name.trim()) return toast.error("Name is required");
-    if (!employeeId.trim()) return toast.error("Employee ID is required");
+    if (!name.trim()) return toast.error("Student Name is required");
+    if (!rollNumber.trim()) return toast.error("Roll Number is required");
     if (!deptSelect) return toast.error("Department is required");
     if (deptSelect === "Others" && !customDept.trim())
       return toast.error("Please enter your department name");
-    if (!instSelect) return toast.error("Institution Name is required");
-    if (instSelect === "Others" && !customInst.trim())
-      return toast.error("Please enter your institution name");
+    if (!yearSelect) return toast.error("Year is required");
+    if (!semSelect) return toast.error("Semester is required");
+    if (!sectionSelect) return toast.error("Section is required");
 
     for (const q of questions) {
       if (!answers[q.id] || !answers[q.id].trim()) {
@@ -118,10 +119,13 @@ function FeedbackFormPage() {
     const payload = {
       feedback_form_id: formId,
       participant_name: name.trim(),
-      participant_email: `${employeeId.trim().toLowerCase()}@feedback.temp`,
-      employee_id: employeeId.trim(),
+      participant_email: `${rollNumber.trim().toLowerCase()}@feedback.temp`,
+      employee_id: rollNumber.trim(),
+      roll_number: rollNumber.trim(),
       department: deptSelect === "Others" ? customDept.trim() : deptSelect,
-      institution_name: instSelect === "Others" ? customInst.trim() : instSelect,
+      year: yearSelect,
+      semester: semSelect,
+      section: sectionSelect,
       answers_json: questions.map((q) => ({
         question_id: q.id,
         question_text: q.question_text,
@@ -157,29 +161,36 @@ function FeedbackFormPage() {
           <CardContent className="space-y-6 p-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label>Name *</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} required />
-              </div>
-
-              <div>
-                <Label>Employee ID *</Label>
+                <Label>Student Name *</Label>
                 <Input
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter Student Name"
                   required
                 />
               </div>
+
+              <div>
+                <Label>Roll Number *</Label>
+                <Input
+                  value={rollNumber}
+                  onChange={(e) => setRollNumber(e.target.value)}
+                  placeholder="Enter Roll Number"
+                  required
+                />
+              </div>
+
               <div>
                 <Label>Department *</Label>
                 <Select value={deptSelect} onValueChange={setDeptSelect}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
+                    <SelectValue placeholder="Select Department" />
                   </SelectTrigger>
                   <SelectContent>
                     {[
                       "CSE",
-                      "CSE (AI & ML)",
-                      "CSE (Data Science)",
+                      "CSE(AI&ML)",
+                      "CSE(DS)",
                       "IT",
                       "ECE",
                       "EEE",
@@ -192,6 +203,7 @@ function FeedbackFormPage() {
                   </SelectContent>
                 </Select>
               </div>
+
               {deptSelect === "Others" && (
                 <div>
                   <Label>Department Name *</Label>
@@ -203,31 +215,54 @@ function FeedbackFormPage() {
                   />
                 </div>
               )}
+
               <div>
-                <Label>Institute / Organization *</Label>
-                <Select value={instSelect} onValueChange={setInstSelect}>
+                <Label>Years *</Label>
+                <Select value={yearSelect} onValueChange={setYearSelect}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select institute" />
+                    <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="G. Narayanamma Institute of Technology and Science">
-                      G. Narayanamma Institute of Technology and Science
-                    </SelectItem>
-                    <SelectItem value="Others">Others</SelectItem>
+                    {["1st Year", "2nd Year", "3rd Year", "4th Year"].map((y) => (
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              {instSelect === "Others" && (
-                <div className="md:col-span-2">
-                  <Label>Institute Name *</Label>
-                  <Input
-                    value={customInst}
-                    onChange={(e) => setCustomInst(e.target.value)}
-                    placeholder="Enter institute name"
-                    required
-                  />
-                </div>
-              )}
+
+              <div>
+                <Label>Sem *</Label>
+                <Select value={semSelect} onValueChange={setSemSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Sem I", "Sem II"].map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Section *</Label>
+                <Select value={sectionSelect} onValueChange={setSectionSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Section A", "Section B", "Section C", "Section D", "Section E"].map((sec) => (
+                      <SelectItem key={sec} value={sec}>
+                        {sec}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-6">
