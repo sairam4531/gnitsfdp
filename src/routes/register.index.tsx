@@ -1,9 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { QueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,15 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { usePaymentSettings, useWebsiteSettings } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, IndianRupee, Upload, QrCode, ArrowRight, ArrowLeft } from "lucide-react";
-import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import heroBg from "@/assets/hero-bg.png";
 
 export const Route = createFileRoute("/register/")({
@@ -78,13 +75,6 @@ const schema = z.object({
     .string()
     .trim()
     .regex(/^[0-9]{10}$/, "Mobile Number must be exactly 10 digits"),
-  utr_number: z
-    .string()
-    .trim()
-    .min(8, "Minimum 8 characters")
-    .max(50)
-    .transform((v) => v.toUpperCase()),
-  declaration: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
 });
 
 type FormVals = z.infer<typeof schema>;
@@ -93,9 +83,7 @@ function RegisterPage() {
   const navigate = useNavigate();
   const { data: payment } = usePaymentSettings();
   const { data: settings } = useWebsiteSettings();
-  const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [step, setStep] = useState(1);
 
   useEffect(() => {
     let meta = document.querySelector('meta[name="viewport"]');
@@ -113,72 +101,14 @@ function RegisterPage() {
 
   const form = useForm<FormVals>({
     resolver: zodResolver(schema),
-    defaultValues: { declaration: undefined as unknown as true },
   });
 
   const fee = payment?.internal_fee ?? 250;
   const open = settings?.registration_open ?? true;
 
-  async function handleNext() {
-    // Auto-uppercase Student Name and Roll Number
-    const nameVal = (form.getValues("faculty_name") || "").toUpperCase().trim();
-    const rollVal = (form.getValues("faculty_id") || "").toUpperCase().trim();
-    form.setValue("faculty_name", nameVal);
-    form.setValue("faculty_id", rollVal);
-
-    // Validate all fields for Step 1
-    const isValid = await form.trigger([
-      "faculty_name",
-      "faculty_id",
-      "designation",
-      "department",
-      "category",
-      "institute",
-      "email",
-      "phone",
-    ]);
-    if (!isValid) return;
-
-    setSubmitting(true);
-    try {
-      const rollNumber = rollVal;
-      const { data: isDuplicate, error: checkErr } = await supabase.rpc(
-        "check_duplicate_registration",
-        { _roll_number: rollNumber },
-      );
-      if (checkErr) throw checkErr;
-
-      if (isDuplicate) {
-        form.setError("faculty_id", {
-          type: "manual",
-          message: "This Roll Number has already been registered",
-        });
-        toast.error("This Roll Number has already submitted a registration!");
-        return;
-      }
-
-      setStep(2);
-    } catch (err) {
-      console.warn("Duplicate check error (falling back to step 2):", err);
-      setStep(2);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function onSubmit(values: FormVals) {
-    if (!file) {
-      toast.error("Please upload your payment screenshot.");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File must be ≤ 10 MB");
-      return;
-    }
-
     const studentName = values.faculty_name.toUpperCase().trim();
     const rollNumber = values.faculty_id.toUpperCase().trim();
-    const utrNumber = values.utr_number.toUpperCase().trim();
 
     setSubmitting(true);
     try {
@@ -195,18 +125,8 @@ function RegisterPage() {
           message: "This Roll Number has already been registered",
         });
         toast.error("This Roll Number has already submitted a registration!");
-        setSubmitting(false);
-        setStep(1);
         return;
       }
-
-      // upload screenshot
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("payment-screenshots")
-        .upload(path, file, { contentType: file.type });
-      if (upErr) throw upErr;
 
       const regId = `GNITS-WRK-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -222,10 +142,10 @@ function RegisterPage() {
         phone: values.phone,
         category: values.category,
         registration_fee: fee,
-        utr_number: utrNumber,
-        payment_screenshot_url: path,
+        utr_number: "Pending Payment",
+        payment_screenshot_url: null,
         registration_id: regId,
-        payment_status: "Approved",
+        payment_status: "Pending",
       } as never);
       if (error) throw error;
 
@@ -243,21 +163,7 @@ function RegisterPage() {
 
   function onError(errs: any) {
     console.log("Validation errors:", errs);
-    if (
-      errs.faculty_name ||
-      errs.faculty_id ||
-      errs.designation ||
-      errs.department ||
-      errs.category ||
-      errs.institute ||
-      errs.email ||
-      errs.phone
-    ) {
-      toast.error("Please fill all student details correctly in Step 1.");
-      setStep(1);
-    } else {
-      toast.error("Please fill payment details and accept declaration.");
-    }
+    toast.error("Please fill all student details correctly.");
   }
 
   if (!open) {
@@ -299,309 +205,157 @@ function RegisterPage() {
           <p className="mt-2 text-muted-foreground">
             {settings?.fdp_dates} · {settings?.venue}
           </p>
-          {/* Step indicator */}
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <div
-              className={`h-2.5 w-16 rounded-full transition-colors duration-300 ${
-                step === 1 ? "bg-primary" : "bg-muted"
-              }`}
-            />
-            <div
-              className={`h-2.5 w-16 rounded-full transition-colors duration-300 ${
-                step === 2 ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          </div>
-          <div className="mt-2 text-xs text-muted-foreground font-semibold">
-            {step === 1 ? "Step 1: Student Details" : "Step 2: Payment Details"}
-          </div>
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
-          {step === 1 ? (
-            <Card className="animate-fade-in shadow-elegant">
-              <CardHeader>
-                <CardTitle>Student Details</CardTitle>
-                <CardDescription>All fields are mandatory.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Student Name" error={form.formState.errors.faculty_name?.message}>
-                    <Input
-                      {...form.register("faculty_name")}
-                      placeholder="ENTER STUDENT NAME"
-                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
-                      onChange={(e) => {
-                        form.setValue("faculty_name", e.target.value.toUpperCase(), {
-                          shouldValidate: true,
-                        });
-                      }}
-                    />
-                  </Field>
-                  <Field label="Roll Number" error={form.formState.errors.faculty_id?.message}>
-                    <Input
-                      {...form.register("faculty_id")}
-                      placeholder="ENTER ROLL NUMBER"
-                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
-                      onChange={(e) => {
-                        form.setValue("faculty_id", e.target.value.toUpperCase(), {
-                          shouldValidate: true,
-                        });
-                      }}
-                    />
-                  </Field>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Department" error={form.formState.errors.department?.message}>
-                    <Select
-                      onValueChange={(v) =>
-                        form.setValue("department", v as FormVals["department"], {
-                          shouldValidate: true,
-                        })
-                      }
-                      value={form.watch("department")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["CSE", "CSE(AI&ML)", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
-                          <SelectItem key={d} value={d}>
-                            {d}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-
-                  <Field label="Year" error={form.formState.errors.designation?.message}>
-                    <Select
-                      onValueChange={(v) =>
-                        form.setValue("designation", v as FormVals["designation"], {
-                          shouldValidate: true,
-                        })
-                      }
-                      value={form.watch("designation")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["1st Year", "2nd Year", "3rd Year", "4th Year"].map((y) => (
-                          <SelectItem key={y} value={y}>
-                            {y}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Semester" error={form.formState.errors.category?.message}>
-                    <Select
-                      onValueChange={(v) =>
-                        form.setValue("category", v as FormVals["category"], {
-                          shouldValidate: true,
-                        })
-                      }
-                      value={form.watch("category")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Semester" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["Sem I", "Sem II"].map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-
-                  <Field label="Section" error={form.formState.errors.institute?.message}>
-                    <Select
-                      onValueChange={(v) =>
-                        form.setValue("institute", v as FormVals["institute"], {
-                          shouldValidate: true,
-                        })
-                      }
-                      value={form.watch("institute")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Section" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["A", "B", "C", "D", "E"].map((sec) => (
-                          <SelectItem key={sec} value={sec}>
-                            Section {sec}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Gmail ID" error={form.formState.errors.email?.message}>
-                    <Input
-                      type="email"
-                      {...form.register("email")}
-                      placeholder="username@gmail.com"
-                    />
-                  </Field>
-                  <Field label="Mobile Number" error={form.formState.errors.phone?.message}>
-                    <Input {...form.register("phone")} placeholder="10-digit number" />
-                  </Field>
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="w-full bg-gradient-primary text-primary-foreground font-bold shadow-elegant mt-2"
-                >
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6 animate-fade-in">
-              <Card className="border-secondary/40 bg-gradient-to-br from-accent to-background shadow-elegant">
-                <CardContent className="flex items-center justify-between p-6">
-                  <div>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                      Registration Fee
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Uniform College Rate</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center text-3xl font-black text-secondary">
-                      <IndianRupee className="h-6 w-6" />
-                      {fee}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-elegant">
-                <CardHeader>
-                  <CardTitle>Payment Details</CardTitle>
-                  <CardDescription>
-                    Scan & pay using the QR or UPI ID below, then enter your UTR and upload
-                    screenshot.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4">
-                      {payment?.qr_code_url ? (
-                        <img
-                          src={payment.qr_code_url}
-                          alt="QR"
-                          className="h-40 w-40 object-contain"
-                        />
-                      ) : (
-                        <div className="text-center text-muted-foreground">
-                          <QrCode className="mx-auto h-10 w-10" />
-                          <div className="mt-2 text-xs">QR not configured</div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="sm:col-span-2 space-y-3">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">UPI ID</Label>
-                        <div className="font-mono font-semibold">{payment?.upi_id || "—"}</div>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Account Name</Label>
-                        <div className="font-semibold">{payment?.account_name || "—"}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Field
-                    label="UTR / Transaction Number"
-                    error={form.formState.errors.utr_number?.message}
-                  >
-                    <Input
-                      {...form.register("utr_number")}
-                      placeholder="Minimum 8 characters"
-                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
-                      onChange={(e) => {
-                        form.setValue("utr_number", e.target.value.toUpperCase(), {
-                          shouldValidate: true,
-                        });
-                      }}
-                    />
-                  </Field>
-
-                  <div>
-                    <Label>
-                      Payment Screenshot <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="mt-1 rounded-lg border border-dashed p-4 text-center">
-                      <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,application/pdf"
-                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                        className="mt-2 block w-full text-sm mx-auto max-w-xs"
-                      />
-                      {file && (
-                        <div className="mt-2 text-xs text-muted-foreground font-semibold">
-                          {file.name} ({(file.size / 1024).toFixed(0)} KB)
-                        </div>
-                      )}
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        JPG, JPEG, PNG, PDF · max 10 MB
-                      </p>
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-2 text-sm cursor-pointer select-none py-1">
-                    <Checkbox
-                      checked={!!form.watch("declaration")}
-                      onCheckedChange={(v) =>
-                        form.setValue("declaration", v ? true : (undefined as unknown as true), {
-                          shouldValidate: true,
-                        })
-                      }
-                    />
-                    <span className="leading-none text-muted-foreground text-xs">
-                      I hereby declare that all information provided is correct and the payment is
-                      genuine.
-                    </span>
-                  </label>
-                  {form.formState.errors.declaration && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.declaration.message}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  className="flex-1 font-bold"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 bg-gradient-primary text-primary-foreground font-bold shadow-elegant"
-                >
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Register
-                </Button>
+          <Card className="animate-fade-in shadow-elegant">
+            <CardHeader>
+              <CardTitle>Student Details</CardTitle>
+              <CardDescription>All fields are mandatory.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Student Name" error={form.formState.errors.faculty_name?.message}>
+                  <Input
+                    {...form.register("faculty_name")}
+                    placeholder="ENTER STUDENT NAME"
+                    className="uppercase placeholder:normal-case font-semibold tracking-wide"
+                    onChange={(e) => {
+                      form.setValue("faculty_name", e.target.value.toUpperCase(), {
+                        shouldValidate: true,
+                      });
+                    }}
+                  />
+                </Field>
+                <Field label="Roll Number" error={form.formState.errors.faculty_id?.message}>
+                  <Input
+                    {...form.register("faculty_id")}
+                    placeholder="ENTER ROLL NUMBER"
+                    className="uppercase placeholder:normal-case font-semibold tracking-wide"
+                    onChange={(e) => {
+                      form.setValue("faculty_id", e.target.value.toUpperCase(), {
+                        shouldValidate: true,
+                      });
+                    }}
+                  />
+                </Field>
               </div>
-            </div>
-          )}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Department" error={form.formState.errors.department?.message}>
+                  <Select
+                    onValueChange={(v) =>
+                      form.setValue("department", v as FormVals["department"], {
+                        shouldValidate: true,
+                      })
+                    }
+                    value={form.watch("department")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["CSE", "CSE(AI&ML)", "CSE(DS)", "IT", "ECE", "EEE"].map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Year" error={form.formState.errors.designation?.message}>
+                  <Select
+                    onValueChange={(v) =>
+                      form.setValue("designation", v as FormVals["designation"], {
+                        shouldValidate: true,
+                      })
+                    }
+                    value={form.watch("designation")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["1st Year", "2nd Year", "3rd Year", "4th Year"].map((y) => (
+                        <SelectItem key={y} value={y}>
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Semester" error={form.formState.errors.category?.message}>
+                  <Select
+                    onValueChange={(v) =>
+                      form.setValue("category", v as FormVals["category"], {
+                        shouldValidate: true,
+                      })
+                    }
+                    value={form.watch("category")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["Sem I", "Sem II"].map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Section" error={form.formState.errors.institute?.message}>
+                  <Select
+                    onValueChange={(v) =>
+                      form.setValue("institute", v as FormVals["institute"], {
+                        shouldValidate: true,
+                      })
+                    }
+                    value={form.watch("institute")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Section" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["A", "B", "C", "D", "E"].map((sec) => (
+                        <SelectItem key={sec} value={sec}>
+                          Section {sec}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Gmail ID" error={form.formState.errors.email?.message}>
+                  <Input
+                    type="email"
+                    {...form.register("email")}
+                    placeholder="username@gmail.com"
+                  />
+                </Field>
+                <Field label="Mobile Number" error={form.formState.errors.phone?.message}>
+                  <Input {...form.register("phone")} placeholder="10-digit number" />
+                </Field>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-gradient-primary text-primary-foreground font-bold shadow-elegant mt-4 h-11 text-base cursor-pointer"
+              >
+                {submitting && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                Submit Registration
+              </Button>
+            </CardContent>
+          </Card>
         </form>
       </div>
       <SiteFooter />

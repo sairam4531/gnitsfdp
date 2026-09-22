@@ -54,9 +54,11 @@ function ReportsPage() {
       Section: r.institute,
       "Gmail ID": r.email,
       "Mobile Number": r.phone,
-      Fee: r.registration_fee,
-      "UTR Number": r.utr_number,
-      "Payment Status": r.payment_status,
+      "Payment Details":
+        r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING"
+          ? `UTR: ${r.utr_number}`
+          : "Pending Payment",
+      "Payment Status": r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
       "Registration ID": r.registration_id,
       Date: new Date(r.created_at).toLocaleDateString(),
     }));
@@ -94,8 +96,7 @@ function ReportsPage() {
           "Dept",
           "Sem",
           "Sec",
-          "Fee",
-          "UTR",
+          "Payment Details",
           "Status",
           "Date",
         ],
@@ -108,9 +109,10 @@ function ReportsPage() {
         r.department,
         r.category,
         r.institute,
-        `₹${r.registration_fee}`,
-        r.utr_number,
-        r.payment_status,
+        r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING"
+          ? `UTR: ${r.utr_number}`
+          : "Pending Payment",
+        r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
         new Date(r.created_at).toLocaleDateString(),
       ]),
     });

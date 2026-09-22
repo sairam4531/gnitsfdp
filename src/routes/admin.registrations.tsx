@@ -126,9 +126,11 @@ function RegistrationsPage() {
       Section: r.institute,
       "Gmail ID": r.email,
       "Mobile Number": r.phone,
-      Fee: r.registration_fee,
-      "UTR Number": r.utr_number,
-      "Payment Status": r.payment_status,
+      "Payment Details":
+        r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING"
+          ? `UTR: ${r.utr_number}`
+          : "Pending Payment",
+      "Payment Status": r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
       "Registration ID": r.registration_id,
       Date: new Date(r.created_at).toLocaleDateString(),
     }));
@@ -167,8 +169,7 @@ function RegistrationsPage() {
           "Dept",
           "Sem",
           "Sec",
-          "Fee",
-          "UTR",
+          "Payment Details",
           "Status",
           "Date",
         ],
@@ -181,9 +182,10 @@ function RegistrationsPage() {
         r.department,
         r.category,
         r.institute,
-        `₹${r.registration_fee}`,
-        r.utr_number,
-        r.payment_status,
+        r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING"
+          ? `UTR: ${r.utr_number}`
+          : "Pending Payment",
+        r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
         new Date(r.created_at).toLocaleDateString(),
       ]),
       styles: { fontSize: 7 },
@@ -246,7 +248,7 @@ function RegistrationsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Pending">Pending Payment</SelectItem>
                 <SelectItem value="Approved">Approved</SelectItem>
                 <SelectItem value="Rejected">Rejected</SelectItem>
               </SelectContent>
@@ -349,8 +351,7 @@ function RegistrationsPage() {
                   <TableHead>Dept</TableHead>
                   <TableHead>Sem</TableHead>
                   <TableHead>Sec</TableHead>
-                  <TableHead>Fee</TableHead>
-                  <TableHead>UTR</TableHead>
+                  <TableHead>Payment Details</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -359,13 +360,13 @@ function RegistrationsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="py-10 text-center">
+                    <TableCell colSpan={11} className="py-10 text-center">
                       <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                     </TableCell>
                   </TableRow>
                 ) : pageData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
                       No registrations.
                     </TableCell>
                   </TableRow>
@@ -396,15 +397,28 @@ function RegistrationsPage() {
                       <TableCell className="text-sm">{r.department}</TableCell>
                       <TableCell className="text-sm">{r.category}</TableCell>
                       <TableCell className="text-sm font-semibold">Section {r.institute}</TableCell>
-                      <TableCell className="text-sm">₹{r.registration_fee}</TableCell>
-                      <TableCell className="font-mono text-xs">{r.utr_number}</TableCell>
+                      <TableCell>
+                        {r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING" ? (
+                          <div className="space-y-0.5">
+                            <span className="text-xs font-semibold">₹{r.registration_fee}</span>
+                            <div className="font-mono text-[11px] text-muted-foreground">{r.utr_number}</div>
+                          </div>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs font-semibold whitespace-nowrap"
+                          >
+                            Pending Payment
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Select value={r.payment_status} onValueChange={(v) => setStatus(r.id, v)}>
-                          <SelectTrigger className="h-8 w-28">
+                          <SelectTrigger className="h-8 w-36">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Pending">Pending Payment</SelectItem>
                             <SelectItem value="Approved">Approved</SelectItem>
                             <SelectItem value="Rejected">Rejected</SelectItem>
                           </SelectContent>

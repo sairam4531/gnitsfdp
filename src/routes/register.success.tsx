@@ -24,8 +24,13 @@ function SuccessPage() {
             </div>
             <h1 className="mt-6 text-3xl font-bold">Successfully registered for the Workshop!</h1>
             <p className="mt-2 text-muted-foreground">
-              Thank you. Your registration has been received and successfully approved.
+              Thank you. Your registration has been received successfully.
             </p>
+            {id && (
+              <div className="mt-4 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-mono font-semibold text-foreground">
+                Registration ID: {id}
+              </div>
+            )}
             <Button asChild className="mt-8">
               <Link to="/">Back to home</Link>
             </Button>
