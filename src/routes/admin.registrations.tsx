@@ -132,7 +132,7 @@ function RegistrationsPage() {
           : "Pending Payment",
       "Payment Status": r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
       "Registration ID": r.registration_id,
-      Date: new Date(r.created_at).toLocaleDateString(),
+      "Date & Time": new Date(r.created_at).toLocaleString(),
     }));
   }
 
@@ -171,7 +171,7 @@ function RegistrationsPage() {
           "Sec",
           "Payment Details",
           "Status",
-          "Date",
+          "Date & Time",
         ],
       ],
       body: filtered.map((r, index) => [
@@ -186,7 +186,7 @@ function RegistrationsPage() {
           ? `UTR: ${r.utr_number}`
           : "Pending Payment",
         r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
-        new Date(r.created_at).toLocaleDateString(),
+        new Date(r.created_at).toLocaleString(),
       ]),
       styles: { fontSize: 7 },
       headStyles: { fillColor: [124, 58, 237] },
@@ -353,7 +353,7 @@ function RegistrationsPage() {
                   <TableHead>Sec</TableHead>
                   <TableHead>Payment Details</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -424,8 +424,17 @@ function RegistrationsPage() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="text-xs">
-                        {new Date(r.created_at).toLocaleDateString()}
+                      <TableCell className="text-xs whitespace-nowrap">
+                        <div className="font-medium text-foreground">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground font-mono">
+                          {new Date(r.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">

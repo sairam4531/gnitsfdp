@@ -60,7 +60,7 @@ function ReportsPage() {
           : "Pending Payment",
       "Payment Status": r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
       "Registration ID": r.registration_id,
-      Date: new Date(r.created_at).toLocaleDateString(),
+      "Date & Time": new Date(r.created_at).toLocaleString(),
     }));
   }
 
@@ -98,7 +98,7 @@ function ReportsPage() {
           "Sec",
           "Payment Details",
           "Status",
-          "Date",
+          "Date & Time",
         ],
       ],
       body: filtered.map((r) => [
@@ -113,7 +113,7 @@ function ReportsPage() {
           ? `UTR: ${r.utr_number}`
           : "Pending Payment",
         r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
-        new Date(r.created_at).toLocaleDateString(),
+        new Date(r.created_at).toLocaleString(),
       ]),
     });
     doc.save(`workshop-report-${Date.now()}.pdf`);
