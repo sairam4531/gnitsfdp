@@ -150,7 +150,7 @@ function RegisterPage() {
       if (error) throw error;
 
       toast.success("Successfully registered for the Workshop");
-      navigate({ to: "/register/success", search: { id: regId } });
+      navigate({ to: "/register/success", search: {} });
     } catch (e: any) {
       console.error("Submission error details:", e);
       const msg =

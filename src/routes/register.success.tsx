@@ -12,7 +12,6 @@ export const Route = createFileRoute("/register/success")({
 });
 
 function SuccessPage() {
-  const { id } = Route.useSearch();
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -26,11 +25,6 @@ function SuccessPage() {
             <p className="mt-2 text-muted-foreground">
               Thank you. Your registration has been received successfully.
             </p>
-            {id && (
-              <div className="mt-4 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-mono font-semibold text-foreground">
-                Registration ID: {id}
-              </div>
-            )}
             <Button asChild className="mt-8">
               <Link to="/">Back to home</Link>
             </Button>
