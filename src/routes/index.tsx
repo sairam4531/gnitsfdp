@@ -19,10 +19,19 @@ import {
   Target,
   Brain,
   Clock,
+  ArrowRight,
+  IndianRupee,
+  Layers,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { useWebsiteSettings, useSpeakers, useRegistrationCount } from "@/lib/queries";
+import {
+  useWebsiteSettings,
+  useSpeakers,
+  useRegistrationCount,
+  useWorkshops,
+  Workshop,
+} from "@/lib/queries";
 import { useEnabledFeedbackForms } from "@/lib/feedback";
 import { useEnabledQuizExam } from "@/lib/quiz";
 import { MessageSquare, GraduationCap } from "lucide-react";
@@ -32,11 +41,11 @@ import heroVideo from "@/assets/second_AI_Powered_Humanoid.mp4";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' — GNITS" },
+      { title: "Technical Workshops & Workathons — GNITS" },
       {
         name: "description",
         content:
-          "Department of CSE (Data Science) is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter.",
+          "Explore and register for cutting-edge technical workshops and workathons organized by departments at GNITS Hyderabad.",
       },
     ],
   }),
@@ -82,6 +91,7 @@ function Home() {
   const { data: enabledFeedback = [] } = useEnabledFeedbackForms();
   const { data: enabledQuiz } = useEnabledQuizExam();
   const { data: regCount = 0 } = useRegistrationCount();
+  const { data: workshops = [] } = useWorkshops();
   const feedbackForm = enabledFeedback[0];
   const open = settings?.registration_open ?? true;
   const remainingSeats = Math.max(0, (settings?.seat_limit ?? 500) - regCount);
@@ -179,6 +189,14 @@ function Home() {
                 size="lg"
                 className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-base px-8 py-6 shadow-xl shadow-amber-500/25 hover:scale-105 transition-all"
               >
+                <a href="#workshops">Explore Workshops</a>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-amber-400/40 bg-slate-900/80 text-amber-200 backdrop-blur-md hover:bg-amber-400/20 hover:text-white text-base px-6 py-6 transition-all"
+              >
                 <Link to="/register">Register Now</Link>
               </Button>
               {enabledQuiz && (
@@ -217,6 +235,29 @@ function Home() {
               )}
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* WORKSHOPS CATALOG */}
+      <section id="workshops" className="container mx-auto px-4 py-20 relative">
+        <div className="mx-auto max-w-4xl text-center mb-12">
+          <Badge className="border-amber-400/50 bg-amber-400/10 text-amber-500 font-extrabold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest shadow-sm">
+            Technical Workshops
+          </Badge>
+          <h2 className="mt-3 text-3xl font-black md:text-5xl tracking-tight leading-tight">
+            <span className="bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 dark:from-amber-300 dark:via-yellow-200 dark:to-cyan-300 bg-clip-text text-transparent">
+              Available Workshops & Workathons
+            </span>
+          </h2>
+          <p className="mt-3 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+            Choose from our specialized programs. You can register for individual workshops or multiple events.
+          </p>
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-2 max-w-6xl mx-auto">
+          {workshops.map((ws) => (
+            <WorkshopCatalogCard key={ws.slug} ws={ws} />
+          ))}
         </div>
       </section>
 
@@ -362,5 +403,114 @@ function Home() {
         phone={settings?.contact_phone}
       />
     </div>
+  );
+}
+
+function WorkshopCatalogCard({ ws }: { ws: Workshop }) {
+  const { data: count = 0 } = useRegistrationCount(ws.slug);
+  const remaining = Math.max(0, ws.seat_limit - count);
+  const progressPercent = Math.min(100, Math.round((count / ws.seat_limit) * 100));
+
+  return (
+    <Card className="overflow-hidden border-border/60 bg-card/90 backdrop-blur-md shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-amber-400/50 flex flex-col justify-between">
+      <div>
+        {ws.hero_banner_url && (
+          <div className="aspect-[16/9] w-full overflow-hidden bg-slate-900 border-b">
+            <img src={ws.hero_banner_url} alt={ws.title} className="w-full h-full object-cover" />
+          </div>
+        )}
+        <CardContent className="p-6 md:p-8 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Badge
+              variant="outline"
+              className="border-amber-400/50 bg-amber-400/10 text-amber-400 font-bold text-xs"
+            >
+              {ws.department || "GNITS"}
+            </Badge>
+            {ws.registration_open ? (
+              <Badge className="bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-xs font-semibold">
+                ● Registration Open
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-xs font-semibold">
+                Registration Closed
+              </Badge>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-xl md:text-2xl font-black text-foreground leading-snug tracking-tight">
+              {ws.title}
+            </h3>
+            {ws.subtitle && (
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                {ws.subtitle}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2.5 pt-2 text-sm text-foreground/80">
+            <div className="flex items-center gap-2.5 text-xs md:text-sm">
+              <Calendar className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="font-semibold">{ws.dates}</span>
+            </div>
+            {ws.timings && (
+              <div className="flex items-center gap-2.5 text-xs md:text-sm">
+                <Clock className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span>{ws.timings}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2.5 text-xs md:text-sm">
+              <MapPin className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span className="line-clamp-1">{ws.venue}</span>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/50 bg-muted/40 p-4 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground font-medium">Seats Availability</span>
+              <span className="font-bold text-amber-400">
+                {remaining} seats left of {ws.seat_limit}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </div>
+
+      <div className="p-6 md:p-8 pt-0 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/40 mt-4 bg-muted/20">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Registration Fee
+          </div>
+          <div className="flex items-center text-2xl font-black text-amber-400">
+            <IndianRupee className="h-5 w-5" />
+            {ws.registration_fee}
+          </div>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          {ws.registration_open ? (
+            <Button
+              asChild
+              className="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold px-6 shadow-md hover:scale-105 transition-all"
+            >
+              <Link to="/register" search={{ workshop: ws.slug }}>
+                Register for this Workshop <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          ) : (
+            <Button disabled className="w-full sm:w-auto">
+              Registration Closed
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }

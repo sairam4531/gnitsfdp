@@ -28,6 +28,8 @@ import {
   usePaymentSettings,
   useSpeakers,
   useCoordinators,
+  useWorkshops,
+  Workshop,
   Coordinator,
 } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +46,9 @@ import {
   Settings,
   CreditCard,
   Mic,
+  Layers,
+  IndianRupee,
+  ExternalLink,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/workshop")({
@@ -106,6 +111,115 @@ function WorkshopPage() {
   // Speakers states
   const [editingSpeaker, setEditingSpeaker] = useState<Partial<SpeakerRow> | null>(null);
   const [editingCoordinator, setEditingCoordinator] = useState<Partial<Coordinator> | null>(null);
+
+  // Multi-Workshop states
+  const { data: workshops = [] } = useWorkshops();
+  const [editingWorkshop, setEditingWorkshop] = useState<Partial<Workshop> | null>(null);
+  const [isNewWorkshop, setIsNewWorkshop] = useState(false);
+  const [savingWorkshop, setSavingWorkshop] = useState(false);
+  const [uploadingWorkshopBanner, setUploadingWorkshopBanner] = useState(false);
+  const [uploadingWorkshopQR, setUploadingWorkshopQR] = useState(false);
+
+  async function uploadWorkshopAsset(file: File, type: "banner" | "qr") {
+    if (type === "banner") setUploadingWorkshopBanner(true);
+    else setUploadingWorkshopQR(true);
+
+    try {
+      const bucket = type === "banner" ? "website-assets" : "payment-screenshots";
+      const path = `workshop-${type}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: file.type, upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      if (type === "banner") {
+        setEditingWorkshop((prev) => ({ ...prev, hero_banner_url: data.publicUrl }));
+      } else {
+        setEditingWorkshop((prev) => ({ ...prev, qr_code_url: data.publicUrl }));
+      }
+      toast.success("Asset uploaded successfully!");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      if (type === "banner") setUploadingWorkshopBanner(false);
+      else setUploadingWorkshopQR(false);
+    }
+  }
+
+  async function saveWorkshopItem() {
+    if (!editingWorkshop || !editingWorkshop.title || !editingWorkshop.slug) {
+      toast.error("Workshop Title and Slug are required.");
+      return;
+    }
+    setSavingWorkshop(true);
+    try {
+      const payload = {
+        title: editingWorkshop.title,
+        slug: editingWorkshop.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+        subtitle: editingWorkshop.subtitle || null,
+        description: editingWorkshop.description || null,
+        department: editingWorkshop.department || "CSE",
+        dates: editingWorkshop.dates || "TBD",
+        timings: editingWorkshop.timings || "9:00 AM to 4:00 PM",
+        venue: editingWorkshop.venue || "GNITS Campus",
+        registration_fee: Number(editingWorkshop.registration_fee ?? 250),
+        seat_limit: Number(editingWorkshop.seat_limit ?? 500),
+        registration_open: editingWorkshop.registration_open ?? true,
+        hero_banner_url: editingWorkshop.hero_banner_url || null,
+        brochure_url: editingWorkshop.brochure_url || null,
+        upi_id: editingWorkshop.upi_id || null,
+        account_name: editingWorkshop.account_name || null,
+        qr_code_url: editingWorkshop.qr_code_url || null,
+        sort_order: Number(editingWorkshop.sort_order ?? 0),
+        is_featured: !!editingWorkshop.is_featured,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (isNewWorkshop || !editingWorkshop.id || editingWorkshop.id.startsWith("workshop-")) {
+        const { error } = await supabase.from("workshops" as never).insert(payload as never);
+        if (error) throw error;
+        toast.success("Workshop created successfully!");
+      } else {
+        const { error } = await supabase
+          .from("workshops" as never)
+          .update(payload as never)
+          .eq("id", editingWorkshop.id);
+        if (error) throw error;
+        toast.success("Workshop updated successfully!");
+      }
+      setEditingWorkshop(null);
+      qc.invalidateQueries({ queryKey: ["workshops"] });
+    } catch (err: any) {
+      console.error("Save workshop error:", err);
+      toast.error(err?.message || "Failed to save workshop. Please ensure database migration is applied.");
+    } finally {
+      setSavingWorkshop(false);
+    }
+  }
+
+  async function deleteWorkshopItem(id: string, title: string) {
+    if (!confirm(`Delete workshop "${title}"?`)) return;
+    try {
+      const { error } = await supabase.from("workshops" as never).delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Workshop deleted.");
+      qc.invalidateQueries({ queryKey: ["workshops"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete workshop.");
+    }
+  }
+
+  async function toggleWorkshopRegistration(ws: Workshop, newOpen: boolean) {
+    try {
+      const { error } = await supabase
+        .from("workshops" as never)
+        .update({ registration_open: newOpen } as never)
+        .eq("id", ws.id);
+      if (error) throw error;
+      toast.success(`Registration ${newOpen ? "opened" : "closed"} for ${ws.title}`);
+      qc.invalidateQueries({ queryKey: ["workshops"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to toggle registration.");
+    }
+  }
 
   // Sync settings
   useEffect(() => {
@@ -332,8 +446,11 @@ function WorkshopPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="registration" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+      <Tabs defaultValue="workshops" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 max-w-3xl">
+          <TabsTrigger value="workshops" className="flex items-center gap-1.5 font-bold">
+            <Layers className="h-4 w-4" /> Workshops
+          </TabsTrigger>
           <TabsTrigger value="registration" className="flex items-center gap-1.5">
             <CalendarCheck className="h-4 w-4" /> Registration
           </TabsTrigger>
@@ -350,6 +467,126 @@ function WorkshopPage() {
             <Users className="h-4 w-4" /> Coordinators
           </TabsTrigger>
         </TabsList>
+
+        {/* --- ALL WORKSHOPS TAB --- */}
+        <TabsContent value="workshops" className="space-y-6 animate-fade-in">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight">Active Workshops & Workathons</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage, add, and configure independent workshops, dates, fees, and registration status.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingWorkshop({
+                  title: "",
+                  slug: "",
+                  department: "CSE",
+                  dates: "",
+                  timings: "9:00 AM to 4:00 PM",
+                  venue: "GNITS Campus",
+                  registration_fee: 250,
+                  seat_limit: 500,
+                  registration_open: true,
+                  sort_order: workshops.length + 1,
+                });
+                setIsNewWorkshop(true);
+              }}
+              className="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold"
+            >
+              <Plus className="mr-1.5 h-4 w-4" /> Add Workshop
+            </Button>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {workshops.map((ws) => (
+              <Card
+                key={ws.slug}
+                className="overflow-hidden border-border/70 shadow-lg flex flex-col justify-between"
+              >
+                <div>
+                  {ws.hero_banner_url && (
+                    <div className="h-36 w-full overflow-hidden bg-slate-900 border-b">
+                      <img src={ws.hero_banner_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <CardHeader className="p-5 pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge
+                        variant="outline"
+                        className="border-amber-400/40 text-amber-500 font-bold text-[11px]"
+                      >
+                        {ws.department || "GNITS"}
+                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Registration:</span>
+                        <Switch
+                          checked={ws.registration_open}
+                          onCheckedChange={(val) => toggleWorkshopRegistration(ws, val)}
+                        />
+                      </div>
+                    </div>
+                    <CardTitle className="text-lg font-bold leading-tight mt-2 text-foreground">
+                      {ws.title}
+                    </CardTitle>
+                    <CardDescription className="text-xs font-mono text-muted-foreground mt-1">
+                      URL: /register?workshop={ws.slug}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-5 pt-0 space-y-2 text-xs text-muted-foreground">
+                    <div>
+                      <strong className="text-foreground">Dates:</strong> {ws.dates}
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Venue:</strong> {ws.venue}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t mt-2">
+                      <span>
+                        Fee:{" "}
+                        <strong className="text-foreground font-bold">₹{ws.registration_fee}</strong>
+                      </span>
+                      <span>
+                        Seats:{" "}
+                        <strong className="text-foreground font-bold">{ws.seat_limit}</strong>
+                      </span>
+                    </div>
+                  </CardContent>
+                </div>
+
+                <div className="p-4 border-t bg-muted/20 flex items-center justify-between">
+                  <a
+                    href={`/register?workshop=${ws.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-amber-500 hover:underline flex items-center gap-1 font-semibold"
+                  >
+                    View Public Form <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingWorkshop({ ...ws });
+                        setIsNewWorkshop(false);
+                      }}
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteWorkshopItem(ws.id, ws.title)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
         {/* --- REGISTRATION TAB --- */}
         <TabsContent value="registration" className="space-y-6 animate-fade-in">
@@ -992,6 +1229,270 @@ function WorkshopPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Workshop Create/Edit Dialog */}
+      <Dialog
+        open={!!editingWorkshop}
+        onOpenChange={(v) => {
+          if (!v) setEditingWorkshop(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {isNewWorkshop ? "Add New Technical Workshop" : "Edit Workshop"}
+            </DialogTitle>
+            <DialogDescription>
+              Configure the workshop title, registration URL slug, dates, venue, pricing, and assets.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Workshop Title *</Label>
+                <Input
+                  value={editingWorkshop?.title || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({
+                      ...p,
+                      title: e.target.value,
+                      slug: isNewWorkshop
+                        ? e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "-")
+                            .replace(/(^-|-$)/g, "")
+                        : (p?.slug || ""),
+                    }))
+                  }
+                  placeholder="e.g. Agentic AI & Cloud Workshop"
+                />
+              </div>
+
+              <div>
+                <Label>URL Slug (identifier) *</Label>
+                <Input
+                  value={editingWorkshop?.slug || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({
+                      ...p,
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                    }))
+                  }
+                  placeholder="e.g. agentic-ai-cloud"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Public Link: /register?workshop={editingWorkshop?.slug || "slug"}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Organizing Department</Label>
+                <Input
+                  value={editingWorkshop?.department || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({ ...p, department: e.target.value }))
+                  }
+                  placeholder="e.g. CSE (Data Science) or CSE"
+                />
+              </div>
+
+              <div>
+                <Label>Registration Fee (₹)</Label>
+                <Input
+                  type="number"
+                  value={editingWorkshop?.registration_fee ?? 250}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({
+                      ...p,
+                      registration_fee: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Dates</Label>
+                <Input
+                  value={editingWorkshop?.dates || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({ ...p, dates: e.target.value }))
+                  }
+                  placeholder="e.g. 18 September 2026 – 19 September 2026"
+                />
+              </div>
+
+              <div>
+                <Label>Timings</Label>
+                <Input
+                  value={editingWorkshop?.timings || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({ ...p, timings: e.target.value }))
+                  }
+                  placeholder="e.g. 9:00 AM to 4:00 PM"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Venue</Label>
+                <Input
+                  value={editingWorkshop?.venue || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({ ...p, venue: e.target.value }))
+                  }
+                  placeholder="e.g. Main Seminar Hall, Admin Block, GNITS"
+                />
+              </div>
+
+              <div>
+                <Label>Seat Limit</Label>
+                <Input
+                  type="number"
+                  value={editingWorkshop?.seat_limit ?? 500}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({
+                      ...p,
+                      seat_limit: parseInt(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Subtitle / Short Summary</Label>
+              <Input
+                value={editingWorkshop?.subtitle || ""}
+                onChange={(e) =>
+                  setEditingWorkshop((p) => ({ ...p, subtitle: e.target.value }))
+                }
+                placeholder="Brief high-impact tagline for cards and banners"
+              />
+            </div>
+
+            <div>
+              <Label>Full Description</Label>
+              <Textarea
+                rows={3}
+                value={editingWorkshop?.description || ""}
+                onChange={(e) =>
+                  setEditingWorkshop((p) => ({ ...p, description: e.target.value }))
+                }
+                placeholder="Detailed workshop description and learning outcomes"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 border-t pt-3">
+              <div>
+                <Label>Workshop Specific UPI ID (optional)</Label>
+                <Input
+                  value={editingWorkshop?.upi_id || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({ ...p, upi_id: e.target.value }))
+                  }
+                  placeholder="Leaves blank to use global UPI"
+                />
+              </div>
+
+              <div>
+                <Label>Account Name (optional)</Label>
+                <Input
+                  value={editingWorkshop?.account_name || ""}
+                  onChange={(e) =>
+                    setEditingWorkshop((p) => ({ ...p, account_name: e.target.value }))
+                  }
+                  placeholder="Leaves blank to use global Account"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 border-t pt-3">
+              <div>
+                <Label>Hero Banner Image</Label>
+                {editingWorkshop?.hero_banner_url && (
+                  <img
+                    src={editingWorkshop.hero_banner_url}
+                    alt="Banner preview"
+                    className="mt-2 h-20 w-full object-cover rounded border"
+                  />
+                )}
+                <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2 hover:bg-muted/50 text-xs font-semibold">
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>{uploadingWorkshopBanner ? "Uploading…" : "Upload banner"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadWorkshopAsset(f, "banner");
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div>
+                <Label>Payment QR Code</Label>
+                {editingWorkshop?.qr_code_url && (
+                  <img
+                    src={editingWorkshop.qr_code_url}
+                    alt="QR preview"
+                    className="mt-2 h-20 w-20 object-contain rounded border mx-auto"
+                  />
+                )}
+                <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2 hover:bg-muted/50 text-xs font-semibold">
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>{uploadingWorkshopQR ? "Uploading…" : "Upload QR code"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadWorkshopAsset(f, "qr");
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t pt-3">
+              <div>
+                <Label>Registration Open</Label>
+                <p className="text-xs text-muted-foreground">
+                  Allow students to register for this workshop
+                </p>
+              </div>
+              <Switch
+                checked={editingWorkshop?.registration_open ?? true}
+                onCheckedChange={(v) =>
+                  setEditingWorkshop((p) => ({ ...p, registration_open: v }))
+                }
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingWorkshop(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={saveWorkshopItem}
+              disabled={savingWorkshop}
+              className="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold"
+            >
+              {savingWorkshop && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isNewWorkshop ? "Create Workshop" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

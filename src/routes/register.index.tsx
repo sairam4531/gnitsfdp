@@ -1,9 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { QueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,24 +18,36 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { usePaymentSettings, useWebsiteSettings } from "@/lib/queries";
+import { usePaymentSettings, useWebsiteSettings, useWorkshops, Workshop } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, IndianRupee, Upload, QrCode, ArrowRight, ArrowLeft } from "lucide-react";
-import { useEffect } from "react";
+import {
+  Loader2,
+  IndianRupee,
+  Upload,
+  QrCode,
+  ArrowRight,
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  CheckCircle2,
+} from "lucide-react";
 import heroBg from "@/assets/hero-bg.png";
 
 export const Route = createFileRoute("/register/")({
+  validateSearch: z.object({
+    workshop: z.string().optional(),
+  }),
   head: () => ({
     meta: [
-      { title: "Register — Workshop at GNITS" },
+      { title: "Register for Technical Workshop — GNITS" },
       {
         name: "viewport",
         content: "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
       },
       {
         name: "description",
-        content: "Register for the Workshop on AI Humanoid Robot at GNITS.",
+        content: "Register for technical workshops and workathons organized at GNITS Hyderabad.",
       },
     ],
   }),
@@ -91,23 +102,49 @@ type FormVals = z.infer<typeof schema>;
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const { data: payment } = usePaymentSettings();
   const { data: settings } = useWebsiteSettings();
+  const { data: workshops = [], isLoading: loadingWorkshops } = useWorkshops();
+
+  const [selectedSlug, setSelectedSlug] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(1);
 
+  // Set initial selected workshop from URL search param or first workshop
+  useEffect(() => {
+    if (workshops.length > 0) {
+      if (searchParams.workshop) {
+        const found = workshops.find(
+          (w) => w.slug === searchParams.workshop || w.id === searchParams.workshop,
+        );
+        if (found) {
+          setSelectedSlug(found.slug);
+          return;
+        }
+      }
+      if (!selectedSlug) {
+        const featured = workshops.find((w) => w.is_featured) || workshops[0];
+        setSelectedSlug(featured.slug);
+      }
+    }
+  }, [workshops, searchParams.workshop]);
+
   useEffect(() => {
     let meta = document.querySelector('meta[name="viewport"]');
     if (!meta) {
-      meta = document.createElement('meta');
-      meta.setAttribute('name', 'viewport');
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "viewport");
       document.head.appendChild(meta);
     }
-    const prevContent = meta.getAttribute('content');
-    meta.setAttribute('content', 'width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes');
+    const prevContent = meta.getAttribute("content");
+    meta.setAttribute(
+      "content",
+      "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
+    );
     return () => {
-      if (prevContent) meta.setAttribute('content', prevContent);
+      if (prevContent) meta.setAttribute("content", prevContent);
     };
   }, []);
 
@@ -116,11 +153,50 @@ function RegisterPage() {
     defaultValues: { declaration: undefined as unknown as true },
   });
 
-  const fee = payment?.internal_fee ?? 250;
-  const open = settings?.registration_open ?? true;
+  const currentWorkshop: Workshop | undefined =
+    workshops.find((w) => w.slug === selectedSlug || w.id === selectedSlug) || workshops[0];
+
+  const fee = currentWorkshop?.registration_fee ?? (payment?.internal_fee ?? 250);
+  const open = currentWorkshop?.registration_open ?? (settings?.registration_open ?? true);
+  const upiId = currentWorkshop?.upi_id || payment?.upi_id;
+  const accountName = currentWorkshop?.account_name || payment?.account_name;
+  const qrCodeUrl = currentWorkshop?.qr_code_url || payment?.qr_code_url;
+  const bannerUrl = currentWorkshop?.hero_banner_url || settings?.hero_banner_url || heroBg;
+
+  async function checkDuplicate(rollNumber: string, workshopIdentifier: string) {
+    try {
+      // 1. Try RPC with workshop parameter
+      const { data, error } = await supabase.rpc("check_duplicate_registration" as any, {
+        _roll_number: rollNumber,
+        _workshop_identifier: workshopIdentifier,
+      });
+      if (!error && typeof data === "boolean") {
+        return data;
+      }
+    } catch {
+      // Fallback
+    }
+
+    try {
+      // 2. Direct fallback query against registrations table
+      const { data: directData } = await supabase
+        .from("registrations")
+        .select("id")
+        .eq("faculty_id", rollNumber)
+        .or(`workshop_slug.eq.${workshopIdentifier},workshop_title.ilike.%${workshopIdentifier}%`)
+        .limit(1);
+
+      if (directData && directData.length > 0) {
+        return true;
+      }
+    } catch {
+      // Ignore
+    }
+
+    return false;
+  }
 
   async function handleNext() {
-    // Auto-uppercase Student Name and Roll Number
     const nameVal = (form.getValues("faculty_name") || "").toUpperCase().trim();
     const rollVal = (form.getValues("faculty_id") || "").toUpperCase().trim();
     form.setValue("faculty_name", nameVal);
@@ -139,21 +215,21 @@ function RegisterPage() {
     ]);
     if (!isValid) return;
 
+    if (!currentWorkshop) {
+      toast.error("Please select a workshop to continue.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const rollNumber = rollVal;
-      const { data: isDuplicate, error: checkErr } = await supabase.rpc(
-        "check_duplicate_registration",
-        { _roll_number: rollNumber },
-      );
-      if (checkErr) throw checkErr;
+      const isDuplicate = await checkDuplicate(rollVal, currentWorkshop.slug);
 
       if (isDuplicate) {
         form.setError("faculty_id", {
           type: "manual",
-          message: "This Roll Number has already been registered",
+          message: `This Roll Number has already registered for "${currentWorkshop.title}"`,
         });
-        toast.error("This Roll Number has already submitted a registration!");
+        toast.error(`You have already registered for ${currentWorkshop.title}!`);
         return;
       }
 
@@ -180,27 +256,27 @@ function RegisterPage() {
     const rollNumber = values.faculty_id.toUpperCase().trim();
     const utrNumber = values.utr_number.toUpperCase().trim();
 
+    if (!currentWorkshop) {
+      toast.error("Please select a workshop.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Check if registration already exists with this Roll Number via RPC
-      const { data: isDuplicate, error: checkErr } = await supabase.rpc(
-        "check_duplicate_registration",
-        { _roll_number: rollNumber },
-      );
-
-      if (checkErr) throw checkErr;
+      // Re-verify duplicate registration
+      const isDuplicate = await checkDuplicate(rollNumber, currentWorkshop.slug);
       if (isDuplicate) {
         form.setError("faculty_id", {
           type: "manual",
-          message: "This Roll Number has already been registered",
+          message: `This Roll Number has already registered for this workshop`,
         });
-        toast.error("This Roll Number has already submitted a registration!");
+        toast.error(`This Roll Number is already registered for ${currentWorkshop.title}!`);
         setSubmitting(false);
         setStep(1);
         return;
       }
 
-      // upload screenshot
+      // Upload payment screenshot
       const ext = file.name.split(".").pop();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: upErr } = await supabase.storage
@@ -208,7 +284,9 @@ function RegisterPage() {
         .upload(path, file, { contentType: file.type });
       if (upErr) throw upErr;
 
-      const regId = `GNITS-WRK-${Math.floor(100000 + Math.random() * 900000)}`;
+      // Unique prefix per workshop
+      const prefix = currentWorkshop.slug.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase() || "GNIT";
+      const regId = `GNITS-${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
 
       const { error } = await supabase.from("registrations").insert({
         faculty_name: studentName,
@@ -226,10 +304,13 @@ function RegisterPage() {
         payment_screenshot_url: path,
         registration_id: regId,
         payment_status: "Approved",
+        workshop_id: currentWorkshop.id.startsWith("workshop-") ? null : currentWorkshop.id,
+        workshop_slug: currentWorkshop.slug,
+        workshop_title: currentWorkshop.title,
       } as never);
       if (error) throw error;
 
-      toast.success("Successfully registered for the Workshop");
+      toast.success(`Successfully registered for ${currentWorkshop.title}`);
       navigate({ to: "/register/success", search: { id: regId } });
     } catch (e: any) {
       console.error("Submission error details:", e);
@@ -260,18 +341,46 @@ function RegisterPage() {
     }
   }
 
+  if (loadingWorkshops) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <SiteHeader />
+        <div className="flex-1 flex items-center justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   if (!open) {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
         <div className="container mx-auto max-w-2xl px-4 py-24 text-center">
-          <h1 className="text-3xl font-bold">Registration Closed</h1>
+          <Badge variant="destructive" className="px-4 py-1.5 font-bold mb-4">
+            Registration Closed
+          </Badge>
+          <h1 className="text-3xl font-bold">{currentWorkshop?.title || "Workshop Registration"}</h1>
           <p className="mt-3 text-muted-foreground">
-            Registrations for this Workshop are currently closed. Please check back later.
+            Registrations for this workshop are currently closed. You can explore other active workshops on the home page.
           </p>
-          <Button asChild className="mt-6">
-            <Link to="/">Back to home</Link>
-          </Button>
+          <div className="mt-6 flex justify-center gap-4">
+            <Button asChild variant="outline">
+              <Link to="/">Back to home</Link>
+            </Button>
+            {workshops.some((w) => w.slug !== currentWorkshop?.slug && w.registration_open) && (
+              <Button
+                onClick={() => {
+                  const alt = workshops.find((w) => w.slug !== currentWorkshop?.slug && w.registration_open);
+                  if (alt) setSelectedSlug(alt.slug);
+                }}
+                className="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold"
+              >
+                View Other Workshop
+              </Button>
+            )}
+          </div>
         </div>
         <SiteFooter />
       </div>
@@ -283,22 +392,85 @@ function RegisterPage() {
       <SiteHeader />
       <div className="container mx-auto max-w-3xl px-4 py-8">
         {/* Workshop Banner */}
-        <div className="mb-8 overflow-hidden rounded-2xl border border-border/40 bg-navy/20 shadow-elegant">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-border/40 bg-navy/20 shadow-elegant">
           <img
-            src={settings?.hero_banner_url || heroBg}
-            alt="Workshop Banner"
+            src={bannerUrl}
+            alt={currentWorkshop?.title || "Workshop Banner"}
             className="w-full h-auto object-contain rounded-2xl"
           />
         </div>
 
+        {/* Multi-Workshop Switcher Tabs */}
+        {workshops.length > 1 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Select Workshop to Register:
+              </Label>
+              <span className="text-xs text-amber-500 font-semibold">
+                Multiple registrations supported
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {workshops.map((ws) => {
+                const isSelected = (currentWorkshop?.slug === ws.slug);
+                return (
+                  <button
+                    key={ws.slug}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSlug(ws.slug);
+                      setStep(1); // Return to step 1 on workshop switch
+                    }}
+                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                      isSelected
+                        ? "border-amber-400 bg-amber-400/10 shadow-lg ring-1 ring-amber-400/50"
+                        : "border-border/60 bg-card/60 hover:border-amber-400/40 hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-bold ${
+                          isSelected ? "border-amber-400 text-amber-400 bg-amber-400/10" : "text-muted-foreground"
+                        }`}
+                      >
+                        {ws.department || "GNITS"}
+                      </Badge>
+                      <div className="flex items-center text-xs font-black text-amber-400">
+                        <IndianRupee className="h-3 w-3" />
+                        {ws.registration_fee}
+                      </div>
+                    </div>
+                    <div className="font-bold text-sm text-foreground mt-2 line-clamp-1">
+                      {ws.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3 text-amber-400 shrink-0" /> {ws.dates}
+                    </div>
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 text-amber-400">
+                        <CheckCircle2 className="h-4 w-4 fill-amber-400 text-background" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mb-8 text-center">
-          <Badge className="bg-gradient-primary text-primary-foreground">
-            Workshop Registration
+          <Badge className="bg-gradient-primary text-primary-foreground font-semibold">
+            {currentWorkshop?.department || "Technical"} Workshop Registration
           </Badge>
-          <h1 className="mt-3 text-3xl font-bold md:text-4xl">Register for the Workshop</h1>
-          <p className="mt-2 text-muted-foreground">
-            {settings?.fdp_dates} · {settings?.venue}
+          <h1 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight">
+            {currentWorkshop?.title}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {currentWorkshop?.dates} · {currentWorkshop?.venue}
           </p>
+
           {/* Step indicator */}
           <div className="mt-6 flex items-center justify-center gap-2">
             <div
@@ -322,7 +494,9 @@ function RegisterPage() {
             <Card className="animate-fade-in shadow-elegant">
               <CardHeader>
                 <CardTitle>Student Details</CardTitle>
-                <CardDescription>All fields are mandatory.</CardDescription>
+                <CardDescription>
+                  All fields are mandatory. You may register for multiple workshops with the same Roll Number.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -474,7 +648,9 @@ function RegisterPage() {
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">
                       Registration Fee
                     </div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Uniform College Rate</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">
+                      {currentWorkshop?.title}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center text-3xl font-black text-secondary">
@@ -489,17 +665,16 @@ function RegisterPage() {
                 <CardHeader>
                   <CardTitle>Payment Details</CardTitle>
                   <CardDescription>
-                    Scan & pay using the QR or UPI ID below, then enter your UTR and upload
-                    screenshot.
+                    Scan & pay using the QR or UPI ID below, then enter your UTR and upload screenshot.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4">
-                      {payment?.qr_code_url ? (
+                      {qrCodeUrl ? (
                         <img
-                          src={payment.qr_code_url}
-                          alt="QR"
+                          src={qrCodeUrl}
+                          alt="QR Code"
                           className="h-40 w-40 object-contain"
                         />
                       ) : (
@@ -512,11 +687,17 @@ function RegisterPage() {
                     <div className="sm:col-span-2 space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">UPI ID</Label>
-                        <div className="font-mono font-semibold">{payment?.upi_id || "—"}</div>
+                        <div className="font-mono font-semibold">{upiId || "—"}</div>
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Account Name</Label>
-                        <div className="font-semibold">{payment?.account_name || "—"}</div>
+                        <div className="font-semibold">{accountName || "—"}</div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Event Name</Label>
+                        <div className="font-semibold text-amber-500 text-xs">
+                          {currentWorkshop?.title}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -570,8 +751,7 @@ function RegisterPage() {
                       }
                     />
                     <span className="leading-none text-muted-foreground text-xs">
-                      I hereby declare that all information provided is correct and the payment is
-                      genuine.
+                      I hereby declare that all information provided is correct and the payment is genuine for {currentWorkshop?.title}.
                     </span>
                   </label>
                   {form.formState.errors.declaration && (
@@ -597,7 +777,7 @@ function RegisterPage() {
                   className="flex-1 bg-gradient-primary text-primary-foreground font-bold shadow-elegant"
                 >
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Register
+                  Register for {currentWorkshop?.slug === "agentic-ai-cloud" ? "Agentic AI" : "Workshop"}
                 </Button>
               </div>
             </div>

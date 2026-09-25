@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRegistrations } from "@/lib/queries";
+import { useRegistrations, useWorkshops } from "@/lib/queries";
 import { startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -24,6 +24,8 @@ export const Route = createFileRoute("/admin/reports")({
 
 function ReportsPage() {
   const { data: regs = [] } = useRegistrations();
+  const { data: workshops = [] } = useWorkshops();
+  const [workshopFilter, setWorkshopFilter] = useState("all");
   const [range, setRange] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -31,6 +33,13 @@ function ReportsPage() {
   const filtered = useMemo(() => {
     const now = new Date();
     return regs.filter((r) => {
+      if (workshopFilter !== "all") {
+        const wSlug = r.workshop_slug || "";
+        const wTitle = r.workshop_title || "";
+        if (wSlug !== workshopFilter && !wTitle.toLowerCase().includes(workshopFilter.toLowerCase())) {
+          return false;
+        }
+      }
       const d = new Date(r.created_at);
       if (range === "today") return d >= startOfDay(now);
       if (range === "week") return d >= startOfWeek(now);
@@ -41,11 +50,12 @@ function ReportsPage() {
       }
       return true;
     });
-  }, [regs, range, from, to]);
+  }, [regs, workshopFilter, range, from, to]);
 
   function getExportData() {
     return filtered.map((r, index) => ({
       "S.No": index + 1,
+      Workshop: r.workshop_title || "AI Humanoid Robot",
       "Roll Number": r.faculty_id,
       "Student Name": r.faculty_name,
       Year: r.designation,
@@ -90,6 +100,7 @@ function ReportsPage() {
       head: [
         [
           "Reg ID",
+          "Workshop",
           "Roll Number",
           "Student Name",
           "Year",
@@ -103,6 +114,7 @@ function ReportsPage() {
       ],
       body: filtered.map((r) => [
         r.registration_id,
+        r.workshop_slug === "agentic-ai-cloud" ? "Agentic AI" : (r.workshop_title ? (r.workshop_title.length > 20 ? r.workshop_title.slice(0, 20) + "..." : r.workshop_title) : "AI Humanoid"),
         r.faculty_id,
         r.faculty_name,
         r.designation,
@@ -131,7 +143,23 @@ function ReportsPage() {
           <CardDescription>{filtered.length} records match the current filter.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+            <div>
+              <Label>Workshop</Label>
+              <Select value={workshopFilter} onValueChange={setWorkshopFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Workshops" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Workshops</SelectItem>
+                  {workshops.map((ws) => (
+                    <SelectItem key={ws.slug} value={ws.slug}>
+                      {ws.slug === "agentic-ai-cloud" ? "Agentic AI Workshop" : ws.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Date Range</Label>
               <Select value={range} onValueChange={setRange}>

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useRegistrations } from "@/lib/queries";
+import { useRegistrations, useWorkshops } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,9 @@ export const Route = createFileRoute("/admin/registrations")({
 function RegistrationsPage() {
   const qc = useQueryClient();
   const { data: regs = [], isLoading } = useRegistrations();
+  const { data: workshops = [] } = useWorkshops();
   const [search, setSearch] = useState("");
+  const [workshopFilter, setWorkshopFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [semesterFilter, setSemesterFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<string>("all");
@@ -58,11 +60,18 @@ function RegistrationsPage() {
         const q = search.trim().toLowerCase();
         if (
           q &&
-          !`${r.registration_id} ${r.faculty_name} ${r.email} ${r.phone || ""} ${r.faculty_id} ${r.utr_number} ${r.designation}`
+          !`${r.registration_id} ${r.faculty_name} ${r.email} ${r.phone || ""} ${r.faculty_id} ${r.utr_number} ${r.designation} ${r.workshop_title || ""}`
             .toLowerCase()
             .includes(q)
         )
           return false;
+        if (workshopFilter !== "all") {
+          const wSlug = r.workshop_slug || "";
+          const wTitle = r.workshop_title || "";
+          if (wSlug !== workshopFilter && !wTitle.toLowerCase().includes(workshopFilter.toLowerCase())) {
+            return false;
+          }
+        }
         if (statusFilter !== "all" && r.payment_status !== statusFilter) return false;
         if (semesterFilter !== "all" && r.category !== semesterFilter) return false;
         if (yearFilter !== "all" && r.designation !== yearFilter) return false;
@@ -70,7 +79,7 @@ function RegistrationsPage() {
         if (sectionFilter !== "all" && r.institute !== sectionFilter) return false;
         return true;
       }),
-    [regs, search, statusFilter, semesterFilter, yearFilter, departmentFilter, sectionFilter],
+    [regs, search, workshopFilter, statusFilter, semesterFilter, yearFilter, departmentFilter, sectionFilter],
   );
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -118,6 +127,7 @@ function RegistrationsPage() {
   function getExportData() {
     return filtered.map((r, index) => ({
       "S.No": index + 1,
+      Workshop: r.workshop_title || "AI Humanoid Robot",
       "Roll Number": r.faculty_id,
       "Student Name": r.faculty_name,
       Year: r.designation,
@@ -163,6 +173,7 @@ function RegistrationsPage() {
       head: [
         [
           "S.No",
+          "Workshop",
           "Roll Number",
           "Student Name",
           "Year",
@@ -176,6 +187,7 @@ function RegistrationsPage() {
       ],
       body: filtered.map((r, index) => [
         index + 1,
+        r.workshop_slug === "agentic-ai-cloud" ? "Agentic AI" : (r.workshop_title ? (r.workshop_title.length > 20 ? r.workshop_title.slice(0, 20) + "..." : r.workshop_title) : "AI Humanoid"),
         r.faculty_id,
         r.faculty_name,
         r.designation,
@@ -227,7 +239,7 @@ function RegistrationsPage() {
 
       <Card>
         <CardHeader className="space-y-3">
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
             <Input
               placeholder="Search by name, roll no, UTR…"
               value={search}
@@ -236,6 +248,25 @@ function RegistrationsPage() {
                 setPage(1);
               }}
             />
+            <Select
+              value={workshopFilter}
+              onValueChange={(v) => {
+                setWorkshopFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Workshops" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Workshops</SelectItem>
+                {workshops.map((ws) => (
+                  <SelectItem key={ws.slug} value={ws.slug}>
+                    {ws.slug === "agentic-ai-cloud" ? "Agentic AI Workshop" : ws.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select
               value={statusFilter}
               onValueChange={(v) => {
@@ -346,6 +377,7 @@ function RegistrationsPage() {
                     />
                   </TableHead>
                   <TableHead>S.No</TableHead>
+                  <TableHead>Workshop</TableHead>
                   <TableHead>Roll Number</TableHead>
                   <TableHead>Student Details</TableHead>
                   <TableHead>Dept</TableHead>
@@ -360,14 +392,14 @@ function RegistrationsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="py-10 text-center">
+                    <TableCell colSpan={12} className="py-10 text-center">
                       <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                     </TableCell>
                   </TableRow>
                 ) : pageData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
-                      No registrations.
+                    <TableCell colSpan={12} className="py-10 text-center text-muted-foreground">
+                      No registrations found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -386,6 +418,22 @@ function RegistrationsPage() {
                         />
                       </TableCell>
                       <TableCell className="text-sm">{(page - 1) * pageSize + index + 1}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs font-semibold whitespace-nowrap ${
+                            r.workshop_slug === "agentic-ai-cloud"
+                              ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                              : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                          }`}
+                        >
+                          {r.workshop_slug === "agentic-ai-cloud"
+                            ? "Agentic AI"
+                            : r.workshop_title && r.workshop_title.length > 20
+                            ? r.workshop_title.slice(0, 20) + "..."
+                            : (r.workshop_title || "AI Humanoid")}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{r.faculty_id}</TableCell>
                       <TableCell>
                         <div className="font-medium text-sm">{r.faculty_name}</div>
