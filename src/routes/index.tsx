@@ -189,14 +189,6 @@ function Home() {
                 size="lg"
                 className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-base px-8 py-6 shadow-xl shadow-amber-500/25 hover:scale-105 transition-all"
               >
-                <a href="#workshops">Explore Workshops</a>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-amber-400/40 bg-slate-900/80 text-amber-200 backdrop-blur-md hover:bg-amber-400/20 hover:text-white text-base px-6 py-6 transition-all"
-              >
                 <Link to="/register">Register Now</Link>
               </Button>
               {enabledQuiz && (

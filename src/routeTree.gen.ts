@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ItAdminRouteImport } from './routes/it-admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RegisterIndexRouteImport } from './routes/register.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as WorkshopSlugIndexRouteImport } from './routes/$workshopSlug.index'
 import { Route as RegisterSuccessRouteImport } from './routes/register.success'
 import { Route as QuizExamIdRouteImport } from './routes/quiz.$examId'
 import { Route as FeedbackFormIdRouteImport } from './routes/feedback.$formId'
@@ -21,12 +23,18 @@ import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as WorkshopSlugAdminRouteImport } from './routes/$workshopSlug.admin'
 import { Route as AdminQuizResponsesRouteImport } from './routes/admin.quiz.responses'
 import { Route as AdminQuizQuestionsRouteImport } from './routes/admin.quiz.questions'
 import { Route as AdminFeedbackResponsesRouteImport } from './routes/admin.feedback.responses'
 import { Route as AdminFeedbackQuestionsRouteImport } from './routes/admin.feedback.questions'
 import { Route as AdminFeedbackViewFormIdRouteImport } from './routes/admin.feedback.view.$formId'
 
+const ItAdminRoute = ItAdminRouteImport.update({
+  id: '/it-admin',
+  path: '/it-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -51,6 +59,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const WorkshopSlugIndexRoute = WorkshopSlugIndexRouteImport.update({
+  id: '/$workshopSlug/',
+  path: '/$workshopSlug/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterSuccessRoute = RegisterSuccessRouteImport.update({
   id: '/register/success',
@@ -87,6 +100,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const WorkshopSlugAdminRoute = WorkshopSlugAdminRouteImport.update({
+  id: '/$workshopSlug/admin',
+  path: '/$workshopSlug/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQuizResponsesRoute = AdminQuizResponsesRouteImport.update({
   id: '/quiz/responses',
   path: '/quiz/responses',
@@ -117,6 +135,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/it-admin': typeof ItAdminRoute
+  '/$workshopSlug/admin': typeof WorkshopSlugAdminRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -124,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/feedback/$formId': typeof FeedbackFormIdRoute
   '/quiz/$examId': typeof QuizExamIdRoute
   '/register/success': typeof RegisterSuccessRoute
+  '/$workshopSlug/': typeof WorkshopSlugIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
@@ -135,6 +156,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/it-admin': typeof ItAdminRoute
+  '/$workshopSlug/admin': typeof WorkshopSlugAdminRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -142,6 +165,7 @@ export interface FileRoutesByTo {
   '/feedback/$formId': typeof FeedbackFormIdRoute
   '/quiz/$examId': typeof QuizExamIdRoute
   '/register/success': typeof RegisterSuccessRoute
+  '/$workshopSlug': typeof WorkshopSlugIndexRoute
   '/admin': typeof AdminIndexRoute
   '/register': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
@@ -155,6 +179,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/it-admin': typeof ItAdminRoute
+  '/$workshopSlug/admin': typeof WorkshopSlugAdminRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -162,6 +188,7 @@ export interface FileRoutesById {
   '/feedback/$formId': typeof FeedbackFormIdRoute
   '/quiz/$examId': typeof QuizExamIdRoute
   '/register/success': typeof RegisterSuccessRoute
+  '/$workshopSlug/': typeof WorkshopSlugIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/admin/feedback/questions': typeof AdminFeedbackQuestionsRoute
@@ -176,6 +203,8 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/it-admin'
+    | '/$workshopSlug/admin'
     | '/admin/analytics'
     | '/admin/registrations'
     | '/admin/reports'
@@ -183,6 +212,7 @@ export interface FileRouteTypes {
     | '/feedback/$formId'
     | '/quiz/$examId'
     | '/register/success'
+    | '/$workshopSlug/'
     | '/admin/'
     | '/register/'
     | '/admin/feedback/questions'
@@ -194,6 +224,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/it-admin'
+    | '/$workshopSlug/admin'
     | '/admin/analytics'
     | '/admin/registrations'
     | '/admin/reports'
@@ -201,6 +233,7 @@ export interface FileRouteTypes {
     | '/feedback/$formId'
     | '/quiz/$examId'
     | '/register/success'
+    | '/$workshopSlug'
     | '/admin'
     | '/register'
     | '/admin/feedback/questions'
@@ -213,6 +246,8 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/it-admin'
+    | '/$workshopSlug/admin'
     | '/admin/analytics'
     | '/admin/registrations'
     | '/admin/reports'
@@ -220,6 +255,7 @@ export interface FileRouteTypes {
     | '/feedback/$formId'
     | '/quiz/$examId'
     | '/register/success'
+    | '/$workshopSlug/'
     | '/admin/'
     | '/register/'
     | '/admin/feedback/questions'
@@ -233,14 +269,24 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ItAdminRoute: typeof ItAdminRoute
+  WorkshopSlugAdminRoute: typeof WorkshopSlugAdminRoute
   FeedbackFormIdRoute: typeof FeedbackFormIdRoute
   QuizExamIdRoute: typeof QuizExamIdRoute
   RegisterSuccessRoute: typeof RegisterSuccessRoute
+  WorkshopSlugIndexRoute: typeof WorkshopSlugIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/it-admin': {
+      id: '/it-admin'
+      path: '/it-admin'
+      fullPath: '/it-admin'
+      preLoaderRoute: typeof ItAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -275,6 +321,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/$workshopSlug/': {
+      id: '/$workshopSlug/'
+      path: '/$workshopSlug'
+      fullPath: '/$workshopSlug/'
+      preLoaderRoute: typeof WorkshopSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/register/success': {
       id: '/register/success'
@@ -324,6 +377,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/$workshopSlug/admin': {
+      id: '/$workshopSlug/admin'
+      path: '/$workshopSlug/admin'
+      fullPath: '/$workshopSlug/admin'
+      preLoaderRoute: typeof WorkshopSlugAdminRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/quiz/responses': {
       id: '/admin/quiz/responses'
@@ -395,9 +455,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  ItAdminRoute: ItAdminRoute,
+  WorkshopSlugAdminRoute: WorkshopSlugAdminRoute,
   FeedbackFormIdRoute: FeedbackFormIdRoute,
   QuizExamIdRoute: QuizExamIdRoute,
   RegisterSuccessRoute: RegisterSuccessRoute,
+  WorkshopSlugIndexRoute: WorkshopSlugIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
 }
 export const routeTree = rootRouteImport

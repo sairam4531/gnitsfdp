@@ -14,6 +14,7 @@ import {
   ClipboardList,
   GraduationCap,
   ListChecks,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
@@ -23,7 +24,8 @@ import { toast } from "sonner";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/workshop", label: "Workshop", icon: CalendarCheck },
+  { to: "/it-admin", label: "IT-Admin (Master)", icon: ShieldCheck },
+  { to: "/admin/workshop", label: "Workshops", icon: CalendarCheck },
   { to: "/admin/registrations", label: "Responses", icon: Users },
   { to: "/admin/feedback/questions", label: "Feedback Forms", icon: MessageSquare },
   { to: "/admin/feedback/responses", label: "Feedback Responses", icon: ClipboardList },

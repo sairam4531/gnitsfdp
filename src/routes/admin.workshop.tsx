@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
@@ -30,6 +31,7 @@ import {
   useSpeakers,
   useCoordinators,
   useWorkshops,
+  saveLocalWorkshopCredentials,
   Workshop,
   Coordinator,
 } from "@/lib/queries";
@@ -152,9 +154,16 @@ function WorkshopPage() {
     }
     setSavingWorkshop(true);
     try {
-      const payload = {
+      const cleanSlug = editingWorkshop.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      saveLocalWorkshopCredentials(
+        cleanSlug,
+        editingWorkshop.admin_username,
+        editingWorkshop.admin_password,
+      );
+
+      const payload: any = {
         title: editingWorkshop.title,
-        slug: editingWorkshop.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+        slug: cleanSlug,
         subtitle: editingWorkshop.subtitle || null,
         description: editingWorkshop.description || null,
         department: editingWorkshop.department || "CSE",
@@ -169,21 +178,43 @@ function WorkshopPage() {
         upi_id: editingWorkshop.upi_id || null,
         account_name: editingWorkshop.account_name || null,
         qr_code_url: editingWorkshop.qr_code_url || null,
+        admin_username: editingWorkshop.admin_username || null,
+        admin_password: editingWorkshop.admin_password || null,
         sort_order: Number(editingWorkshop.sort_order ?? 0),
         is_featured: !!editingWorkshop.is_featured,
         updated_at: new Date().toISOString(),
       };
 
+      let errorResult: any = null;
       if (isNewWorkshop || !editingWorkshop.id || editingWorkshop.id.startsWith("workshop-")) {
         const { error } = await supabase.from("workshops" as never).insert(payload as never);
-        if (error) throw error;
+        if (error && error.message?.includes("admin_username")) {
+          delete payload.admin_username;
+          delete payload.admin_password;
+          const retry = await supabase.from("workshops" as never).insert(payload as never);
+          errorResult = retry.error;
+        } else {
+          errorResult = error;
+        }
+        if (errorResult) throw errorResult;
         toast.success("Workshop created successfully!");
       } else {
         const { error } = await supabase
           .from("workshops" as never)
           .update(payload as never)
           .eq("id", editingWorkshop.id);
-        if (error) throw error;
+        if (error && error.message?.includes("admin_username")) {
+          delete payload.admin_username;
+          delete payload.admin_password;
+          const retry = await supabase
+            .from("workshops" as never)
+            .update(payload as never)
+            .eq("id", editingWorkshop.id);
+          errorResult = retry.error;
+        } else {
+          errorResult = error;
+        }
+        if (errorResult) throw errorResult;
         toast.success("Workshop updated successfully!");
       }
       setEditingWorkshop(null);

@@ -19,10 +19,30 @@ export interface Workshop {
   upi_id?: string | null;
   account_name?: string | null;
   qr_code_url?: string | null;
+  admin_username?: string | null;
+  admin_password?: string | null;
   sort_order: number;
   is_featured: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export function getLocalWorkshopCredentials(): Record<string, { username?: string; password?: string }> {
+  try {
+    return JSON.parse(localStorage.getItem("gnits_workshop_credentials") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalWorkshopCredentials(slug: string, username?: string | null, password?: string | null) {
+  try {
+    const creds = getLocalWorkshopCredentials();
+    creds[slug] = { username: username || "", password: password || "" };
+    localStorage.setItem("gnits_workshop_credentials", JSON.stringify(creds));
+  } catch (e) {
+    console.error("Failed to save local workshop credentials:", e);
+  }
 }
 
 export function useWebsiteSettings() {
@@ -62,6 +82,7 @@ export function useWorkshops() {
   return useQuery<Workshop[]>({
     queryKey: ["workshops", websiteSettings?.id, paymentSettings?.id],
     queryFn: async () => {
+      const localCreds = getLocalWorkshopCredentials();
       try {
         const { data, error } = await supabase
           .from("workshops" as never)
@@ -69,7 +90,14 @@ export function useWorkshops() {
           .order("sort_order");
 
         if (!error && Array.isArray(data) && data.length > 0) {
-          return data as unknown as Workshop[];
+          return (data as unknown as Workshop[]).map((ws) => {
+            const extra = localCreds[ws.slug] || {};
+            return {
+              ...ws,
+              admin_username: ws.admin_username || extra.username || "admin",
+              admin_password: ws.admin_password || extra.password || "admin123",
+            };
+          });
         }
       } catch (err) {
         console.warn("Could not query workshops table directly, using fallback defaults:", err);
@@ -103,6 +131,8 @@ export function useWorkshops() {
           qr_code_url: paymentSettings?.qr_code_url || null,
           sort_order: 1,
           is_featured: true,
+          admin_username: localCreds["ai-humanoid-robot"]?.username || "csd_admin",
+          admin_password: localCreds["ai-humanoid-robot"]?.password || "gnits@csd2026",
         },
         {
           id: "workshop-2-agentic-ai",
@@ -126,6 +156,8 @@ export function useWorkshops() {
           qr_code_url: paymentSettings?.qr_code_url || null,
           sort_order: 2,
           is_featured: false,
+          admin_username: localCreds["agentic-ai-cloud"]?.username || "cse_admin",
+          admin_password: localCreds["agentic-ai-cloud"]?.password || "gnits@cse2026",
         },
       ];
 
