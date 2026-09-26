@@ -6,10 +6,14 @@ export function SiteFooter({
   footerText,
   email,
   phone,
+  department,
+  workshopSlug,
 }: {
   footerText?: string | null;
   email?: string | null;
   phone?: string | null;
+  department?: string | null;
+  workshopSlug?: string | null;
 }) {
   const { data: coords = [] } = useCoordinators();
 
@@ -22,7 +26,7 @@ export function SiteFooter({
         <div>
           <h4 className="mb-2 font-black text-lg text-white flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-amber-400"></span>
-            GNITS — CSE (Data Science)
+            GNITS — {department || "CSE (Data Science)"}
           </h4>
           <p className="text-sm text-slate-300 leading-relaxed font-medium">
             G. Narayanamma Institute of Technology and Science (for Women), Hyderabad
@@ -93,9 +97,21 @@ export function SiteFooter({
             Quick Links
           </h4>
           <div className="flex flex-col gap-2 text-sm">
-            <Link to="/register" className="text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-2 hover:translate-x-1 transition-transform">
+            <Link
+              to="/register"
+              search={workshopSlug ? { workshop: workshopSlug } : undefined}
+              className="text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-2 hover:translate-x-1 transition-transform"
+            >
               → Workshop Registration
             </Link>
+            {workshopSlug && (
+              <Link
+                to={`/${workshopSlug}/admin`}
+                className="text-slate-400 hover:text-amber-300 font-semibold flex items-center gap-2 hover:translate-x-1 transition-transform text-xs"
+              >
+                → Workshop Coordinator Login
+              </Link>
+            )}
           </div>
         </div>
       </div>

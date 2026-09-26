@@ -431,8 +431,10 @@ function WorkshopCatalogCard({ ws }: { ws: Workshop }) {
           </div>
 
           <div>
-            <h3 className="text-xl md:text-2xl font-black text-foreground leading-snug tracking-tight">
-              {ws.title}
+            <h3 className="text-xl md:text-2xl font-black text-foreground leading-snug tracking-tight hover:text-amber-400 transition-colors">
+              <Link to="/$workshopSlug" params={{ workshopSlug: ws.slug }}>
+                {ws.title}
+              </Link>
             </h3>
             {ws.subtitle && (
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">
@@ -486,19 +488,29 @@ function WorkshopCatalogCard({ ws }: { ws: Workshop }) {
           </div>
         </div>
 
-        <div className="w-full sm:w-auto">
+        <div className="w-full sm:w-auto flex flex-wrap items-center gap-2.5">
+          <Button
+            asChild
+            variant="outline"
+            className="w-full sm:w-auto border-amber-400/30 bg-slate-900/60 text-amber-200 hover:bg-amber-400/10 font-bold"
+          >
+            <Link to="/$workshopSlug" params={{ workshopSlug: ws.slug }}>
+              View Details
+            </Link>
+          </Button>
+
           {ws.registration_open ? (
             <Button
               asChild
               className="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold px-6 shadow-md hover:scale-105 transition-all"
             >
               <Link to="/register" search={{ workshop: ws.slug }}>
-                Register for this Workshop <ArrowRight className="ml-1.5 h-4 w-4" />
+                Register <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
           ) : (
             <Button disabled className="w-full sm:w-auto">
-              Registration Closed
+              Closed
             </Button>
           )}
         </div>
