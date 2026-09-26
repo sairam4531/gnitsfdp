@@ -24,7 +24,6 @@ import { toast } from "sonner";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/it-admin", label: "IT-Admin (Master)", icon: ShieldCheck },
   { to: "/admin/workshop", label: "Workshops", icon: CalendarCheck },
   { to: "/admin/registrations", label: "Responses", icon: Users },
   { to: "/admin/feedback/questions", label: "Feedback Forms", icon: MessageSquare },
