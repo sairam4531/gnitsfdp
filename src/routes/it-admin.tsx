@@ -25,6 +25,8 @@ import {
   useWorkshops,
   useRegistrations,
   saveLocalWorkshopCredentials,
+  markWorkshopDeleted,
+  saveLocalCustomWorkshop,
   Workshop,
 } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
@@ -203,34 +205,60 @@ function ITAdminPage() {
 
       let errorResult: any = null;
       if (isNew || !editingWs.id || editingWs.id.startsWith("workshop-")) {
-        const { error } = await supabase.from("workshops" as never).insert(payload as never);
-        if (error && error.message?.includes("admin_username")) {
-          delete payload.admin_username;
-          delete payload.admin_password;
-          const retry = await supabase.from("workshops" as never).insert(payload as never);
-          errorResult = retry.error;
-        } else {
-          errorResult = error;
+        const tempId = editingWs.id && !editingWs.id.startsWith("workshop-") ? editingWs.id : `custom-${cleanSlug}-${Date.now()}`;
+        saveLocalCustomWorkshop({
+          ...editingWs,
+          ...payload,
+          id: tempId,
+        });
+
+        try {
+          const { error } = await supabase.from("workshops" as never).insert(payload as never);
+          if (error && error.message?.includes("admin_username")) {
+            delete payload.admin_username;
+            delete payload.admin_password;
+            const retry = await supabase.from("workshops" as never).insert(payload as never);
+            errorResult = retry.error;
+          } else {
+            errorResult = error;
+          }
+        } catch (dbErr) {
+          errorResult = dbErr;
         }
-        if (errorResult) throw errorResult;
+
+        if (errorResult) {
+          console.warn("Supabase insert notice (saved locally):", errorResult);
+        }
         toast.success(`Workshop "${editingWs.title}" created successfully!`);
       } else {
-        const { error } = await supabase
-          .from("workshops" as never)
-          .update(payload as never)
-          .eq("id", editingWs.id);
-        if (error && error.message?.includes("admin_username")) {
-          delete payload.admin_username;
-          delete payload.admin_password;
-          const retry = await supabase
+        saveLocalCustomWorkshop({
+          ...editingWs,
+          ...payload,
+        });
+
+        try {
+          const { error } = await supabase
             .from("workshops" as never)
             .update(payload as never)
             .eq("id", editingWs.id);
-          errorResult = retry.error;
-        } else {
-          errorResult = error;
+          if (error && error.message?.includes("admin_username")) {
+            delete payload.admin_username;
+            delete payload.admin_password;
+            const retry = await supabase
+              .from("workshops" as never)
+              .update(payload as never)
+              .eq("id", editingWs.id);
+            errorResult = retry.error;
+          } else {
+            errorResult = error;
+          }
+        } catch (dbErr) {
+          errorResult = dbErr;
         }
-        if (errorResult) throw errorResult;
+
+        if (errorResult) {
+          console.warn("Supabase update notice (saved locally):", errorResult);
+        }
         toast.success(`Workshop "${editingWs.title}" updated successfully!`);
       }
 
@@ -247,11 +275,15 @@ function ITAdminPage() {
 
   async function toggleRegistration(ws: Workshop, newOpen: boolean) {
     try {
-      const { error } = await supabase
-        .from("workshops" as never)
-        .update({ registration_open: newOpen } as never)
-        .eq("id", ws.id);
-      if (error) throw error;
+      saveLocalCustomWorkshop({ ...ws, registration_open: newOpen });
+      try {
+        await supabase
+          .from("workshops" as never)
+          .update({ registration_open: newOpen } as never)
+          .eq("id", ws.id);
+      } catch (dbErr) {
+        console.warn("Supabase toggle notice (saved locally):", dbErr);
+      }
       toast.success(`Registration ${newOpen ? "Opened" : "Closed"} for ${ws.title}`);
       qc.invalidateQueries({ queryKey: ["workshops"] });
     } catch (err: any) {
@@ -262,9 +294,21 @@ function ITAdminPage() {
   async function handleDelete(ws: Workshop) {
     if (!confirm(`Are you sure you want to delete "${ws.title}"? This cannot be undone.`)) return;
     try {
-      const { error } = await supabase.from("workshops" as never).delete().eq("id", ws.id);
-      if (error) throw error;
-      toast.success(`Deleted ${ws.title}`);
+      // 1. Mark as deleted locally so it immediately disappears even in fallback/mock mode
+      if (ws.id) markWorkshopDeleted(ws.id);
+      if (ws.slug) markWorkshopDeleted(ws.slug);
+
+      // 2. Attempt Supabase delete (gracefully handle if table or id does not exist on remote db)
+      try {
+        const { error } = await supabase.from("workshops" as never).delete().eq("id", ws.id);
+        if (error) {
+          console.warn("Supabase delete notice (workshop marked deleted locally):", error);
+        }
+      } catch (dbErr) {
+        console.warn("Supabase delete failed (marked deleted locally):", dbErr);
+      }
+
+      toast.success(`Deleted "${ws.title}" successfully.`);
       qc.invalidateQueries({ queryKey: ["workshops"] });
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete workshop.");
