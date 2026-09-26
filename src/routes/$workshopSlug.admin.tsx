@@ -14,12 +14,14 @@ import {
   useFeedbackForms,
   useFeedbackResponses,
   feedbackDb,
+  FeedbackForm,
 } from "@/lib/feedback";
 import {
   useQuizExams,
   useQuizQuestions,
   quizDb,
 } from "@/lib/quiz";
+import { QuestionsManager } from "@/components/feedback/QuestionsManager";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -83,6 +86,8 @@ import {
   CreditCard,
   Mic,
   Layers,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
 import {
   Bar,
@@ -161,14 +166,12 @@ function WorkshopAdminPage() {
   );
 
   // Authentication State
-  const isMasterAdmin =
-    typeof window !== "undefined" &&
-    sessionStorage.getItem("gnits_it_admin") === "sairohit45";
-
   const [isWsAuth, setIsWsAuth] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    if (sessionStorage.getItem("gnits_it_admin") === "sairohit45") return true;
-    return sessionStorage.getItem(`gnits_ws_admin_${workshopSlug}`) === "true";
+    if (typeof window !== "undefined") {
+      if (sessionStorage.getItem("gnits_it_admin") === "sairohit45") return true;
+      return sessionStorage.getItem(`gnits_ws_admin_${workshopSlug}`) === "true";
+    }
+    return false;
   });
 
   const [activeTab, setActiveTab] = useState<AdminNavTab>("dashboard");
@@ -177,42 +180,54 @@ function WorkshopAdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // Filters & Search for Registrations
-  const [searchQuery, setSearchQuery] = useState("");
+  // ----------------------------------------------------
+  // Screenshot 1: Workshop Responses State & Filters
+  // ----------------------------------------------------
+  const [search, setSearch] = useState("");
+  const [workshopFilter, setWorkshopFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [semesterFilter, setSemesterFilter] = useState<string>("all");
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [selectedRegs, setSelectedRegs] = useState<Set<string>>(new Set());
   const [viewScreenshotUrl, setViewScreenshotUrl] = useState<string | null>(null);
 
-  // Multi-Workshop & Detail Management States
+  // ----------------------------------------------------
+  // Screenshot 2: Feedback Forms & Questions State
+  // ----------------------------------------------------
+  const [creatingFeedbackForm, setCreatingFeedbackForm] = useState(false);
+  const [editingFeedbackForm, setEditingFeedbackForm] = useState<FeedbackForm | null>(null);
+  const [managingQuestionsFor, setManagingQuestionsFor] = useState<FeedbackForm | null>(null);
+  const [feedbackTitleInput, setFeedbackTitleInput] = useState("");
+  const [feedbackBtnInput, setFeedbackBtnInput] = useState("Submit Workshop Feedback Day 1");
+  const [feedbackDateInput, setFeedbackDateInput] = useState(new Date().toISOString().slice(0, 10));
+
+  // ----------------------------------------------------
+  // Screenshot 3: Feedback Responses State & Filters
+  // ----------------------------------------------------
+  const [feedbackDateFilter, setFeedbackDateFilter] = useState("");
+  const [feedbackFormFilter, setFeedbackFormFilter] = useState<string>("all");
+
+  // Multi-Workshop & Detail Management States (from previous request)
   const [open, setOpen] = useState(true);
   const [seatLimit, setSeatLimit] = useState(500);
   const [savingReg, setSavingReg] = useState(false);
-
-  // Details Tab State
   const [detailsForm, setDetailsForm] = useState<Partial<Workshop>>({});
   const [savingDetails, setSavingDetails] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingBrochure, setUploadingBrochure] = useState(false);
-
-  // Payment Tab State
   const [upi, setUpi] = useState("");
   const [acct, setAcct] = useState("");
   const [fee, setFee] = useState(250);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [uploadingQR, setUploadingQR] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
-
-  // Speakers & Coordinators Modals
   const [editingSpeaker, setEditingSpeaker] = useState<Partial<SpeakerRow> | null>(null);
   const [savingSpeaker, setSavingSpeaker] = useState(false);
   const [uploadingSpeakerPhoto, setUploadingSpeakerPhoto] = useState(false);
-
   const [editingCoordinator, setEditingCoordinator] = useState<Partial<Coordinator> | null>(null);
   const [savingCoordinator, setSavingCoordinator] = useState(false);
-
-  // Multi-Workshop Edit Modal
-  const [editingWorkshop, setEditingWorkshop] = useState<Partial<Workshop> | null>(null);
-  const [isNewWorkshop, setIsNewWorkshop] = useState(false);
-  const [savingWorkshop, setSavingWorkshop] = useState(false);
 
   // Sync state when workshop loads
   useEffect(() => {
@@ -224,6 +239,7 @@ function WorkshopAdminPage() {
       setAcct(ws.account_name || "");
       setFee(ws.registration_fee || 250);
       setQrUrl(ws.qr_code_url || null);
+      setFeedbackTitleInput(ws.title);
     }
   }, [ws]);
 
@@ -234,7 +250,6 @@ function WorkshopAdminPage() {
     setTimeout(() => {
       const inputUser = usernameInput.trim();
       const inputPass = passwordInput.trim();
-
       const expectedUser = ws?.admin_username || `${ws?.slug}_admin`;
       const expectedPass = ws?.admin_password || "gnits@admin2026";
 
@@ -258,7 +273,7 @@ function WorkshopAdminPage() {
     toast.info("Signed out of Workshop Admin.");
   }
 
-  // Filter registrations for THIS workshop
+  // Registrations belonging to this workshop
   const workshopRegistrations = useMemo(() => {
     if (!ws) return [];
     return allRegistrations.filter((r: any) => {
@@ -272,26 +287,47 @@ function WorkshopAdminPage() {
     });
   }, [allRegistrations, ws]);
 
+  // Filtered registrations matching Screenshot 1 filters
   const filteredRegistrations = useMemo(() => {
     return workshopRegistrations.filter((r) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        r.faculty_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.faculty_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.phone.includes(searchQuery) ||
-        r.utr_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.department.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        r.payment_status.toLowerCase() === statusFilter.toLowerCase();
-
-      return matchesSearch && matchesStatus;
+      const q = search.trim().toLowerCase();
+      if (
+        q &&
+        !`${r.registration_id} ${r.faculty_name} ${r.email} ${r.phone || ""} ${r.faculty_id} ${r.utr_number} ${r.designation} ${r.workshop_title || ""}`
+          .toLowerCase()
+          .includes(q)
+      ) {
+        return false;
+      }
+      if (workshopFilter !== "all") {
+        const wSlug = r.workshop_slug || "";
+        const wTitle = r.workshop_title || "";
+        if (wSlug !== workshopFilter && !wTitle.toLowerCase().includes(workshopFilter.toLowerCase())) {
+          return false;
+        }
+      }
+      if (statusFilter !== "all") {
+        const s = (r.payment_status || "Pending").toLowerCase();
+        if (s !== statusFilter.toLowerCase()) return false;
+      }
+      if (departmentFilter !== "all" && r.department !== departmentFilter) return false;
+      if (yearFilter !== "all" && r.designation !== yearFilter) return false;
+      if (semesterFilter !== "all" && r.category !== semesterFilter) return false;
+      if (sectionFilter !== "all" && r.institute !== sectionFilter) return false;
+      return true;
     });
-  }, [workshopRegistrations, searchQuery, statusFilter]);
+  }, [
+    workshopRegistrations,
+    search,
+    workshopFilter,
+    statusFilter,
+    departmentFilter,
+    yearFilter,
+    semesterFilter,
+    sectionFilter,
+  ]);
 
-  // Statistics
+  // Statistics for Dashboard
   const today = startOfDay(new Date());
   const todayCount = workshopRegistrations.filter(
     (r) => new Date(r.created_at) >= today,
@@ -300,7 +336,7 @@ function WorkshopAdminPage() {
     (r) => r.payment_status?.toLowerCase() === "approved",
   );
   const pendingRegistrations = workshopRegistrations.filter(
-    (r) => r.payment_status?.toLowerCase() === "pending",
+    (r) => (r.payment_status || "pending").toLowerCase() === "pending",
   );
   const approvedCount = approvedRegistrations.length;
   const pendingCount = pendingRegistrations.length;
@@ -310,7 +346,7 @@ function WorkshopAdminPage() {
   );
   const remainingSeats = ws ? Math.max(0, ws.seat_limit - workshopRegistrations.length) : 0;
 
-  // 14 days chart data
+  // Chart data
   const daily = Array.from({ length: 14 }).map((_, i) => {
     const d = startOfDay(subDays(new Date(), 13 - i));
     const next = startOfDay(subDays(new Date(), 12 - i));
@@ -347,7 +383,7 @@ function WorkshopAdminPage() {
   const COLORS = ["#7c3aed", "#a855f7", "#facc15", "#22d3ee", "#f97316", "#ec4899", "#10b981"];
 
   // Payment status update
-  async function updatePaymentStatus(id: string, newStatus: "approved" | "rejected" | "pending") {
+  async function updatePaymentStatus(id: string, newStatus: string) {
     try {
       const { error } = await supabase
         .from("registrations")
@@ -361,7 +397,36 @@ function WorkshopAdminPage() {
     }
   }
 
-  // --- 1. Registration Controls Save ---
+  async function deleteOneRegistration(id: string) {
+    if (!confirm("Are you sure you want to delete this registration?")) return;
+    try {
+      const { error } = await supabase.from("registrations").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Registration deleted.");
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete registration.");
+    }
+  }
+
+  async function bulkDeleteRegistrations() {
+    if (selectedRegs.size === 0) return;
+    if (!confirm(`Delete ${selectedRegs.size} selected registrations?`)) return;
+    try {
+      const { error } = await supabase
+        .from("registrations")
+        .delete()
+        .in("id", Array.from(selectedRegs));
+      if (error) throw error;
+      toast.success("Selected registrations deleted.");
+      setSelectedRegs(new Set());
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to bulk delete.");
+    }
+  }
+
+  // --- Registration Controls Save ---
   async function saveRegistrationControls() {
     if (!ws) return;
     setSavingReg(true);
@@ -384,7 +449,7 @@ function WorkshopAdminPage() {
     }
   }
 
-  // --- 2. Details Tab Save ---
+  // --- Details Tab Save ---
   async function saveWorkshopDetails() {
     if (!ws) return;
     setSavingDetails(true);
@@ -430,7 +495,6 @@ function WorkshopAdminPage() {
     }
   }
 
-  // Upload Banner / Brochure
   async function uploadWorkshopAsset(file: File, field: "hero_banner_url" | "brochure_url") {
     if (field === "hero_banner_url") setUploadingBanner(true);
     else setUploadingBrochure(true);
@@ -450,7 +514,7 @@ function WorkshopAdminPage() {
     }
   }
 
-  // --- 3. Payment Tab Save ---
+  // --- Payment Tab Save ---
   async function savePaymentSettings() {
     if (!ws) return;
     setSavingPayment(true);
@@ -492,7 +556,7 @@ function WorkshopAdminPage() {
     }
   }
 
-  // --- 4. Speakers Save / Delete ---
+  // --- Speakers Save / Delete ---
   async function saveSpeakerAction() {
     if (!editingSpeaker || !editingSpeaker.name) {
       toast.error("Please enter speaker name.");
@@ -551,7 +615,7 @@ function WorkshopAdminPage() {
     }
   }
 
-  // --- 5. Coordinators Save / Delete ---
+  // --- Coordinators Save / Delete ---
   async function saveCoordinatorAction() {
     if (!editingCoordinator || !editingCoordinator.name) {
       toast.error("Please enter coordinator name.");
@@ -595,78 +659,193 @@ function WorkshopAdminPage() {
     }
   }
 
-  // Export Handlers
-  function exportToExcel() {
-    if (workshopRegistrations.length === 0) {
-      toast.error("No registrations to export.");
+  // --- Feedback Forms Actions (Screenshot 2) ---
+  async function toggleFeedbackEnabled(form: FeedbackForm, enabled: boolean) {
+    const { error } = await feedbackDb
+      .from("feedback_forms")
+      .update({ is_enabled: enabled })
+      .eq("id", form.id);
+    if (error) return toast.error(error.message);
+    toast.success(enabled ? "Feedback form enabled" : "Feedback form disabled");
+    qc.invalidateQueries({ queryKey: ["feedback_forms"] });
+  }
+
+  async function saveFeedbackForm() {
+    if (!feedbackTitleInput.trim() || !feedbackBtnInput.trim()) {
+      toast.error("Please fill title and button name");
       return;
     }
-    const data = workshopRegistrations.map((r, i) => ({
-      "S.No": i + 1,
-      "Registration ID": r.registration_id,
-      "Student Name": r.faculty_name,
+
+    const payload = {
+      fdp_title: feedbackTitleInput.trim(),
+      feedback_button_name: feedbackBtnInput.trim(),
+      feedback_date: feedbackDateInput || null,
+      is_enabled: true,
+    };
+
+    if (editingFeedbackForm) {
+      const { error } = await feedbackDb
+        .from("feedback_forms")
+        .update(payload)
+        .eq("id", editingFeedbackForm.id);
+      if (error) return toast.error(error.message);
+      toast.success("Feedback form updated");
+      setEditingFeedbackForm(null);
+    } else {
+      const { error } = await feedbackDb.from("feedback_forms").insert(payload);
+      if (error) return toast.error(error.message);
+      toast.success("Feedback form created");
+      setCreatingFeedbackForm(false);
+    }
+    qc.invalidateQueries({ queryKey: ["feedback_forms"] });
+  }
+
+  async function deleteFeedbackForm(id: string) {
+    if (!confirm("Delete this feedback form?")) return;
+    const { error } = await feedbackDb.from("feedback_forms").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Feedback form deleted");
+    qc.invalidateQueries({ queryKey: ["feedback_forms"] });
+  }
+
+  // --- Feedback Responses Filter & Dynamic Questions (Screenshot 3) ---
+  const filteredFeedbackResponses = useMemo(() => {
+    return feedbackResponses.filter((r) => {
+      if (feedbackFormFilter !== "all" && r.feedback_form_id !== feedbackFormFilter) return false;
+      if (feedbackDateFilter) {
+        const d = new Date(r.submitted_at).toISOString().slice(0, 10);
+        if (d !== feedbackDateFilter) return false;
+      }
+      return true;
+    });
+  }, [feedbackResponses, feedbackFormFilter, feedbackDateFilter]);
+
+  const uniqueFeedbackQuestions = useMemo(() => {
+    const qTexts = new Set<string>();
+    filteredFeedbackResponses.forEach((r) => {
+      (r.answers_json ?? []).forEach((a) => {
+        if (a.question_text) {
+          qTexts.add(a.question_text);
+        }
+      });
+    });
+    return Array.from(qTexts);
+  }, [filteredFeedbackResponses]);
+
+  function exportFeedbackExcel() {
+    const rows = filteredFeedbackResponses.map((r, i) => {
+      const rowData: any = {
+        "S.No": i + 1,
+        "Student Name": r.participant_name,
+        "Roll Number": r.roll_number || r.employee_id || "",
+        Department: r.department ?? "",
+        Year: r.year ?? "",
+        Semester: r.semester ?? "",
+        Section: r.section ?? "",
+      };
+
+      const answersMap = new Map((r.answers_json ?? []).map((a) => [a.question_text, a.answer]));
+      uniqueFeedbackQuestions.forEach((q, idx) => {
+        rowData[`${idx + 1}. ${q}`] = answersMap.get(q) || "";
+      });
+      rowData["Submitted"] = new Date(r.submitted_at).toLocaleString();
+      return rowData;
+    });
+
+    if (rows.length === 0) return toast.error("No responses to export");
+    const wsSheet = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsSheet, "Feedback Responses");
+    XLSX.writeFile(wb, `feedback-responses-${Date.now()}.xlsx`);
+  }
+
+  // --- Registrations Export Handlers (Screenshot 1) ---
+  function getRegistrationsExportData() {
+    return filteredRegistrations.map((r, index) => ({
+      "S.No": index + 1,
+      Workshop: ws?.title || "AI Humanoid Robot",
       "Roll Number": r.faculty_id,
+      "Student Name": r.faculty_name,
       Year: r.designation,
       Department: r.department,
       Semester: r.category,
       Section: r.institute,
-      Email: r.email,
-      Mobile: r.phone,
-      "UTR Number": r.utr_number,
-      "Fee (₹)": r.registration_fee,
-      "Payment Status": r.payment_status,
-      "Registration Time": new Date(r.created_at).toLocaleString(),
+      "Gmail ID": r.email,
+      "Mobile Number": r.phone,
+      "Payment Details":
+        r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING"
+          ? `UTR: ${r.utr_number}`
+          : "Pending Payment",
+      "Payment Status": r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
+      "Registration ID": r.registration_id,
+      "Date & Time": new Date(r.created_at).toLocaleString(),
     }));
+  }
 
+  function exportRegistrationsExcel() {
+    const data = getRegistrationsExportData();
+    if (data.length === 0) return toast.error("No data to export");
     const wsSheet = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, wsSheet, "Registrations");
     XLSX.writeFile(wb, `${ws?.slug || "workshop"}-registrations.xlsx`);
-    toast.success("Excel sheet downloaded.");
+    toast.success("Excel downloaded!");
   }
 
-  function exportToPDF() {
-    if (workshopRegistrations.length === 0) {
-      toast.error("No registrations to export.");
-      return;
-    }
+  function exportRegistrationsCSV() {
+    const data = getRegistrationsExportData();
+    if (data.length === 0) return toast.error("No data to export");
+    const wsSheet = XLSX.utils.json_to_sheet(data);
+    const csvContent = XLSX.utils.sheet_to_csv(wsSheet);
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ws?.slug || "workshop"}-registrations.csv`;
+    a.click();
+    toast.success("CSV downloaded!");
+  }
+
+  function exportRegistrationsPDF() {
+    if (filteredRegistrations.length === 0) return toast.error("No data to export");
     const doc = new jsPDF({ orientation: "landscape" });
-    doc.setFontSize(14);
-    doc.text(`${ws?.title || "Workshop"} — Registrations`, 14, 15);
-    doc.setFontSize(9);
-    doc.text(
-      `Generated: ${new Date().toLocaleString()} | Total: ${workshopRegistrations.length}`,
-      14,
-      21,
-    );
-
-    const headers = [
-      ["#", "Roll No", "Student Name", "Year", "Dept", "Sec", "Mobile", "UTR", "Fee", "Status"],
-    ];
-    const rows = workshopRegistrations.map((r, i) => [
-      i + 1,
-      r.faculty_id,
-      r.faculty_name,
-      r.designation,
-      r.department,
-      r.institute,
-      r.phone,
-      r.utr_number,
-      `Rs.${r.registration_fee}`,
-      (r.payment_status || "PENDING").toUpperCase(),
-    ]);
-
+    doc.text(`${ws?.title || "Workshop"} — Responses`, 14, 14);
     autoTable(doc, {
-      startY: 26,
-      head: headers,
-      body: rows,
-      theme: "striped",
-      styles: { fontSize: 8 },
+      startY: 20,
+      head: [
+        [
+          "S.No",
+          "Workshop",
+          "Roll Number",
+          "Student Name",
+          "Year",
+          "Dept",
+          "Sem",
+          "Sec",
+          "Payment Details",
+          "Status",
+          "Date & Time",
+        ],
+      ],
+      body: filteredRegistrations.map((r, index) => [
+        index + 1,
+        ws?.department || "AI Humanoid",
+        r.faculty_id,
+        r.faculty_name,
+        r.designation,
+        r.department,
+        r.category,
+        r.institute,
+        r.utr_number && r.utr_number !== "Pending Payment" && r.utr_number !== "PENDING"
+          ? `UTR: ${r.utr_number}`
+          : "Pending Payment",
+        r.payment_status === "Pending" ? "Pending Payment" : r.payment_status,
+        new Date(r.created_at).toLocaleString(),
+      ]),
+      styles: { fontSize: 7 },
       headStyles: { fillColor: [124, 58, 237] },
     });
-
     doc.save(`${ws?.slug || "workshop"}-registrations.pdf`);
-    toast.success("PDF downloaded.");
+    toast.success("PDF downloaded!");
   }
 
   if (loadingWorkshops) {
@@ -855,22 +1034,12 @@ function WorkshopAdminPage() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="text-xs"
-            >
+            <Button asChild variant="outline" size="sm" className="text-xs">
               <a href={`/${ws.slug}`} target="_blank" rel="noreferrer">
                 <Globe className="mr-1.5 h-3.5 w-3.5 text-cyan-500" /> View Page
               </a>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -1090,7 +1259,7 @@ function WorkshopAdminPage() {
             </div>
           )}
 
-          {/* TAB 2: WORKSHOP MANAGEMENT (Matches screenshot exactly with all 6 sub-tabs!) */}
+          {/* TAB 2: WORKSHOPS (Workshop Management Suite with all 6 Subtabs) */}
           {activeTab === "workshops" && (
             <div className="space-y-6">
               <div>
@@ -1122,17 +1291,8 @@ function WorkshopAdminPage() {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* SUBTAB 1: WORKSHOPS LIST */}
+                {/* SUBTAB 1: WORKSHOPS */}
                 <TabsContent value="workshops" className="space-y-6">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-xl font-bold tracking-tight">Active Workshops & Workathons</h2>
-                      <p className="text-sm text-muted-foreground">
-                        Manage, switch, or view details for independent technical workshops.
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="grid gap-6 md:grid-cols-2">
                     {workshops.map((w) => (
                       <Card
@@ -1185,7 +1345,6 @@ function WorkshopAdminPage() {
                             </div>
                           </CardContent>
                         </div>
-
                         <div className="p-4 border-t bg-muted/20 flex items-center justify-between">
                           <a
                             href={`/${w.slug}`}
@@ -1208,7 +1367,7 @@ function WorkshopAdminPage() {
                   </div>
                 </TabsContent>
 
-                {/* SUBTAB 2: REGISTRATION (Matches screenshot 100%!) */}
+                {/* SUBTAB 2: REGISTRATION (Matching Screenshot from previous prompt) */}
                 <TabsContent value="registration" className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-3">
                     <Card className="rounded-xl border shadow-sm">
@@ -1223,7 +1382,6 @@ function WorkshopAdminPage() {
                         </div>
                       </CardContent>
                     </Card>
-
                     <Card className="rounded-xl border shadow-sm">
                       <CardContent className="p-5">
                         <div className="text-xs text-muted-foreground font-semibold">Seats Available</div>
@@ -1232,7 +1390,6 @@ function WorkshopAdminPage() {
                         </div>
                       </CardContent>
                     </Card>
-
                     <Card className="rounded-xl border shadow-sm">
                       <CardContent className="p-5">
                         <div className="text-xs text-muted-foreground font-semibold">Registered</div>
@@ -1260,7 +1417,6 @@ function WorkshopAdminPage() {
                         </div>
                         <Switch checked={open} onCheckedChange={setOpen} />
                       </div>
-
                       <div>
                         <Label className="font-semibold text-xs">Seat Limit</Label>
                         <Input
@@ -1270,7 +1426,6 @@ function WorkshopAdminPage() {
                           className="mt-1.5 max-w-md font-semibold"
                         />
                       </div>
-
                       <Button
                         onClick={saveRegistrationControls}
                         disabled={savingReg}
@@ -1685,182 +1840,281 @@ function WorkshopAdminPage() {
             </div>
           )}
 
-          {/* TAB 3: RESPONSES / REGISTRATIONS */}
+          {/* TAB 3: WORKSHOP RESPONSES (Exact 100% Match to Screenshot 1) */}
           {activeTab === "registrations" && (
             <div className="space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Responses & Registrations</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">Workshop Responses</h1>
                   <p className="text-sm text-muted-foreground">
-                    Total {workshopRegistrations.length} students registered for {ws.title}.
+                    {filteredRegistrations.length} of {workshopRegistrations.length} registrations
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportToExcel}
-                    className="text-xs font-semibold"
-                  >
-                    <FileSpreadsheet className="mr-1.5 h-4 w-4 text-emerald-600" /> Excel
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={exportRegistrationsExcel} className="text-xs">
+                    <FileSpreadsheet className="mr-1.5 h-4 w-4 text-emerald-600" />
+                    Excel
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={exportToPDF}
-                    className="text-xs font-semibold"
-                  >
-                    <FileText className="mr-1.5 h-4 w-4 text-rose-600" /> PDF
+                  <Button variant="outline" size="sm" onClick={exportRegistrationsCSV} className="text-xs">
+                    <Download className="mr-1.5 h-4 w-4 text-cyan-600" />
+                    CSV
                   </Button>
+                  <Button variant="outline" size="sm" onClick={exportRegistrationsPDF} className="text-xs">
+                    <FileText className="mr-1.5 h-4 w-4 text-rose-600" />
+                    PDF
+                  </Button>
+                  {selectedRegs.size > 0 && (
+                    <Button variant="destructive" size="sm" onClick={bulkDeleteRegistrations} className="text-xs">
+                      <Trash2 className="mr-1.5 h-4 w-4" />
+                      Delete {selectedRegs.size}
+                    </Button>
+                  )}
                 </div>
               </div>
 
-              {/* Filters */}
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-card p-4 rounded-xl border shadow-sm">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by student name, roll number, mobile, email, UTR..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 text-xs"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={statusFilter === "all" ? "default" : "outline"}
-                    onClick={() => setStatusFilter("all")}
-                    className="text-xs h-9"
-                  >
-                    All ({workshopRegistrations.length})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === "approved" ? "default" : "outline"}
-                    onClick={() => setStatusFilter("approved")}
-                    className="text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    Approved ({approvedCount})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === "pending" ? "default" : "outline"}
-                    onClick={() => setStatusFilter("pending")}
-                    className="text-xs h-9 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
-                  >
-                    Pending ({pendingCount})
-                  </Button>
-                </div>
-              </div>
+              {/* Exact Filter Bar from Screenshot 1 */}
+              <Card className="rounded-xl border shadow-sm">
+                <CardContent className="p-3">
+                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+                    <Input
+                      placeholder="Search by name, roll no, UTR…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="text-xs h-9 bg-background"
+                    />
 
-              {/* Table */}
+                    <Select value={workshopFilter} onValueChange={setWorkshopFilter}>
+                      <SelectTrigger className="text-xs h-9 bg-background">
+                        <SelectValue placeholder="All Workshops" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Workshops</SelectItem>
+                        {workshops.map((w) => (
+                          <SelectItem key={w.slug} value={w.slug}>
+                            {w.title.length > 20 ? w.title.slice(0, 20) + "..." : w.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="text-xs h-9 bg-background">
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Pending">Pending Payment</SelectItem>
+                        <SelectItem value="Approved">Approved</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                      <SelectTrigger className="text-xs h-9 bg-background">
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Departments</SelectItem>
+                        <SelectItem value="CSE(DS)">CSE(DS)</SelectItem>
+                        <SelectItem value="CSE">CSE</SelectItem>
+                        <SelectItem value="CSE(AI&ML)">CSE(AI&ML)</SelectItem>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="ECE">ECE</SelectItem>
+                        <SelectItem value="EEE">EEE</SelectItem>
+                        <SelectItem value="ETM">ETM</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={yearFilter} onValueChange={setYearFilter}>
+                      <SelectTrigger className="text-xs h-9 bg-background">
+                        <SelectValue placeholder="All Years" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Years</SelectItem>
+                        <SelectItem value="1st Year">1st Year</SelectItem>
+                        <SelectItem value="2nd Year">2nd Year</SelectItem>
+                        <SelectItem value="3rd Year">3rd Year</SelectItem>
+                        <SelectItem value="4th Year">4th Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                      <SelectTrigger className="text-xs h-9 bg-background">
+                        <SelectValue placeholder="All Semesters" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Semesters</SelectItem>
+                        <SelectItem value="Sem I">Sem I</SelectItem>
+                        <SelectItem value="Sem II">Sem II</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={sectionFilter} onValueChange={setSectionFilter}>
+                      <SelectTrigger className="text-xs h-9 bg-background">
+                        <SelectValue placeholder="All Sections" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Sections</SelectItem>
+                        <SelectItem value="A">Section A</SelectItem>
+                        <SelectItem value="B">Section B</SelectItem>
+                        <SelectItem value="C">Section C</SelectItem>
+                        <SelectItem value="D">Section D</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Exact Table Matching Screenshot 1 */}
               <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/50 border-b font-bold text-muted-foreground">
+                    <thead className="bg-muted/40 border-b font-bold text-muted-foreground">
                       <tr>
-                        <th className="p-3">#</th>
-                        <th className="p-3">Roll No</th>
-                        <th className="p-3">Student Name</th>
-                        <th className="p-3">Dept & Year</th>
-                        <th className="p-3">Mobile & Email</th>
-                        <th className="p-3">UTR / Fee</th>
-                        <th className="p-3">Payment</th>
-                        <th className="p-3">Receipt</th>
+                        <th className="p-3 w-10 text-center">
+                          <Checkbox
+                            checked={
+                              filteredRegistrations.length > 0 &&
+                              selectedRegs.size === filteredRegistrations.length
+                            }
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedRegs(new Set(filteredRegistrations.map((r) => r.id)));
+                              } else {
+                                setSelectedRegs(new Set());
+                              }
+                            }}
+                          />
+                        </th>
+                        <th className="p-3">S.No</th>
+                        <th className="p-3">Workshop</th>
+                        <th className="p-3">Roll Number</th>
+                        <th className="p-3">Student Details</th>
+                        <th className="p-3">Dept</th>
+                        <th className="p-3">Sem</th>
+                        <th className="p-3">Sec</th>
+                        <th className="p-3">Payment Details</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Date & Time</th>
                         <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {filteredRegistrations.length === 0 ? (
                         <tr>
-                          <td colSpan={9} className="p-8 text-center text-muted-foreground">
-                            No registrations found matching criteria.
+                          <td colSpan={12} className="p-8 text-center text-muted-foreground">
+                            No registrations found matching the filters.
                           </td>
                         </tr>
                       ) : (
                         filteredRegistrations.map((r, i) => (
                           <tr key={r.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="p-3 text-center">
+                              <Checkbox
+                                checked={selectedRegs.has(r.id)}
+                                onCheckedChange={(checked) => {
+                                  const next = new Set(selectedRegs);
+                                  if (checked) next.add(r.id);
+                                  else next.delete(r.id);
+                                  setSelectedRegs(next);
+                                }}
+                              />
+                            </td>
                             <td className="p-3 font-mono text-muted-foreground">{i + 1}</td>
+                            <td className="p-3">
+                              <Badge
+                                variant="outline"
+                                className="border-amber-400/50 bg-amber-400/10 text-amber-600 font-bold text-[11px] rounded-full whitespace-nowrap"
+                              >
+                                {r.workshop_slug === "agentic-ai-cloud"
+                                  ? "Agentic AI"
+                                  : ws?.department || "AI Humanoid"}
+                              </Badge>
+                            </td>
                             <td className="p-3 font-mono font-bold text-foreground">
                               {r.faculty_id}
                             </td>
-                            <td className="p-3 font-semibold text-foreground">
-                              {r.faculty_name}
-                            </td>
                             <td className="p-3">
-                              <span className="font-medium text-foreground">
-                                {r.department}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground block">
-                                {r.designation} {r.institute ? `· Sec ${r.institute}` : ""}
-                              </span>
+                              <div className="font-bold text-foreground uppercase">
+                                {r.faculty_name}
+                              </div>
+                              <div className="text-[11px] font-semibold text-purple-600 mt-0.5">
+                                {r.designation}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">{r.email}</div>
+                              <div className="text-[11px] text-muted-foreground font-mono">
+                                {r.phone}
+                              </div>
+                            </td>
+                            <td className="p-3 font-semibold">{r.department}</td>
+                            <td className="p-3 text-muted-foreground font-medium">
+                              {r.category || "Sem I"}
+                            </td>
+                            <td className="p-3 text-muted-foreground font-medium">
+                              Section {r.institute || "A"}
                             </td>
                             <td className="p-3 font-mono">
-                              <div>{r.phone}</div>
-                              <div className="text-[10px] text-muted-foreground">{r.email}</div>
-                            </td>
-                            <td className="p-3 font-mono">
-                              <div className="font-bold text-foreground">{r.utr_number}</div>
-                              <div className="text-[10px] text-amber-500 font-semibold">
-                                ₹{r.registration_fee}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Badge
+                                  variant="outline"
+                                  className={`rounded-full text-[10px] font-bold ${
+                                    r.payment_status === "Approved"
+                                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
+                                      : r.payment_status === "Rejected"
+                                        ? "border-rose-500 bg-rose-500/10 text-rose-600"
+                                        : "border-amber-400 bg-amber-400/10 text-amber-600"
+                                  }`}
+                                >
+                                  {r.utr_number &&
+                                  r.utr_number !== "Pending Payment" &&
+                                  r.utr_number !== "PENDING"
+                                    ? `UTR: ${r.utr_number}`
+                                    : "Pending Payment"}
+                                </Badge>
+                                {r.payment_screenshot_url && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewScreenshotUrl(r.payment_screenshot_url)}
+                                    className="text-[10px] text-purple-600 underline font-semibold flex items-center"
+                                  >
+                                    View Receipt
+                                  </button>
+                                )}
                               </div>
                             </td>
                             <td className="p-3">
-                              <Badge
-                                variant={
-                                  r.payment_status === "approved"
-                                    ? "default"
-                                    : r.payment_status === "rejected"
-                                      ? "destructive"
-                                      : "outline"
-                                }
-                                className={`text-[10px] uppercase font-bold ${
-                                  r.payment_status === "approved"
-                                    ? "bg-emerald-600 text-white"
-                                    : r.payment_status === "pending"
-                                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
-                                      : ""
-                                }`}
+                              {/* Status Dropdown Matching Screenshot 1 */}
+                              <Select
+                                value={r.payment_status || "Pending"}
+                                onValueChange={(val) => updatePaymentStatus(r.id, val)}
                               >
-                                {r.payment_status || "pending"}
-                              </Badge>
+                                <SelectTrigger className="h-8 w-36 text-xs bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Pending">Pending Payment</SelectItem>
+                                  <SelectItem value="Approved">Approved</SelectItem>
+                                  <SelectItem value="Rejected">Rejected</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="p-3">
-                              {r.payment_screenshot_url ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setViewScreenshotUrl(r.payment_screenshot_url)}
-                                  className="text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1 text-[11px]"
-                                >
-                                  <Eye className="h-3.5 w-3.5" /> View
-                                </button>
-                              ) : (
-                                <span className="text-muted-foreground text-[10px]">None</span>
-                              )}
+                            <td className="p-3 text-muted-foreground text-[11px] whitespace-nowrap">
+                              {new Date(r.created_at).toLocaleString([], {
+                                month: "numeric",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </td>
                             <td className="p-3 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                {r.payment_status !== "approved" && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updatePaymentStatus(r.id, "approved")}
-                                    className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"
-                                  >
-                                    Approve
-                                  </Button>
-                                )}
-                                {r.payment_status !== "rejected" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => updatePaymentStatus(r.id, "rejected")}
-                                    className="h-7 px-2 text-rose-600 hover:text-rose-700 text-[11px]"
-                                  >
-                                    Reject
-                                  </Button>
-                                )}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => deleteOneRegistration(r.id)}
+                                className="text-rose-500 hover:text-rose-700 p-1 rounded transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -1872,59 +2126,101 @@ function WorkshopAdminPage() {
             </div>
           )}
 
-          {/* TAB 4: FEEDBACK FORMS */}
+          {/* TAB 4: FEEDBACK QUESTIONS (Exact 100% Match to Screenshot 2) */}
           {activeTab === "feedback-forms" && (
-            <div className="space-y-4">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Feedback Forms</h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage workshop feedback surveys and active status.
-                </p>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">Feedback Questions</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Create feedback forms and manage their questions.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setCreatingFeedbackForm(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> New Feedback Form
+                </Button>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                {feedbackForms.map((form) => (
-                  <Card key={form.id} className="rounded-xl border shadow-sm">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <Badge
-                          variant={form.is_enabled ? "default" : "secondary"}
-                          className={form.is_enabled ? "bg-emerald-600 text-white" : ""}
-                        >
-                          {form.is_enabled ? "ACTIVE" : "DISABLED"}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {form.feedback_date || "No date set"}
-                        </span>
+              {/* Exact Cards Matching Screenshot 2 */}
+              <div className="grid gap-4">
+                {feedbackForms.map((f) => (
+                  <Card key={f.id} className="rounded-xl border shadow-sm">
+                    <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-base text-foreground uppercase tracking-wide">
+                            {f.fdp_title}
+                          </h3>
+                          {f.is_enabled ? (
+                            <Badge className="bg-emerald-600 text-white text-[11px] font-bold">
+                              ON
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[11px]">
+                              OFF
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            Button: <strong>{f.feedback_button_name}</strong>
+                          </span>
+                          {f.feedback_date && <span>Date: {f.feedback_date}</span>}
+                        </div>
                       </div>
-                      <CardTitle className="text-base font-bold mt-2">
-                        {form.feedback_button_name}
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        {form.fdp_title}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0 flex items-center justify-between">
-                      <Button asChild size="sm" variant="outline" className="text-xs">
-                        <Link to="/feedback/$formId" params={{ formId: form.id }} target="_blank">
-                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Preview Form
-                        </Link>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={form.is_enabled ? "destructive" : "default"}
-                        className="text-xs"
-                        onClick={async () => {
-                          await feedbackDb
-                            .from("feedback_forms")
-                            .update({ is_enabled: !form.is_enabled })
-                            .eq("id", form.id);
-                          qc.invalidateQueries({ queryKey: ["feedback_forms"] });
-                          toast.success(`Form ${form.is_enabled ? "Disabled" : "Enabled"}!`);
-                        }}
-                      >
-                        {form.is_enabled ? "Deactivate" : "Activate"}
-                      </Button>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5">
+                          <Switch
+                            checked={f.is_enabled}
+                            onCheckedChange={(v) => toggleFeedbackEnabled(f, v)}
+                          />
+                          <span className="text-xs font-bold">{f.is_enabled ? "ON" : "OFF"}</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setManagingQuestionsFor(f)}
+                          className="text-xs"
+                        >
+                          <ListChecks className="mr-1.5 h-4 w-4" /> Questions
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingFeedbackForm(f);
+                            setFeedbackTitleInput(f.fdp_title);
+                            setFeedbackBtnInput(f.feedback_button_name);
+                            setFeedbackDateInput(f.feedback_date || "");
+                          }}
+                          className="text-xs"
+                        >
+                          <Pencil className="mr-1.5 h-4 w-4" /> Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setFeedbackFormFilter(f.id);
+                            setActiveTab("feedback-responses");
+                          }}
+                          className="text-xs"
+                        >
+                          <Eye className="mr-1.5 h-4 w-4" /> Responses
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteFeedbackForm(f.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -1932,55 +2228,133 @@ function WorkshopAdminPage() {
             </div>
           )}
 
-          {/* TAB 5: FEEDBACK RESPONSES */}
+          {/* TAB 5: FEEDBACK RESPONSES (Exact 100% Match to Screenshot 3) */}
           {activeTab === "feedback-responses" && (
             <div className="space-y-4">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Feedback Responses</h1>
-                <p className="text-sm text-muted-foreground">
-                  Submitted participant reviews and survey responses.
-                </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">Feedback Responses</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Filter, view, and export feedback responses.
+                  </p>
+                </div>
+                <Button
+                  onClick={exportFeedbackExcel}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Export Excel
+                </Button>
               </div>
 
+              {/* Exact Filter Bar from Screenshot 3 */}
+              <Card className="rounded-xl border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap items-end gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-muted-foreground">
+                        Select Date
+                      </Label>
+                      <Input
+                        type="date"
+                        value={feedbackDateFilter}
+                        onChange={(e) => setFeedbackDateFilter(e.target.value)}
+                        className="h-9 w-48 text-xs bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1 flex-1 min-w-[200px]">
+                      <Label className="text-xs font-semibold text-muted-foreground">
+                        Workshop / Feedback Form
+                      </Label>
+                      <Select
+                        value={feedbackFormFilter}
+                        onValueChange={setFeedbackFormFilter}
+                      >
+                        <SelectTrigger className="h-9 text-xs bg-background">
+                          <SelectValue placeholder="All Forms" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Forms</SelectItem>
+                          {feedbackForms.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.feedback_button_name} ({f.fdp_title})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFeedbackDateFilter("");
+                        setFeedbackFormFilter("all");
+                      }}
+                      className="h-9 text-xs font-semibold"
+                    >
+                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset Filters
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Exact Table Matching Screenshot 3 */}
               <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/50 border-b font-bold text-muted-foreground">
+                    <thead className="bg-muted/40 border-b font-bold text-muted-foreground">
                       <tr>
-                        <th className="p-3">#</th>
-                        <th className="p-3">Roll No</th>
-                        <th className="p-3">Participant Name</th>
+                        <th className="p-3">S.No</th>
+                        <th className="p-3">Student Name</th>
+                        <th className="p-3">Roll Number</th>
                         <th className="p-3">Department</th>
-                        <th className="p-3">Survey Title</th>
-                        <th className="p-3">Submitted At</th>
+                        <th className="p-3">Years</th>
+                        <th className="p-3">Sem</th>
+                        <th className="p-3">Section</th>
+                        {uniqueFeedbackQuestions.map((q, idx) => (
+                          <th key={idx} className="p-3 min-w-[200px] max-w-[280px]">
+                            {idx + 1}. {q}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {feedbackResponses.length === 0 ? (
+                      {filteredFeedbackResponses.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                            No feedback responses submitted yet.
+                          <td
+                            colSpan={7 + Math.max(1, uniqueFeedbackQuestions.length)}
+                            className="p-8 text-center text-muted-foreground"
+                          >
+                            No feedback responses found for the selected criteria.
                           </td>
                         </tr>
                       ) : (
-                        feedbackResponses.map((r, i) => (
-                          <tr key={r.id} className="hover:bg-muted/30">
-                            <td className="p-3 font-mono text-muted-foreground">{i + 1}</td>
-                            <td className="p-3 font-mono font-bold text-foreground">
-                              {r.roll_number || "—"}
-                            </td>
-                            <td className="p-3 font-semibold text-foreground">
-                              {r.participant_name}
-                            </td>
-                            <td className="p-3">{r.department || "—"}</td>
-                            <td className="p-3 font-medium text-purple-600">
-                              {r.feedback_forms?.feedback_button_name || "Feedback"}
-                            </td>
-                            <td className="p-3 text-muted-foreground">
-                              {new Date(r.submitted_at).toLocaleString()}
-                            </td>
-                          </tr>
-                        ))
+                        filteredFeedbackResponses.map((r, i) => {
+                          const answersMap = new Map(
+                            (r.answers_json ?? []).map((a) => [a.question_text, a.answer]),
+                          );
+                          return (
+                            <tr key={r.id} className="hover:bg-muted/30 transition-colors">
+                              <td className="p-3 font-mono text-muted-foreground">{i + 1}</td>
+                              <td className="p-3 font-semibold text-foreground">
+                                {r.participant_name}
+                              </td>
+                              <td className="p-3 font-mono font-bold text-foreground">
+                                {r.roll_number || r.employee_id || "—"}
+                              </td>
+                              <td className="p-3 font-semibold">{r.department || "—"}</td>
+                              <td className="p-3 text-muted-foreground">{r.year || "3rd Year"}</td>
+                              <td className="p-3 text-muted-foreground">{r.semester || "Sem I"}</td>
+                              <td className="p-3 text-muted-foreground">{r.section || "Section A"}</td>
+                              {uniqueFeedbackQuestions.map((q, idx) => (
+                                <td key={idx} className="p-3 text-foreground font-medium">
+                                  {answersMap.get(q) || "—"}
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -2139,7 +2513,7 @@ function WorkshopAdminPage() {
                   </CardHeader>
                   <CardContent>
                     <Button
-                      onClick={exportToExcel}
+                      onClick={exportRegistrationsExcel}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                     >
                       <FileSpreadsheet className="mr-2 h-4 w-4" /> Download Excel (.xlsx)
@@ -2156,7 +2530,7 @@ function WorkshopAdminPage() {
                   </CardHeader>
                   <CardContent>
                     <Button
-                      onClick={exportToPDF}
+                      onClick={exportRegistrationsPDF}
                       className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
                     >
                       <FileText className="mr-2 h-4 w-4" /> Download PDF Report
@@ -2168,6 +2542,97 @@ function WorkshopAdminPage() {
           )}
         </div>
       </main>
+
+      {/* ----------------- DIALOGS ----------------- */}
+
+      {/* Questions Manager Modal */}
+      {managingQuestionsFor && (
+        <Dialog
+          open={!!managingQuestionsFor}
+          onOpenChange={() => setManagingQuestionsFor(null)}
+        >
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold">
+                Questions for {managingQuestionsFor.feedback_button_name}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {managingQuestionsFor.fdp_title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-2">
+              <QuestionsManager formId={managingQuestionsFor.id} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Create / Edit Feedback Form Modal */}
+      {(creatingFeedbackForm || editingFeedbackForm) && (
+        <Dialog
+          open={creatingFeedbackForm || !!editingFeedbackForm}
+          onOpenChange={() => {
+            setCreatingFeedbackForm(false);
+            setEditingFeedbackForm(null);
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold">
+                {editingFeedbackForm ? "Edit Feedback Form" : "Create Feedback Form"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2 text-xs">
+              <div>
+                <Label className="text-xs font-semibold">Title of Workshop / Event</Label>
+                <Input
+                  value={feedbackTitleInput}
+                  onChange={(e) => setFeedbackTitleInput(e.target.value)}
+                  placeholder="e.g. ARTIFICIAL INTELLIGENCE HUMANOID ROBOT"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Button Label on Public Page</Label>
+                <Input
+                  value={feedbackBtnInput}
+                  onChange={(e) => setFeedbackBtnInput(e.target.value)}
+                  placeholder="e.g. Submit Workshop Feedback Day 1"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Feedback Date</Label>
+                <Input
+                  type="date"
+                  value={feedbackDateInput}
+                  onChange={(e) => setFeedbackDateInput(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCreatingFeedbackForm(false);
+                  setEditingFeedbackForm(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={saveFeedbackForm}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                Save Feedback Form
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Speaker Dialog */}
       {editingSpeaker && (
