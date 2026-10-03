@@ -6,6 +6,7 @@ import {
   useCoordinators,
   useSpeakers,
   saveLocalWorkshopCredentials,
+  saveLocalCustomWorkshop,
   Workshop,
   Coordinator,
   RegistrationRecord,
@@ -423,15 +424,42 @@ function WorkshopAdminPage() {
     if (!ws) return;
     setSavingReg(true);
     try {
-      const { error } = await supabase
-        .from("workshops" as never)
-        .update({
-          registration_open: open,
-          seat_limit: seatLimit,
-          updated_at: new Date().toISOString(),
-        } as never)
-        .eq("id", ws.id);
-      if (error) throw error;
+      const updatedWs: Workshop = {
+        ...ws,
+        registration_open: open,
+        seat_limit: seatLimit,
+        updated_at: new Date().toISOString(),
+      };
+      saveLocalCustomWorkshop(updatedWs);
+
+      if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
+        try {
+          await supabase
+            .from("website_settings")
+            .update({
+              registration_open: open,
+              seat_limit: seatLimit,
+              updated_at: new Date().toISOString(),
+            })
+            .limit(1);
+        } catch (err) {
+          console.warn("Could not sync to website_settings:", err);
+        }
+      }
+
+      try {
+        await supabase
+          .from("workshops" as never)
+          .update({
+            registration_open: open,
+            seat_limit: seatLimit,
+            updated_at: new Date().toISOString(),
+          } as never)
+          .eq("id", ws.id);
+      } catch (err) {
+        console.warn("Supabase workshops notice:", err);
+      }
+
       toast.success("Registration Controls Saved!");
       qc.invalidateQueries({ queryKey: ["workshops"] });
     } catch (err: any) {
@@ -452,30 +480,72 @@ function WorkshopAdminPage() {
         detailsForm.admin_password,
       );
 
-      const payload: any = {
-        title: detailsForm.title,
-        subtitle: detailsForm.subtitle,
-        description: detailsForm.description,
-        department: detailsForm.department,
-        dates: detailsForm.dates,
-        timings: detailsForm.timings,
-        venue: detailsForm.venue,
-        hero_banner_url: detailsForm.hero_banner_url,
-        brochure_url: detailsForm.brochure_url,
-        admin_username: detailsForm.admin_username || null,
-        admin_password: detailsForm.admin_password || null,
+      const updatedWs: Workshop = {
+        ...ws,
+        title: detailsForm.title ?? ws.title,
+        subtitle: detailsForm.subtitle ?? ws.subtitle,
+        description: detailsForm.description ?? ws.description,
+        department: detailsForm.department ?? ws.department,
+        dates: detailsForm.dates ?? ws.dates,
+        timings: detailsForm.timings ?? ws.timings,
+        venue: detailsForm.venue ?? ws.venue,
+        hero_banner_url: detailsForm.hero_banner_url ?? ws.hero_banner_url,
+        brochure_url: detailsForm.brochure_url ?? ws.brochure_url,
+        admin_username: detailsForm.admin_username || ws.admin_username,
+        admin_password: detailsForm.admin_password || ws.admin_password,
         updated_at: new Date().toISOString(),
       };
+      saveLocalCustomWorkshop(updatedWs);
 
-      const { error } = await supabase
-        .from("workshops" as never)
-        .update(payload as never)
-        .eq("id", ws.id);
+      if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
+        try {
+          await supabase
+            .from("website_settings")
+            .update({
+              fdp_title: detailsForm.title,
+              fdp_subtitle: detailsForm.subtitle,
+              description: detailsForm.description,
+              fdp_dates: detailsForm.dates,
+              timings: detailsForm.timings,
+              venue: detailsForm.venue,
+              hero_banner_url: detailsForm.hero_banner_url,
+              brochure_url: detailsForm.brochure_url,
+              updated_at: new Date().toISOString(),
+            })
+            .limit(1);
+        } catch (err) {
+          console.warn("Could not sync to website_settings:", err);
+        }
+      }
 
-      if (error && error.message?.includes("admin_username")) {
-        delete payload.admin_username;
-        delete payload.admin_password;
-        await supabase.from("workshops" as never).update(payload as never).eq("id", ws.id);
+      try {
+        const payload: any = {
+          title: detailsForm.title,
+          subtitle: detailsForm.subtitle,
+          description: detailsForm.description,
+          department: detailsForm.department,
+          dates: detailsForm.dates,
+          timings: detailsForm.timings,
+          venue: detailsForm.venue,
+          hero_banner_url: detailsForm.hero_banner_url,
+          brochure_url: detailsForm.brochure_url,
+          admin_username: detailsForm.admin_username || null,
+          admin_password: detailsForm.admin_password || null,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from("workshops" as never)
+          .update(payload as never)
+          .eq("id", ws.id);
+
+        if (error && error.message?.includes("admin_username")) {
+          delete payload.admin_username;
+          delete payload.admin_password;
+          await supabase.from("workshops" as never).update(payload as never).eq("id", ws.id);
+        }
+      } catch (err) {
+        console.warn("Supabase workshops update notice:", err);
       }
 
       toast.success("Workshop Details Saved Successfully!");
@@ -511,17 +581,48 @@ function WorkshopAdminPage() {
     if (!ws) return;
     setSavingPayment(true);
     try {
-      const { error } = await supabase
-        .from("workshops" as never)
-        .update({
-          upi_id: upi,
-          account_name: acct,
-          registration_fee: fee,
-          qr_code_url: qrUrl,
-          updated_at: new Date().toISOString(),
-        } as never)
-        .eq("id", ws.id);
-      if (error) throw error;
+      const updatedWs: Workshop = {
+        ...ws,
+        upi_id: upi,
+        account_name: acct,
+        registration_fee: fee,
+        qr_code_url: qrUrl,
+        updated_at: new Date().toISOString(),
+      };
+      saveLocalCustomWorkshop(updatedWs);
+
+      if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
+        try {
+          await supabase
+            .from("payment_settings")
+            .update({
+              upi_id: upi,
+              account_name: acct,
+              internal_fee: fee,
+              qr_code_url: qrUrl,
+              updated_at: new Date().toISOString(),
+            })
+            .limit(1);
+        } catch (err) {
+          console.warn("Could not sync to payment_settings:", err);
+        }
+      }
+
+      try {
+        await supabase
+          .from("workshops" as never)
+          .update({
+            upi_id: upi,
+            account_name: acct,
+            registration_fee: fee,
+            qr_code_url: qrUrl,
+            updated_at: new Date().toISOString(),
+          } as never)
+          .eq("id", ws.id);
+      } catch (err) {
+        console.warn("Supabase workshops notice:", err);
+      }
+
       toast.success("Payment Settings Saved!");
       qc.invalidateQueries({ queryKey: ["workshops"] });
     } catch (err: any) {
