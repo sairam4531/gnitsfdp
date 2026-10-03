@@ -83,10 +83,10 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
   const customOutcomes: WorkshopOutcome[] | null =
     ws.outcomes && ws.outcomes.length > 0
       ? ws.outcomes.map((o) => ({
-          icon: getOutcomeIcon(o.icon),
-          title: o.title,
-          desc: o.desc,
-        }))
+        icon: getOutcomeIcon(o.icon),
+        title: o.title,
+        desc: o.desc,
+      }))
       : null;
 
   if (isHumanoid) {
@@ -307,7 +307,7 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
           desc: "Perform API testing and learn application deployment techniques, culminating in the development of a complete real-world web application.",
         },
       ],
-      ctaText: `Limited seats available. Open to all students of ${ws.department || "CSE(DATA SCIENCE)"} at GNITS.`,
+      ctaText: `Limited seats available. Open to all students of ${ws.department || "CSE,CSE(AI&ML),CSE(Data Science) and IT"} at GNITS.`,
     };
   }
 
