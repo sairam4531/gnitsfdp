@@ -17,8 +17,17 @@ export function SiteFooter({
 }) {
   const { data: coords = [] } = useCoordinators();
 
-  const facultyCoords = coords.filter((c) => c.type === "Faculty");
-  const studentCoords = coords.filter((c) => c.type === "Student");
+  const deptCoords = department
+    ? coords.filter(
+        (c) =>
+          c.department?.toLowerCase().includes(department.toLowerCase()) ||
+          department.toLowerCase().includes(c.department?.toLowerCase())
+      )
+    : coords;
+  const filteredCoords = deptCoords.length > 0 ? deptCoords : coords;
+
+  const facultyCoords = filteredCoords.filter((c) => c.type === "Faculty");
+  const studentCoords = filteredCoords.filter((c) => c.type === "Student");
 
   return (
     <footer id="contact" className="border-t border-amber-400/20 bg-slate-950 text-slate-100">

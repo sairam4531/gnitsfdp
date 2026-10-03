@@ -130,7 +130,7 @@ type AdminNavTab =
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "workshops", label: "Workshops", icon: CalendarCheck },
+  { id: "workshops", label: "Settings", icon: Settings },
   { id: "registrations", label: "Responses", icon: Users },
   { id: "feedback-forms", label: "Feedback Forms", icon: MessageSquare },
   { id: "feedback-responses", label: "Feedback Responses", icon: ClipboardList },
@@ -287,7 +287,7 @@ function WorkshopAdminPage() {
     });
   }, [allRegistrations, ws]);
 
-  // Filtered registrations matching Screenshot 1 filters
+  // Filtered registrations matching filters
   const filteredRegistrations = useMemo(() => {
     return workshopRegistrations.filter((r) => {
       const q = search.trim().toLowerCase();
@@ -298,13 +298,6 @@ function WorkshopAdminPage() {
           .includes(q)
       ) {
         return false;
-      }
-      if (workshopFilter !== "all") {
-        const wSlug = r.workshop_slug || "";
-        const wTitle = r.workshop_title || "";
-        if (wSlug !== workshopFilter && !wTitle.toLowerCase().includes(workshopFilter.toLowerCase())) {
-          return false;
-        }
       }
       if (statusFilter !== "all") {
         const s = (r.payment_status || "Pending").toLowerCase();
@@ -319,7 +312,6 @@ function WorkshopAdminPage() {
   }, [
     workshopRegistrations,
     search,
-    workshopFilter,
     statusFilter,
     departmentFilter,
     yearFilter,
@@ -1270,10 +1262,7 @@ function WorkshopAdminPage() {
               </div>
 
               <Tabs defaultValue="registration" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 max-w-3xl">
-                  <TabsTrigger value="workshops" className="flex items-center gap-1.5 font-bold">
-                    <Layers className="h-4 w-4" /> Workshops
-                  </TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 max-w-2xl">
                   <TabsTrigger value="registration" className="flex items-center gap-1.5 font-bold">
                     <CalendarCheck className="h-4 w-4" /> Registration
                   </TabsTrigger>
@@ -1291,83 +1280,7 @@ function WorkshopAdminPage() {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* SUBTAB 1: WORKSHOPS */}
-                <TabsContent value="workshops" className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {workshops.map((w) => (
-                      <Card
-                        key={w.slug}
-                        className={`overflow-hidden border shadow-md flex flex-col justify-between ${
-                          w.slug === ws.slug ? "ring-2 ring-purple-500 border-purple-500" : ""
-                        }`}
-                      >
-                        <div>
-                          {w.hero_banner_url && (
-                            <div className="h-32 w-full overflow-hidden bg-slate-900 border-b">
-                              <img src={w.hero_banner_url} alt="" className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <CardHeader className="p-5 pb-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <Badge
-                                variant="outline"
-                                className="border-purple-400 text-purple-600 dark:text-purple-400 font-bold text-[11px]"
-                              >
-                                {w.department || "GNITS"}
-                              </Badge>
-                              {w.slug === ws.slug && (
-                                <Badge className="bg-purple-600 text-white text-[10px] font-bold">
-                                  Current Workshop
-                                </Badge>
-                              )}
-                            </div>
-                            <CardTitle className="text-lg font-bold leading-tight mt-2">
-                              {w.title}
-                            </CardTitle>
-                            <CardDescription className="text-xs font-mono text-muted-foreground mt-1">
-                              URL: /{w.slug}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-5 pt-0 space-y-1.5 text-xs text-muted-foreground">
-                            <div>
-                              <strong className="text-foreground">Dates:</strong> {w.dates}
-                            </div>
-                            <div>
-                              <strong className="text-foreground">Venue:</strong> {w.venue}
-                            </div>
-                            <div className="flex items-center justify-between pt-2 border-t mt-2">
-                              <span>
-                                Fee: <strong className="text-foreground font-bold">₹{w.registration_fee}</strong>
-                              </span>
-                              <span>
-                                Seats: <strong className="text-foreground font-bold">{w.seat_limit}</strong>
-                              </span>
-                            </div>
-                          </CardContent>
-                        </div>
-                        <div className="p-4 border-t bg-muted/20 flex items-center justify-between">
-                          <a
-                            href={`/${w.slug}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs text-purple-600 hover:underline flex items-center gap-1 font-semibold"
-                          >
-                            Public Page <ExternalLink className="h-3 w-3" />
-                          </a>
-                          {w.slug !== ws.slug && (
-                            <Button asChild size="sm" variant="outline">
-                              <Link to="/$workshopSlug/admin" params={{ workshopSlug: w.slug }}>
-                                Open Workshop Admin →
-                              </Link>
-                            </Button>
-                          )}
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-
-                {/* SUBTAB 2: REGISTRATION (Matching Screenshot from previous prompt) */}
+                {/* SUBTAB: REGISTRATION */}
                 <TabsContent value="registration" className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-3">
                     <Card className="rounded-xl border shadow-sm">
@@ -1872,30 +1785,16 @@ function WorkshopAdminPage() {
                 </div>
               </div>
 
-              {/* Exact Filter Bar from Screenshot 1 */}
+              {/* Exact Filter Bar */}
               <Card className="rounded-xl border shadow-sm">
                 <CardContent className="p-3">
-                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                     <Input
                       placeholder="Search by name, roll no, UTR…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="text-xs h-9 bg-background"
                     />
-
-                    <Select value={workshopFilter} onValueChange={setWorkshopFilter}>
-                      <SelectTrigger className="text-xs h-9 bg-background">
-                        <SelectValue placeholder="All Workshops" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Workshops</SelectItem>
-                        {workshops.map((w) => (
-                          <SelectItem key={w.slug} value={w.slug}>
-                            {w.title.length > 20 ? w.title.slice(0, 20) + "..." : w.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
 
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="text-xs h-9 bg-background">

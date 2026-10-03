@@ -356,40 +356,37 @@ function RegisterPage() {
   if (!open) {
     return (
       <div className="min-h-screen bg-background">
-        <SiteHeader />
+        <SiteHeader department={currentWorkshop?.department} />
         <div className="container mx-auto max-w-2xl px-4 py-24 text-center">
           <Badge variant="destructive" className="px-4 py-1.5 font-bold mb-4">
             Registration Closed
           </Badge>
           <h1 className="text-3xl font-bold">{currentWorkshop?.title || "Workshop Registration"}</h1>
           <p className="mt-3 text-muted-foreground">
-            Registrations for this workshop are currently closed. You can explore other active workshops on the home page.
+            Registrations for this workshop are currently closed.
           </p>
           <div className="mt-6 flex justify-center gap-4">
-            <Button asChild variant="outline">
-              <Link to="/">Back to home</Link>
-            </Button>
-            {workshops.some((w) => w.slug !== currentWorkshop?.slug && w.registration_open) && (
-              <Button
-                onClick={() => {
-                  const alt = workshops.find((w) => w.slug !== currentWorkshop?.slug && w.registration_open);
-                  if (alt) setSelectedSlug(alt.slug);
-                }}
-                className="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-bold"
-              >
-                View Other Workshop
+            {currentWorkshop?.slug ? (
+              <Button asChild className="bg-amber-500 text-slate-950 font-bold">
+                <Link to="/$workshopSlug" params={{ workshopSlug: currentWorkshop.slug }}>
+                  Back to Workshop
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link to="/">Back to Home</Link>
               </Button>
             )}
           </div>
         </div>
-        <SiteFooter />
+        <SiteFooter department={currentWorkshop?.department} workshopSlug={currentWorkshop?.slug} />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
+      <SiteHeader department={currentWorkshop?.department} />
       <div className="container mx-auto max-w-3xl px-4 py-8">
         {/* Workshop Banner */}
         <div className="mb-6 overflow-hidden rounded-2xl border border-border/40 bg-navy/20 shadow-elegant">
@@ -400,63 +397,35 @@ function RegisterPage() {
           />
         </div>
 
-        {/* Multi-Workshop Switcher Tabs */}
-        {workshops.length > 1 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2.5">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+        {/* Optional Workshop selector only when URL has no specific workshop */}
+        {!searchParams.workshop && workshops.length > 1 && (
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border bg-card/60">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
                 Select Workshop to Register:
               </Label>
-              <span className="text-xs text-amber-500 font-semibold">
-                Multiple registrations supported
+              <span className="text-xs text-muted-foreground">
+                Choose the workshop you are registering for
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {workshops.map((ws) => {
-                const isSelected = (currentWorkshop?.slug === ws.slug);
-                return (
-                  <button
-                    key={ws.slug}
-                    type="button"
-                    onClick={() => {
-                      setSelectedSlug(ws.slug);
-                      setStep(1); // Return to step 1 on workshop switch
-                    }}
-                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-                      isSelected
-                        ? "border-amber-400 bg-amber-400/10 shadow-lg ring-1 ring-amber-400/50"
-                        : "border-border/60 bg-card/60 hover:border-amber-400/40 hover:bg-muted/40"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] font-bold ${
-                          isSelected ? "border-amber-400 text-amber-400 bg-amber-400/10" : "text-muted-foreground"
-                        }`}
-                      >
-                        {ws.department || "GNITS"}
-                      </Badge>
-                      <div className="flex items-center text-xs font-black text-amber-400">
-                        <IndianRupee className="h-3 w-3" />
-                        {ws.registration_fee}
-                      </div>
-                    </div>
-                    <div className="font-bold text-sm text-foreground mt-2 line-clamp-1">
-                      {ws.title}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3 text-amber-400 shrink-0" /> {ws.dates}
-                    </div>
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 text-amber-400">
-                        <CheckCircle2 className="h-4 w-4 fill-amber-400 text-background" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <Select
+              value={currentWorkshop?.slug || selectedSlug}
+              onValueChange={(val) => {
+                setSelectedSlug(val);
+                setStep(1);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[280px] text-xs font-semibold bg-background">
+                <SelectValue placeholder="Select Workshop" />
+              </SelectTrigger>
+              <SelectContent>
+                {workshops.map((ws) => (
+                  <SelectItem key={ws.slug} value={ws.slug} className="text-xs font-medium">
+                    {ws.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
@@ -777,14 +746,14 @@ function RegisterPage() {
                   className="flex-1 bg-gradient-primary text-primary-foreground font-bold shadow-elegant"
                 >
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Register for {currentWorkshop?.slug === "agentic-ai-cloud" ? "Agentic AI" : "Workshop"}
+                  Register for {currentWorkshop?.title ? (currentWorkshop.title.length > 30 ? currentWorkshop.title.slice(0, 30) + "…" : currentWorkshop.title) : "Workshop"}
                 </Button>
               </div>
             </div>
           )}
         </form>
       </div>
-      <SiteFooter />
+      <SiteFooter department={currentWorkshop?.department} workshopSlug={currentWorkshop?.slug} />
     </div>
   );
 }

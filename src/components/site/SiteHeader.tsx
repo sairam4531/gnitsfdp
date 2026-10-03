@@ -27,12 +27,14 @@ export function SiteHeader({ department }: { department?: string | null }) {
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm font-semibold md:flex">
-          <a
-            href={isHome ? "#workshops" : "/#workshops"}
-            className="text-amber-300 transition hover:text-amber-200 hover:scale-105 flex items-center gap-1 font-bold"
-          >
-            Workshops
-          </a>
+          {isHome && (
+            <a
+              href="#workshops"
+              className="text-amber-300 transition hover:text-amber-200 hover:scale-105 flex items-center gap-1 font-bold"
+            >
+              Workshops
+            </a>
+          )}
           <a href="#about" className="text-slate-300 transition hover:text-amber-300 hover:scale-105">
             About
           </a>
