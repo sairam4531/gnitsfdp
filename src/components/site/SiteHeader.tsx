@@ -50,11 +50,11 @@ export function SiteHeader({ department }: { department?: string | null }) {
           </a>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <img
             src={sigaiLogoUrl}
             alt="ACM-W SIGAI Logo"
-            className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
+            className="h-10 w-auto max-h-10 object-contain bg-white rounded-md px-1.5 py-0.5 shadow-sm border border-amber-400/30"
           />
           <img
             src={csiLogoUrl}
