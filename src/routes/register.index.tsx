@@ -366,7 +366,7 @@ function RegisterPage() {
       }
 
       toast.success(`Successfully registered for ${currentWorkshop.title}`);
-      navigate({ to: "/register/success", search: { id: regId } });
+      navigate({ to: "/register/success", search: { id: regId, workshop: currentWorkshop.slug } });
     } catch (e: any) {
       console.error("Submission error details:", e);
       const msg =

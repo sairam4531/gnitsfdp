@@ -1577,16 +1577,6 @@ function WorkshopAdminPage() {
                             className="mt-1 font-semibold"
                           />
                         </div>
-                        <div>
-                          <Label className="text-xs font-semibold">Subtitle / Theme</Label>
-                          <Input
-                            value={detailsForm.subtitle || ""}
-                            onChange={(e) =>
-                              setDetailsForm({ ...detailsForm, subtitle: e.target.value })
-                            }
-                            className="mt-1"
-                          />
-                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <Label className="text-xs font-semibold">Department</Label>

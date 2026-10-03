@@ -113,14 +113,6 @@ export function SiteFooter({
             >
               → Workshop Registration
             </Link>
-            {workshopSlug && (
-              <Link
-                to={`/${workshopSlug}/admin`}
-                className="text-slate-400 hover:text-amber-300 font-semibold flex items-center gap-2 hover:translate-x-1 transition-transform text-xs"
-              >
-                → Workshop Coordinator Login
-              </Link>
-            )}
           </div>
         </div>
       </div>

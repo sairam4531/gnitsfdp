@@ -438,15 +438,6 @@ function WorkshopUserPage() {
               </span>
             </h1>
 
-            {/* Subtitle */}
-            {ws.subtitle && (
-              <div className="mx-auto mt-6 max-w-3xl rounded-2xl bg-slate-950/75 border border-amber-400/30 p-5 md:p-6 backdrop-blur-md shadow-2xl">
-                <p className="text-base md:text-lg leading-relaxed text-slate-100 font-medium drop-shadow-sm">
-                  {ws.subtitle}
-                </p>
-              </div>
-            )}
-
             {/* Info Chips */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 md:gap-4">
               <div className="flex items-center gap-2.5 rounded-xl bg-slate-900/90 border border-amber-400/40 px-4 py-2.5 text-amber-200 shadow-xl backdrop-blur-sm font-semibold text-sm md:text-base">
@@ -682,15 +673,6 @@ function WorkshopUserPage() {
                   Registration Closed
                 </Button>
               )}
-            </div>
-
-            <div className="mt-6 text-center">
-              <Link
-                to={`/${ws.slug}/admin`}
-                className="text-xs text-amber-300/60 hover:text-amber-300 transition inline-flex items-center gap-1 font-mono"
-              >
-                <ShieldCheck className="h-3.5 w-3.5" /> Coordinator / Workshop Admin Login →
-              </Link>
             </div>
           </div>
         </div>

@@ -5,18 +5,42 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { useWorkshops, useRegistrations } from "@/lib/queries";
 
 export const Route = createFileRoute("/register/success")({
-  validateSearch: z.object({ id: z.string().optional() }),
+  validateSearch: z.object({
+    id: z.string().optional(),
+    workshop: z.string().optional(),
+  }),
   component: SuccessPage,
 });
 
 function SuccessPage() {
+  const { id, workshop } = Route.useSearch();
+  const { data: workshops = [] } = useWorkshops();
+  const { data: registrations = [] } = useRegistrations();
+
+  const reg = id ? registrations.find((r) => r.registration_id === id || r.id === id) : null;
+
+  // Resolve target workshop slug: explicit param -> registration record -> ID prefix -> default web-development
+  let targetSlug = workshop || reg?.workshop_slug || "";
+  if (!targetSlug && id) {
+    const upperId = id.toUpperCase();
+    if (upperId.includes("WEBD")) targetSlug = "web-development";
+    else if (upperId.includes("AIHU")) targetSlug = "ai-humanoid-robot";
+    else if (upperId.includes("AGEN")) targetSlug = "agentic-ai-cloud";
+  }
+  if (!targetSlug) {
+    targetSlug = "web-development";
+  }
+
+  const ws = workshops.find((w) => w.slug.toLowerCase() === targetSlug.toLowerCase());
+
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <div className="container mx-auto max-w-2xl px-4 py-20">
-        <Card className="border-secondary/40 shadow-elegant">
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader department={ws?.department} />
+      <div className="container mx-auto max-w-2xl px-4 py-20 flex-1 flex items-center justify-center">
+        <Card className="border-secondary/40 shadow-elegant w-full">
           <CardContent className="p-10 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground">
               <CheckCircle2 className="h-8 w-8" />
@@ -25,13 +49,19 @@ function SuccessPage() {
             <p className="mt-2 text-muted-foreground">
               Thank you. Your registration has been received successfully.
             </p>
-            <Button asChild className="mt-8">
-              <Link to="/">Back to home</Link>
+            {id && (
+              <div className="mt-4 p-3 bg-muted/40 rounded-lg max-w-xs mx-auto border text-xs">
+                <span className="text-muted-foreground">Registration ID:</span>{" "}
+                <span className="font-mono font-bold text-foreground">{id}</span>
+              </div>
+            )}
+            <Button asChild className="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold px-8">
+              <Link to={`/${targetSlug}`}>Back to home</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
-      <SiteFooter />
+      <SiteFooter department={ws?.department} workshopSlug={targetSlug} />
     </div>
   );
 }
