@@ -34,7 +34,6 @@ import {
   MapPin,
   CheckCircle2,
 } from "lucide-react";
-import heroBg from "@/assets/hero-bg.png";
 
 export const Route = createFileRoute("/register/")({
   validateSearch: z.object({
@@ -166,7 +165,6 @@ function RegisterPage() {
   const upiId = (currentWorkshop?.upi_id || "").trim() || null;
   const accountName = (currentWorkshop?.account_name || "").trim() || null;
   const qrCodeUrl = (currentWorkshop?.qr_code_url || "").trim() || null;
-  const bannerUrl = currentWorkshop?.hero_banner_url || settings?.hero_banner_url || heroBg;
 
   const [qrError, setQrError] = useState(false);
   const hasPaymentDetails = Boolean(upiId || qrCodeUrl);
@@ -443,15 +441,6 @@ function RegisterPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader department={currentWorkshop?.department} />
       <div className="container mx-auto max-w-3xl px-4 py-8">
-        {/* Workshop Banner */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-border/40 bg-navy/20 shadow-elegant">
-          <img
-            src={bannerUrl}
-            alt={currentWorkshop?.title || "Workshop Banner"}
-            className="w-full h-auto object-contain rounded-2xl"
-          />
-        </div>
-
         {/* Optional Workshop selector only when URL has no specific workshop */}
         {!searchParams.workshop && workshops.length > 1 && (
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border bg-card/60">
