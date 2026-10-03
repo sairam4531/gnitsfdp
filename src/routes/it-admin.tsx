@@ -114,6 +114,12 @@ function ITAdminPage() {
         setIsAuthenticated(true);
         sessionStorage.setItem("gnits_it_admin", "sairohit45");
         localStorage.setItem("gnits_it_admin", "sairohit45");
+        supabase.auth.signInWithPassword({
+          email: "csmcsd@gnits.ac.in",
+          password: "csmcsd@1234",
+        }).then(() => {
+          qc.invalidateQueries({ queryKey: ["registrations"] });
+        });
         toast.success("Welcome back, IT Admin (sairohit45)!");
       } else {
         toast.error("Invalid IT Admin credentials. Please check username & password.");
@@ -121,6 +127,22 @@ function ITAdminPage() {
       setLoginLoading(false);
     }, 400);
   }
+
+  // Ensure Supabase authenticated session for IT Admin
+  useEffect(() => {
+    if (isAuthenticated) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) {
+          supabase.auth.signInWithPassword({
+            email: "csmcsd@gnits.ac.in",
+            password: "csmcsd@1234",
+          }).then(() => {
+            qc.invalidateQueries({ queryKey: ["registrations"] });
+          });
+        }
+      });
+    }
+  }, [isAuthenticated, qc]);
 
   function handleLogout() {
     sessionStorage.removeItem("gnits_it_admin");

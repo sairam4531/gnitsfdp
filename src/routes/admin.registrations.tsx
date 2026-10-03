@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useRegistrations, useWorkshops } from "@/lib/queries";
+import { useRegistrations, useWorkshops, markRegistrationAsDeleted } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,9 +102,13 @@ function RegistrationsPage() {
     }
   }
 
-  async function deleteOne(id: string) {
+  async function deleteOne(id: string, regId?: string) {
     if (!confirm("Delete this registration?")) return;
+    markRegistrationAsDeleted(id, regId);
     const { error } = await supabase.from("registrations").delete().eq("id", id);
+    if (regId) {
+      await supabase.from("registrations").delete().eq("registration_id", regId);
+    }
     if (error) toast.error(error.message);
     else {
       toast.success("Deleted");
@@ -115,7 +119,18 @@ function RegistrationsPage() {
   async function bulkDelete() {
     if (selected.size === 0) return;
     if (!confirm(`Delete ${selected.size} registrations?`)) return;
-    const { error } = await supabase.from("registrations").delete().in("id", Array.from(selected));
+    const ids = Array.from(selected);
+    ids.forEach((id) => {
+      const match = regs.find((r) => r.id === id);
+      markRegistrationAsDeleted(id, match?.registration_id);
+    });
+    const { error } = await supabase.from("registrations").delete().in("id", ids);
+    const regIds = ids
+      .map((id) => regs.find((r) => r.id === id)?.registration_id)
+      .filter(Boolean) as string[];
+    if (regIds.length > 0) {
+      await supabase.from("registrations").delete().in("registration_id", regIds);
+    }
     if (error) toast.error(error.message);
     else {
       toast.success("Deleted");
@@ -495,7 +510,7 @@ function RegistrationsPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button size="icon" variant="ghost" onClick={() => deleteOne(r.id)}>
+                          <Button size="icon" variant="ghost" onClick={() => deleteOne(r.id, r.registration_id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>

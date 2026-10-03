@@ -672,16 +672,40 @@ export function saveLocalRegistration(record: RegistrationRecord) {
   }
 }
 
-export function deleteLocalRegistration(id: string) {
+export function getDeletedRegistrationIds(): string[] {
   try {
+    return JSON.parse(localStorage.getItem("gnits_deleted_registration_ids") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function markRegistrationAsDeleted(idOrRegId: string, extraRegId?: string) {
+  try {
+    const deleted = getDeletedRegistrationIds();
+    const toAdd = [
+      idOrRegId,
+      extraRegId,
+      idOrRegId ? idOrRegId.replace(/^local-/, "") : "",
+      extraRegId ? extraRegId.replace(/^local-/, "") : "",
+    ].filter(Boolean) as string[];
+
+    for (const item of toAdd) {
+      if (!deleted.includes(item)) deleted.push(item);
+    }
+    localStorage.setItem("gnits_deleted_registration_ids", JSON.stringify(deleted));
+
+    // Remove from local registrations list
     const list = getLocalRegistrations();
-    const updated = list.filter(
-      (r) => r.id !== id && r.registration_id !== id && `local-${r.registration_id}` !== id
-    );
+    const updated = list.filter((r) => !toAdd.includes(r.id) && !toAdd.includes(r.registration_id));
     localStorage.setItem("gnits_local_registrations", JSON.stringify(updated));
   } catch (e) {
-    console.error("Failed to delete local registration:", e);
+    console.error("Failed to mark registration as deleted:", e);
   }
+}
+
+export function deleteLocalRegistration(id: string, extraRegId?: string) {
+  markRegistrationAsDeleted(id, extraRegId);
 }
 
 
@@ -773,10 +797,42 @@ export function isRegistrationForWorkshop(r: any, ws: Workshop): boolean {
   return false;
 }
 
+export async function ensureAdminSession() {
+  if (typeof window === "undefined") return;
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      const hasItAdmin =
+        sessionStorage.getItem("gnits_it_admin") === "sairohit45" ||
+        localStorage.getItem("gnits_it_admin") === "sairohit45";
+      const hasWsAdmin =
+        Object.keys(localStorage).some(
+          (k) => k.startsWith("gnits_ws_admin_") && localStorage.getItem(k) === "true"
+        ) ||
+        Object.keys(sessionStorage).some(
+          (k) => k.startsWith("gnits_ws_admin_") && sessionStorage.getItem(k) === "true"
+        );
+
+      if (hasItAdmin || hasWsAdmin) {
+        await supabase.auth.signInWithPassword({
+          email: "csmcsd@gnits.ac.in",
+          password: "csmcsd@1234",
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("ensureAdminSession error:", err);
+  }
+}
+
 export function useRegistrations() {
   return useQuery<RegistrationRecord[]>({
     queryKey: ["registrations"],
     queryFn: async () => {
+      if (typeof window !== "undefined") {
+        await ensureAdminSession();
+      }
+
       let fetched: RegistrationRecord[] = [];
       try {
         const { data, error } = await supabase
@@ -790,35 +846,28 @@ export function useRegistrations() {
         console.warn("Could not fetch remote registrations:", err);
       }
 
-      // Merge local registrations and sync any unsaved records to Supabase
-      const local = getLocalRegistrations();
+      const deletedIds = getDeletedRegistrationIds();
+
+      // Filter out deleted records
+      fetched = fetched.filter(
+        (f) =>
+          !deletedIds.includes(f.id) &&
+          !deletedIds.includes(f.registration_id) &&
+          !deletedIds.includes(`local-${f.registration_id}`)
+      );
+
+      // Merge local registrations (only non-deleted and not already in remote)
+      const local = getLocalRegistrations().filter(
+        (loc) =>
+          !deletedIds.includes(loc.id) &&
+          !deletedIds.includes(loc.registration_id) &&
+          !deletedIds.includes(loc.registration_id.replace(/^local-/, ""))
+      );
+
       for (const loc of local) {
         const remoteMatch = fetched.find((f) => f.registration_id === loc.registration_id);
         if (!remoteMatch) {
           fetched.unshift(loc);
-          // Sync to Supabase in background
-          if (loc.registration_id && loc.faculty_id) {
-            const syncPayload = {
-              faculty_name: loc.faculty_name,
-              faculty_id: loc.faculty_id,
-              designation: loc.designation,
-              department: loc.department,
-              custom_department: loc.custom_department || (loc.workshop_slug ? `ws:${loc.workshop_slug}` : null),
-              institute: loc.institute,
-              custom_institute: null,
-              email: loc.email,
-              phone: loc.phone,
-              category: loc.category,
-              registration_fee: loc.registration_fee,
-              utr_number: loc.utr_number,
-              payment_screenshot_url: loc.payment_screenshot_url,
-              registration_id: loc.registration_id,
-              payment_status: loc.payment_status || "Approved",
-            };
-            supabase.from("registrations").insert(syncPayload as never).then(({ error }) => {
-              if (error) console.warn("Local registration sync notice:", error.message);
-            });
-          }
         }
       }
 

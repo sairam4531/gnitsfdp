@@ -13,6 +13,7 @@ import {
   compressImageToBase64,
   updateLocalRegistrationScreenshot,
   deleteLocalRegistration,
+  markRegistrationAsDeleted,
   Workshop,
   Coordinator,
   RegistrationRecord,
@@ -341,6 +342,13 @@ function WorkshopAdminPage() {
         setIsWsAuth(true);
         sessionStorage.setItem(`gnits_ws_admin_${workshopSlug}`, "true");
         localStorage.setItem(`gnits_ws_admin_${workshopSlug}`, "true");
+        // Authenticate with Supabase Auth to enable remote RLS permissions
+        supabase.auth.signInWithPassword({
+          email: "csmcsd@gnits.ac.in",
+          password: "csmcsd@1234",
+        }).then(() => {
+          qc.invalidateQueries({ queryKey: ["registrations"] });
+        });
         toast.success(`Welcome to ${ws?.title || "Workshop"} Admin Portal!`);
       } else {
         toast.error("Invalid credentials for this workshop. Please check username & password.");
@@ -348,6 +356,22 @@ function WorkshopAdminPage() {
       setLoginLoading(false);
     }, 300);
   }
+
+  // Ensure Supabase authenticated session is active whenever admin portal is accessed
+  useEffect(() => {
+    if (isWsAuth) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) {
+          supabase.auth.signInWithPassword({
+            email: "csmcsd@gnits.ac.in",
+            password: "csmcsd@1234",
+          }).then(() => {
+            qc.invalidateQueries({ queryKey: ["registrations"] });
+          });
+        }
+      });
+    }
+  }, [isWsAuth, qc]);
 
   function handleLogout() {
     sessionStorage.removeItem(`gnits_ws_admin_${workshopSlug}`);
@@ -464,24 +488,26 @@ function WorkshopAdminPage() {
     }
   }
 
-  async function deleteOneRegistration(id: string) {
+  async function deleteOneRegistration(id: string, regId?: string) {
     if (!confirm("Are you sure you want to delete this registration?")) return;
     try {
-      // 1. Delete from local storage immediately so UI updates
-      deleteLocalRegistration(id);
+      // 1. Mark as deleted locally so it never resurfaces or re-syncs
+      markRegistrationAsDeleted(id, regId);
       setSelectedRegs((prev) => {
         const next = new Set(prev);
         next.delete(id);
+        if (regId) next.delete(regId);
         return next;
       });
 
       // 2. Delete remotely
       try {
+        const cleanRegId = regId || (id.startsWith("local-") ? id.replace(/^local-/, "") : null);
+        if (cleanRegId) {
+          await supabase.from("registrations").delete().eq("registration_id", cleanRegId);
+        }
         if (!id.startsWith("local-")) {
           await supabase.from("registrations").delete().eq("id", id);
-        } else {
-          const cleanRegId = id.replace(/^local-/, "");
-          await supabase.from("registrations").delete().eq("registration_id", cleanRegId);
         }
       } catch (e) {
         console.warn("Could not delete from Supabase registrations:", e);
@@ -499,7 +525,10 @@ function WorkshopAdminPage() {
     if (!confirm(`Delete ${selectedRegs.size} selected registrations?`)) return;
     try {
       const idsToDelete = Array.from(selectedRegs);
-      idsToDelete.forEach((id) => deleteLocalRegistration(id));
+      idsToDelete.forEach((id) => {
+        const match = workshopRegistrations.find((r) => r.id === id);
+        markRegistrationAsDeleted(id, match?.registration_id);
+      });
       setSelectedRegs(new Set());
 
       const remoteIds = idsToDelete.filter((id) => !id.startsWith("local-"));
@@ -511,9 +540,10 @@ function WorkshopAdminPage() {
         }
       }
 
-      const localCleanIds = idsToDelete
-        .filter((id) => id.startsWith("local-"))
-        .map((id) => id.replace(/^local-/, ""));
+      const localCleanIds = idsToDelete.map((id) => {
+        const match = workshopRegistrations.find((r) => r.id === id);
+        return match?.registration_id || id.replace(/^local-/, "");
+      }).filter(Boolean);
       if (localCleanIds.length > 0) {
         try {
           await supabase.from("registrations").delete().in("registration_id", localCleanIds);
@@ -2300,7 +2330,7 @@ function WorkshopAdminPage() {
                             <td className="p-3 text-right">
                               <button
                                 type="button"
-                                onClick={() => deleteOneRegistration(r.id)}
+                                onClick={() => deleteOneRegistration(r.id, r.registration_id)}
                                 className="text-rose-500 hover:text-rose-700 p-1 rounded transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
