@@ -9,35 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ItAdminRouteImport } from './routes/it-admin'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as RegisterIndexRouteImport } from './routes/register.index'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ItAdminRouteImport } from './routes/it-admin'
 import { Route as WorkshopSlugIndexRouteImport } from './routes/$workshopSlug.index'
-import { Route as RegisterSuccessRouteImport } from './routes/register.success'
-import { Route as QuizExamIdRouteImport } from './routes/quiz.$examId'
-import { Route as FeedbackFormIdRouteImport } from './routes/feedback.$formId'
-import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
-import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as WorkshopSlugAdminRouteImport } from './routes/$workshopSlug.admin'
-import { Route as AdminQuizResponsesRouteImport } from './routes/admin.quiz.responses'
-import { Route as AdminQuizQuestionsRouteImport } from './routes/admin.quiz.questions'
-import { Route as AdminFeedbackResponsesRouteImport } from './routes/admin.feedback.responses'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
+import { Route as FeedbackFormIdRouteImport } from './routes/feedback.$formId'
+import { Route as QuizExamIdRouteImport } from './routes/quiz.$examId'
+import { Route as RegisterIndexRouteImport } from './routes/register.index'
+import { Route as RegisterSuccessRouteImport } from './routes/register.success'
 import { Route as AdminFeedbackQuestionsRouteImport } from './routes/admin.feedback.questions'
+import { Route as AdminFeedbackResponsesRouteImport } from './routes/admin.feedback.responses'
+import { Route as AdminQuizQuestionsRouteImport } from './routes/admin.quiz.questions'
+import { Route as AdminQuizResponsesRouteImport } from './routes/admin.quiz.responses'
 import { Route as AdminFeedbackViewFormIdRouteImport } from './routes/admin.feedback.view.$formId'
 
-const ItAdminRoute = ItAdminRouteImport.update({
-  id: '/it-admin',
-  path: '/it-admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -45,14 +40,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RegisterIndexRoute = RegisterIndexRouteImport.update({
-  id: '/register/',
-  path: '/register/',
+const ItAdminRoute = ItAdminRouteImport.update({
+  id: '/it-admin',
+  path: '/it-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkshopSlugIndexRoute = WorkshopSlugIndexRouteImport.update({
+  id: '/$workshopSlug/',
+  path: '/$workshopSlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkshopSlugAdminRoute = WorkshopSlugAdminRouteImport.update({
+  id: '/$workshopSlug/admin',
+  path: '/$workshopSlug/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -60,34 +65,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const WorkshopSlugIndexRoute = WorkshopSlugIndexRouteImport.update({
-  id: '/$workshopSlug/',
-  path: '/$workshopSlug/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterSuccessRoute = RegisterSuccessRouteImport.update({
-  id: '/register/success',
-  path: '/register/success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QuizExamIdRoute = QuizExamIdRouteImport.update({
-  id: '/quiz/$examId',
-  path: '/quiz/$examId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedbackFormIdRoute = FeedbackFormIdRouteImport.update({
-  id: '/feedback/$formId',
-  path: '/feedback/$formId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminWorkshopRoute = AdminWorkshopRouteImport.update({
-  id: '/workshop',
-  path: '/workshop',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRegistrationsRoute = AdminRegistrationsRouteImport.update({
@@ -95,24 +75,39 @@ const AdminRegistrationsRoute = AdminRegistrationsRouteImport.update({
   path: '/registrations',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
-const WorkshopSlugAdminRoute = WorkshopSlugAdminRouteImport.update({
-  id: '/$workshopSlug/admin',
-  path: '/$workshopSlug/admin',
+const AdminWorkshopRoute = AdminWorkshopRouteImport.update({
+  id: '/workshop',
+  path: '/workshop',
+  getParentRoute: () => AdminRoute,
+} as any)
+const FeedbackFormIdRoute = FeedbackFormIdRouteImport.update({
+  id: '/feedback/$formId',
+  path: '/feedback/$formId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminQuizResponsesRoute = AdminQuizResponsesRouteImport.update({
-  id: '/quiz/responses',
-  path: '/quiz/responses',
-  getParentRoute: () => AdminRoute,
+const QuizExamIdRoute = QuizExamIdRouteImport.update({
+  id: '/quiz/$examId',
+  path: '/quiz/$examId',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminQuizQuestionsRoute = AdminQuizQuestionsRouteImport.update({
-  id: '/quiz/questions',
-  path: '/quiz/questions',
+const RegisterIndexRoute = RegisterIndexRouteImport.update({
+  id: '/register/',
+  path: '/register/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterSuccessRoute = RegisterSuccessRouteImport.update({
+  id: '/register/success',
+  path: '/register/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFeedbackQuestionsRoute = AdminFeedbackQuestionsRouteImport.update({
+  id: '/feedback/questions',
+  path: '/feedback/questions',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminFeedbackResponsesRoute = AdminFeedbackResponsesRouteImport.update({
@@ -120,9 +115,14 @@ const AdminFeedbackResponsesRoute = AdminFeedbackResponsesRouteImport.update({
   path: '/feedback/responses',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminFeedbackQuestionsRoute = AdminFeedbackQuestionsRouteImport.update({
-  id: '/feedback/questions',
-  path: '/feedback/questions',
+const AdminQuizQuestionsRoute = AdminQuizQuestionsRouteImport.update({
+  id: '/quiz/questions',
+  path: '/quiz/questions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQuizResponsesRoute = AdminQuizResponsesRouteImport.update({
+  id: '/quiz/responses',
+  path: '/quiz/responses',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminFeedbackViewFormIdRoute = AdminFeedbackViewFormIdRouteImport.update({
@@ -280,18 +280,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/it-admin': {
-      id: '/it-admin'
-      path: '/it-admin'
-      fullPath: '/it-admin'
-      preLoaderRoute: typeof ItAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -301,18 +294,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/register/': {
-      id: '/register/'
-      path: '/register'
-      fullPath: '/register/'
-      preLoaderRoute: typeof RegisterIndexRouteImport
+    '/it-admin': {
+      id: '/it-admin'
+      path: '/it-admin'
+      fullPath: '/it-admin'
+      preLoaderRoute: typeof ItAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$workshopSlug/': {
+      id: '/$workshopSlug/'
+      path: '/$workshopSlug'
+      fullPath: '/$workshopSlug/'
+      preLoaderRoute: typeof WorkshopSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$workshopSlug/admin': {
+      id: '/$workshopSlug/admin'
+      path: '/$workshopSlug/admin'
+      fullPath: '/$workshopSlug/admin'
+      preLoaderRoute: typeof WorkshopSlugAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -322,46 +329,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/$workshopSlug/': {
-      id: '/$workshopSlug/'
-      path: '/$workshopSlug'
-      fullPath: '/$workshopSlug/'
-      preLoaderRoute: typeof WorkshopSlugIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register/success': {
-      id: '/register/success'
-      path: '/register/success'
-      fullPath: '/register/success'
-      preLoaderRoute: typeof RegisterSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/quiz/$examId': {
-      id: '/quiz/$examId'
-      path: '/quiz/$examId'
-      fullPath: '/quiz/$examId'
-      preLoaderRoute: typeof QuizExamIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feedback/$formId': {
-      id: '/feedback/$formId'
-      path: '/feedback/$formId'
-      fullPath: '/feedback/$formId'
-      preLoaderRoute: typeof FeedbackFormIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/workshop': {
-      id: '/admin/workshop'
-      path: '/workshop'
-      fullPath: '/admin/workshop'
-      preLoaderRoute: typeof AdminWorkshopRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/registrations': {
@@ -371,32 +343,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRegistrationsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/analytics': {
-      id: '/admin/analytics'
-      path: '/analytics'
-      fullPath: '/admin/analytics'
-      preLoaderRoute: typeof AdminAnalyticsRouteImport
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/$workshopSlug/admin': {
-      id: '/$workshopSlug/admin'
-      path: '/$workshopSlug/admin'
-      fullPath: '/$workshopSlug/admin'
-      preLoaderRoute: typeof WorkshopSlugAdminRouteImport
+    '/admin/workshop': {
+      id: '/admin/workshop'
+      path: '/workshop'
+      fullPath: '/admin/workshop'
+      preLoaderRoute: typeof AdminWorkshopRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/feedback/$formId': {
+      id: '/feedback/$formId'
+      path: '/feedback/$formId'
+      fullPath: '/feedback/$formId'
+      preLoaderRoute: typeof FeedbackFormIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/quiz/responses': {
-      id: '/admin/quiz/responses'
-      path: '/quiz/responses'
-      fullPath: '/admin/quiz/responses'
-      preLoaderRoute: typeof AdminQuizResponsesRouteImport
-      parentRoute: typeof AdminRoute
+    '/quiz/$examId': {
+      id: '/quiz/$examId'
+      path: '/quiz/$examId'
+      fullPath: '/quiz/$examId'
+      preLoaderRoute: typeof QuizExamIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/quiz/questions': {
-      id: '/admin/quiz/questions'
-      path: '/quiz/questions'
-      fullPath: '/admin/quiz/questions'
-      preLoaderRoute: typeof AdminQuizQuestionsRouteImport
+    '/register/': {
+      id: '/register/'
+      path: '/register'
+      fullPath: '/register/'
+      preLoaderRoute: typeof RegisterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register/success': {
+      id: '/register/success'
+      path: '/register/success'
+      fullPath: '/register/success'
+      preLoaderRoute: typeof RegisterSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/feedback/questions': {
+      id: '/admin/feedback/questions'
+      path: '/feedback/questions'
+      fullPath: '/admin/feedback/questions'
+      preLoaderRoute: typeof AdminFeedbackQuestionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/feedback/responses': {
@@ -406,11 +399,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFeedbackResponsesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/feedback/questions': {
-      id: '/admin/feedback/questions'
-      path: '/feedback/questions'
-      fullPath: '/admin/feedback/questions'
-      preLoaderRoute: typeof AdminFeedbackQuestionsRouteImport
+    '/admin/quiz/questions': {
+      id: '/admin/quiz/questions'
+      path: '/quiz/questions'
+      fullPath: '/admin/quiz/questions'
+      preLoaderRoute: typeof AdminQuizQuestionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/quiz/responses': {
+      id: '/admin/quiz/responses'
+      path: '/quiz/responses'
+      fullPath: '/admin/quiz/responses'
+      preLoaderRoute: typeof AdminQuizResponsesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/feedback/view/$formId': {
