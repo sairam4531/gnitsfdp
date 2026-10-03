@@ -225,6 +225,46 @@ export function saveLocalWorkshopPayment(slug: string, payment: WorkshopPaymentI
   }
 }
 
+export async function uploadFileOrConvertToBase64(
+  file: File,
+  preferredBuckets: string[] = ["payment-screenshots", "website-assets"]
+): Promise<string> {
+  const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const path = `asset-${Date.now()}-${cleanName}`;
+
+  // Try available Supabase storage buckets
+  for (const bucket of preferredBuckets) {
+    try {
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { contentType: file.type, upsert: true });
+
+      if (!error) {
+        const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+        if (data?.publicUrl) {
+          return data.publicUrl;
+        }
+      }
+    } catch {
+      // Continue to next bucket or fallback to base64
+    }
+  }
+
+  // Resilient fallback: read as Base64 data URL (works 100% reliably even if buckets are missing)
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Failed to process image file"));
+      }
+    };
+    reader.onerror = () => reject(new Error("Failed to read image file"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function getLocalWorkshopCredentials(): Record<string, { username?: string; password?: string }> {
   try {
     return JSON.parse(localStorage.getItem("gnits_workshop_credentials") || "{}");

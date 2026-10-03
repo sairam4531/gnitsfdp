@@ -35,6 +35,7 @@ import {
   markWorkshopDeleted,
   saveLocalCustomWorkshop,
   saveLocalWorkshopPayment,
+  uploadFileOrConvertToBase64,
   Workshop,
   Coordinator,
 } from "@/lib/queries";
@@ -142,15 +143,11 @@ function WorkshopPage() {
     else setUploadingWorkshopQR(true);
 
     try {
-      const bucket = type === "banner" ? "website-assets" : "payment-screenshots";
-      const path = `workshop-${type}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: file.type, upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      const url = await uploadFileOrConvertToBase64(file, ["payment-screenshots", "website-assets"]);
       if (type === "banner") {
-        setEditingWorkshop((prev) => ({ ...prev, hero_banner_url: data.publicUrl }));
+        setEditingWorkshop((prev) => ({ ...prev, hero_banner_url: url }));
       } else {
-        setEditingWorkshop((prev) => ({ ...prev, qr_code_url: data.publicUrl }));
+        setEditingWorkshop((prev) => ({ ...prev, qr_code_url: url }));
       }
       toast.success("Asset uploaded successfully!");
     } catch (err: any) {
@@ -344,15 +341,15 @@ function WorkshopPage() {
   // --- Website details actions ---
   async function uploadAsset(file: File, field: "hero_banner_url" | "brochure_url") {
     setUploadingAsset(field);
-    const path = `${field}-${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage
-      .from("website-assets")
-      .upload(path, file, { contentType: file.type, upsert: true });
-    setUploadingAsset(null);
-    if (error) return toast.error(error.message);
-    const { data } = supabase.storage.from("website-assets").getPublicUrl(path);
-    up(field, data.publicUrl);
-    toast.success("Uploaded. Save Changes to persist.");
+    try {
+      const url = await uploadFileOrConvertToBase64(file, ["website-assets", "payment-screenshots"]);
+      up(field, url);
+      toast.success("Uploaded. Save Changes to persist.");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setUploadingAsset(null);
+    }
   }
 
   async function saveDetails() {
@@ -395,20 +392,15 @@ function WorkshopPage() {
   // --- Payment settings actions ---
   async function uploadQR(file: File) {
     setUploadingQR(true);
-    const ext = file.name.split(".").pop();
-    const path = `qr-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("qr-codes")
-      .upload(path, file, { contentType: file.type, upsert: true });
-    if (error) {
-      toast.error(error.message);
+    try {
+      const url = await uploadFileOrConvertToBase64(file, ["payment-screenshots", "website-assets"]);
+      setQrUrl(url);
+      toast.success("QR uploaded. Click Save Payment to persist.");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
       setUploadingQR(false);
-      return;
     }
-    const { data } = supabase.storage.from("qr-codes").getPublicUrl(path);
-    setQrUrl(data.publicUrl);
-    setUploadingQR(false);
-    toast.success("QR uploaded. Click Save Payment to persist.");
   }
 
   async function savePayment() {
@@ -435,16 +427,12 @@ function WorkshopPage() {
 
   // --- Speakers actions ---
   async function uploadSpeakerPhoto(file: File): Promise<string | null> {
-    const path = `${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage
-      .from("speaker-images")
-      .upload(path, file, { contentType: file.type, upsert: true });
-    if (error) {
-      toast.error(error.message);
+    try {
+      return await uploadFileOrConvertToBase64(file, ["website-assets", "payment-screenshots"]);
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
       return null;
     }
-    const { data } = supabase.storage.from("speaker-images").getPublicUrl(path);
-    return data.publicUrl;
   }
 
   async function saveSpeaker() {

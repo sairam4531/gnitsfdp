@@ -8,6 +8,7 @@ import {
   saveLocalWorkshopCredentials,
   saveLocalCustomWorkshop,
   saveLocalWorkshopPayment,
+  uploadFileOrConvertToBase64,
   isRegistrationForWorkshop,
   Workshop,
   Coordinator,
@@ -560,12 +561,8 @@ function WorkshopAdminPage() {
     if (field === "hero_banner_url") setUploadingBanner(true);
     else setUploadingBrochure(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `workshops/${ws?.slug}-${field}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("website-assets").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("website-assets").getPublicUrl(path);
-      setDetailsForm((prev) => ({ ...prev, [field]: data.publicUrl }));
+      const url = await uploadFileOrConvertToBase64(file, ["website-assets", "payment-screenshots"]);
+      setDetailsForm((prev) => ({ ...prev, [field]: url }));
       toast.success(`${field === "hero_banner_url" ? "Hero Banner" : "Brochure"} uploaded!`);
     } catch (err: any) {
       toast.error(err?.message || "Upload failed");
@@ -640,13 +637,9 @@ function WorkshopAdminPage() {
   async function uploadQR(file: File) {
     setUploadingQR(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `qr-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("receipts").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("receipts").getPublicUrl(path);
-      setQrUrl(data.publicUrl);
-      toast.success("Payment QR uploaded!");
+      const url = await uploadFileOrConvertToBase64(file, ["payment-screenshots", "website-assets"]);
+      setQrUrl(url);
+      toast.success("Payment QR uploaded! Remember to click Save Payment Settings.");
     } catch (err: any) {
       toast.error(err?.message || "Upload failed");
     } finally {
@@ -700,11 +693,8 @@ function WorkshopAdminPage() {
   async function uploadSpeakerPhoto(file: File) {
     setUploadingSpeakerPhoto(true);
     try {
-      const path = `speakers/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error } = await supabase.storage.from("website-assets").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("website-assets").getPublicUrl(path);
-      setEditingSpeaker((prev) => ({ ...prev, photo_url: data.publicUrl }));
+      const url = await uploadFileOrConvertToBase64(file, ["website-assets", "payment-screenshots"]);
+      setEditingSpeaker((prev) => ({ ...prev, photo_url: url }));
       toast.success("Photo uploaded!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to upload photo.");

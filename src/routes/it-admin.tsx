@@ -27,6 +27,7 @@ import {
   saveLocalWorkshopCredentials,
   markWorkshopDeleted,
   saveLocalCustomWorkshop,
+  uploadFileOrConvertToBase64,
   Workshop,
 } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
@@ -316,18 +317,14 @@ function ITAdminPage() {
   }
 
   async function uploadAsset(file: File, type: "banner" | "qr") {
-    const ext = file.name.split(".").pop();
-    const path = `workshops/${Date.now()}-${type}.${ext}`;
     if (type === "banner") setUploadingBanner(true);
     else setUploadingQR(true);
     try {
-      const { error: upErr } = await supabase.storage.from("receipts").upload(path, file);
-      if (upErr) throw upErr;
-      const { data } = supabase.storage.from("receipts").getPublicUrl(path);
+      const url = await uploadFileOrConvertToBase64(file, ["payment-screenshots", "website-assets"]);
       if (type === "banner") {
-        setEditingWs((p) => ({ ...p, hero_banner_url: data.publicUrl }));
+        setEditingWs((p) => ({ ...p, hero_banner_url: url }));
       } else {
-        setEditingWs((p) => ({ ...p, qr_code_url: data.publicUrl }));
+        setEditingWs((p) => ({ ...p, qr_code_url: url }));
       }
       toast.success(`${type === "banner" ? "Hero Banner" : "QR Code"} uploaded!`);
     } catch (err: any) {
