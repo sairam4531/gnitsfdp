@@ -32,6 +32,7 @@ const nav = [
   { to: "/admin/quiz/responses", label: "Quiz Responses", icon: ListChecks },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/reports", label: "Reports", icon: FileText },
+  { to: "/admin/diagnose", label: "Screenshot Diagnosis", icon: ShieldCheck },
 ];
 
 export function AdminShell() {
