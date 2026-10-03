@@ -224,6 +224,8 @@ function WorkshopAdminPage() {
   // ----------------------------------------------------
   const [feedbackDateFilter, setFeedbackDateFilter] = useState("");
   const [feedbackFormFilter, setFeedbackFormFilter] = useState<string>("all");
+  const [selectedFeedbackResponses, setSelectedFeedbackResponses] = useState<Set<string>>(new Set());
+  const [deletingFeedbackResponses, setDeletingFeedbackResponses] = useState(false);
 
   // Multi-Workshop & Detail Management States (from previous request)
   const [open, setOpen] = useState(true);
@@ -954,6 +956,70 @@ function WorkshopAdminPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, wsSheet, "Feedback Responses");
     XLSX.writeFile(wb, `feedback-responses-${Date.now()}.xlsx`);
+  }
+
+  // --- Feedback Responses Deletion Handlers ---
+  async function deleteOneFeedbackResponse(id: string) {
+    if (!confirm("Are you sure you want to delete this feedback response?")) return;
+    try {
+      const { error } = await feedbackDb.from("feedback_responses").delete().eq("id", id);
+      if (error) throw error;
+      setSelectedFeedbackResponses((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      toast.success("Feedback response deleted.");
+      qc.invalidateQueries({ queryKey: ["feedback_responses"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete feedback response.");
+    }
+  }
+
+  async function handleBulkDeleteFeedbackResponses() {
+    if (selectedFeedbackResponses.size === 0) return;
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedFeedbackResponses.size} selected feedback response(s)?`
+      )
+    )
+      return;
+    setDeletingFeedbackResponses(true);
+    try {
+      const ids = Array.from(selectedFeedbackResponses);
+      const { error } = await feedbackDb
+        .from("feedback_responses")
+        .delete()
+        .in("id", ids);
+      if (error) throw error;
+      toast.success(`${ids.length} feedback response(s) deleted.`);
+      setSelectedFeedbackResponses(new Set());
+      qc.invalidateQueries({ queryKey: ["feedback_responses"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to bulk delete feedback responses.");
+    } finally {
+      setDeletingFeedbackResponses(false);
+    }
+  }
+
+  function toggleSelectAllFeedbackResponses() {
+    if (
+      filteredFeedbackResponses.length > 0 &&
+      selectedFeedbackResponses.size === filteredFeedbackResponses.length
+    ) {
+      setSelectedFeedbackResponses(new Set());
+    } else {
+      setSelectedFeedbackResponses(new Set(filteredFeedbackResponses.map((r) => r.id)));
+    }
+  }
+
+  function toggleSelectFeedbackResponse(id: string) {
+    setSelectedFeedbackResponses((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   // --- Registrations Export Handlers (Screenshot 1) ---
@@ -2351,12 +2417,29 @@ function WorkshopAdminPage() {
                     Filter, view, and export feedback responses.
                   </p>
                 </div>
-                <Button
-                  onClick={exportFeedbackExcel}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
-                >
-                  <Download className="mr-2 h-4 w-4" /> Export Excel
-                </Button>
+                <div className="flex items-center gap-2">
+                  {selectedFeedbackResponses.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      onClick={handleBulkDeleteFeedbackResponses}
+                      disabled={deletingFeedbackResponses}
+                      className="font-bold shadow-sm"
+                    >
+                      {deletingFeedbackResponses ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-1.5 h-4 w-4" />
+                      )}
+                      Delete Selected ({selectedFeedbackResponses.size})
+                    </Button>
+                  )}
+                  <Button
+                    onClick={exportFeedbackExcel}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Export Excel
+                  </Button>
+                </div>
               </div>
 
               {/* Exact Filter Bar from Screenshot 3 */}
@@ -2418,6 +2501,16 @@ function WorkshopAdminPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-muted/40 border-b font-bold text-muted-foreground">
                       <tr>
+                        <th className="p-3 w-10 text-center">
+                          <Checkbox
+                            checked={
+                              filteredFeedbackResponses.length > 0 &&
+                              selectedFeedbackResponses.size === filteredFeedbackResponses.length
+                            }
+                            onCheckedChange={toggleSelectAllFeedbackResponses}
+                            aria-label="Select all feedback responses"
+                          />
+                        </th>
                         <th className="p-3">S.No</th>
                         <th className="p-3">Student Name</th>
                         <th className="p-3">Roll Number</th>
@@ -2430,13 +2523,14 @@ function WorkshopAdminPage() {
                             {idx + 1}. {q}
                           </th>
                         ))}
+                        <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {filteredFeedbackResponses.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7 + Math.max(1, uniqueFeedbackQuestions.length)}
+                            colSpan={9 + Math.max(1, uniqueFeedbackQuestions.length)}
                             className="p-8 text-center text-muted-foreground"
                           >
                             No feedback responses found for the selected criteria.
@@ -2447,8 +2541,21 @@ function WorkshopAdminPage() {
                           const answersMap = new Map(
                             (r.answers_json ?? []).map((a) => [a.question_text, a.answer]),
                           );
+                          const isSelected = selectedFeedbackResponses.has(r.id);
                           return (
-                            <tr key={r.id} className="hover:bg-muted/30 transition-colors">
+                            <tr
+                              key={r.id}
+                              className={`hover:bg-muted/30 transition-colors ${
+                                isSelected ? "bg-purple-50/50 dark:bg-purple-950/20" : ""
+                              }`}
+                            >
+                              <td className="p-3 text-center">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSelectFeedbackResponse(r.id)}
+                                  aria-label={`Select feedback response from ${r.participant_name}`}
+                                />
+                              </td>
                               <td className="p-3 font-mono text-muted-foreground">{i + 1}</td>
                               <td className="p-3 font-semibold text-foreground">
                                 {r.participant_name}
@@ -2465,6 +2572,17 @@ function WorkshopAdminPage() {
                                   {answersMap.get(q) || "—"}
                                 </td>
                               ))}
+                              <td className="p-3 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteOneFeedbackResponse(r.id)}
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  title="Delete feedback response"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
                             </tr>
                           );
                         })

@@ -41,6 +41,7 @@ import {
 import { getOutcomeIcon } from "@/components/OutcomeIcons";
 import heroBg from "@/assets/hero-bg.png";
 import heroVideo from "@/assets/second_AI_Powered_Humanoid.mp4";
+import webDevVideo from "@/assets/web_development_15s_video.mp4";
 
 export const Route = createFileRoute("/$workshopSlug/")({
   head: () => ({
@@ -377,6 +378,8 @@ function WorkshopUserPage() {
   const content = getWorkshopContent(ws);
   const remainingSeats = Math.max(0, ws.seat_limit - regCount);
   const feedbackForm = enabledFeedback.find((f) => isFeedbackFormForWorkshop(f, ws));
+  const isWebDev = ws.slug.toLowerCase() === "web-development" || ws.slug.toLowerCase().includes("web");
+  const activeVideo = isWebDev ? webDevVideo : heroVideo;
 
   return (
     <div className="min-h-screen bg-background">
@@ -386,6 +389,7 @@ function WorkshopUserPage() {
       <section className="relative overflow-hidden bg-slate-950">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-navy/90 to-purple-950/80" />
         <video
+          key={activeVideo}
           autoPlay
           loop
           muted
@@ -393,7 +397,7 @@ function WorkshopUserPage() {
           poster={ws.hero_banner_url || heroBg}
           className="absolute inset-0 h-full w-full object-cover opacity-40 filter contrast-125 brightness-90 pointer-events-none"
         >
-          <source src={heroVideo} type="video/mp4" />
+          <source src={activeVideo} type="video/mp4" />
           <img
             src={ws.hero_banner_url || heroBg}
             alt=""
