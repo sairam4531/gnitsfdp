@@ -34,6 +34,7 @@ import {
   saveLocalWorkshopCredentials,
   markWorkshopDeleted,
   saveLocalCustomWorkshop,
+  saveLocalWorkshopPayment,
   Workshop,
   Coordinator,
 } from "@/lib/queries";
@@ -206,6 +207,12 @@ function WorkshopPage() {
           ...payload,
           id: tempId,
         });
+        saveLocalWorkshopPayment(cleanSlug, {
+          upi_id: payload.upi_id,
+          account_name: payload.account_name,
+          qr_code_url: payload.qr_code_url,
+          registration_fee: payload.registration_fee,
+        });
 
         try {
           const { error } = await supabase.from("workshops" as never).insert(payload as never);
@@ -229,6 +236,12 @@ function WorkshopPage() {
         saveLocalCustomWorkshop({
           ...editingWorkshop,
           ...payload,
+        });
+        saveLocalWorkshopPayment(cleanSlug, {
+          upi_id: payload.upi_id,
+          account_name: payload.account_name,
+          qr_code_url: payload.qr_code_url,
+          registration_fee: payload.registration_fee,
         });
 
         try {

@@ -22,6 +22,8 @@ import { usePaymentSettings, useWebsiteSettings, useWorkshops, Workshop, saveLoc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
+  AlertCircle,
+  Info,
   Loader2,
   IndianRupee,
   Upload,
@@ -154,14 +156,19 @@ function RegisterPage() {
   });
 
   const currentWorkshop: Workshop | undefined =
-    workshops.find((w) => w.slug === selectedSlug || w.id === selectedSlug) || workshops[0];
+    workshops.find((w) => w.slug.toLowerCase() === selectedSlug?.toLowerCase() || w.id === selectedSlug) ||
+    workshops[0];
 
-  const fee = currentWorkshop?.registration_fee ?? (payment?.internal_fee ?? 250);
+  const fee = currentWorkshop?.registration_fee ?? 250;
   const open = currentWorkshop?.registration_open ?? (settings?.registration_open ?? true);
-  const upiId = currentWorkshop?.upi_id || payment?.upi_id;
-  const accountName = currentWorkshop?.account_name || payment?.account_name;
-  const qrCodeUrl = currentWorkshop?.qr_code_url || payment?.qr_code_url;
+
+  // STRICT PER-WORKSHOP ISOLATION: Never fall back to another workshop's UPI or QR code!
+  const upiId = (currentWorkshop?.upi_id || "").trim() || null;
+  const accountName = (currentWorkshop?.account_name || "").trim() || null;
+  const qrCodeUrl = (currentWorkshop?.qr_code_url || "").trim() || null;
   const bannerUrl = currentWorkshop?.hero_banner_url || settings?.hero_banner_url || heroBg;
+
+  const hasPaymentDetails = Boolean(upiId || qrCodeUrl);
 
   async function checkDuplicate(rollNumber: string, workshopIdentifier: string) {
     try {
@@ -258,6 +265,11 @@ function RegisterPage() {
 
     if (!currentWorkshop) {
       toast.error("Please select a workshop.");
+      return;
+    }
+
+    if (!hasPaymentDetails) {
+      toast.error("Payment details have not been configured for this workshop yet. Please contact the coordinator.");
       return;
     }
 
@@ -667,125 +679,182 @@ function RegisterPage() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-elegant">
-                <CardHeader>
-                  <CardTitle>Payment Details</CardTitle>
-                  <CardDescription>
-                    Scan & pay using the QR or UPI ID below, then enter your UTR and upload screenshot.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4">
-                      {qrCodeUrl ? (
-                        <img
-                          src={qrCodeUrl}
-                          alt="QR Code"
-                          className="h-40 w-40 object-contain"
-                        />
-                      ) : (
-                        <div className="text-center text-muted-foreground">
-                          <QrCode className="mx-auto h-10 w-10" />
-                          <div className="mt-2 text-xs">QR not configured</div>
-                        </div>
-                      )}
+              {!hasPaymentDetails ? (
+                <Card className="border-destructive/40 bg-destructive/5 shadow-elegant animate-fade-in">
+                  <CardHeader className="text-center pb-3">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive mb-3">
+                      <AlertCircle className="h-7 w-7" />
                     </div>
-                    <div className="sm:col-span-2 space-y-3">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">UPI ID</Label>
-                        <div className="font-mono font-semibold">{upiId || "—"}</div>
+                    <CardTitle className="text-xl font-bold text-destructive">
+                      Payment Details Not Configured
+                    </CardTitle>
+                    <CardDescription className="text-sm max-w-lg mx-auto mt-1.5 leading-relaxed text-foreground/80">
+                      The workshop administrator has not yet added payment details (UPI ID &amp; QR Code) for{" "}
+                      <strong className="text-foreground">&quot;{currentWorkshop?.title}&quot;</strong>.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-1">
+                    <div className="rounded-xl border border-destructive/20 bg-background/90 p-4 max-w-lg mx-auto text-xs space-y-2.5">
+                      <div className="font-bold text-foreground flex items-center gap-1.5 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" /> Registration Payment Blocked
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Account Name</Label>
-                        <div className="font-semibold">{accountName || "—"}</div>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Event Name</Label>
-                        <div className="font-semibold text-amber-500 text-xs">
-                          {currentWorkshop?.title}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Field
-                    label="UTR / Transaction Number"
-                    error={form.formState.errors.utr_number?.message}
-                  >
-                    <Input
-                      {...form.register("utr_number")}
-                      placeholder="Minimum 8 characters"
-                      className="uppercase placeholder:normal-case font-semibold tracking-wide"
-                      onChange={(e) => {
-                        form.setValue("utr_number", e.target.value.toUpperCase(), {
-                          shouldValidate: true,
-                        });
-                      }}
-                    />
-                  </Field>
-
-                  <div>
-                    <Label>
-                      Payment Screenshot <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="mt-1 rounded-lg border border-dashed p-4 text-center">
-                      <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,application/pdf"
-                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                        className="mt-2 block w-full text-sm mx-auto max-w-xs"
-                      />
-                      {file && (
-                        <div className="mt-2 text-xs text-muted-foreground font-semibold">
-                          {file.name} ({(file.size / 1024).toFixed(0)} KB)
-                        </div>
-                      )}
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        JPG, JPEG, PNG, PDF · max 10 MB
+                      <p className="text-muted-foreground leading-relaxed">
+                        Online fee submission for this workshop is currently unavailable. Registrations cannot be completed without verified payment instructions.
                       </p>
+                      <div className="pt-2 border-t text-[11px] text-muted-foreground space-y-1.5">
+                        <p>
+                          • If you are a student, please contact the <strong className="text-foreground">{currentWorkshop?.department || "GNITS"} Department</strong> coordinator or check back later.
+                        </p>
+                        <p>
+                          • If you are the workshop coordinator, log in to the{" "}
+                          <a
+                            href={currentWorkshop?.slug ? `/${currentWorkshop.slug}/admin` : "/admin/workshop"}
+                            className="text-amber-500 underline font-semibold"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Workshop Admin Portal
+                          </a>{" "}
+                          to configure your workshop&apos;s UPI ID and Payment QR Code in Settings &gt; Payment.
+                        </p>
+                      </div>
                     </div>
+
+                    <div className="flex justify-center pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setStep(1)}
+                        className="font-bold text-xs"
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Student Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <Card className="shadow-elegant">
+                    <CardHeader>
+                      <CardTitle>Payment Details</CardTitle>
+                      <CardDescription>
+                        Scan &amp; pay using the QR or UPI ID below, then enter your UTR and upload screenshot.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4">
+                          {qrCodeUrl ? (
+                            <img
+                              src={qrCodeUrl}
+                              alt={`${currentWorkshop?.title} QR Code`}
+                              className="h-40 w-40 object-contain rounded-md border bg-white p-1"
+                            />
+                          ) : (
+                            <div className="text-center text-muted-foreground">
+                              <QrCode className="mx-auto h-10 w-10" />
+                              <div className="mt-2 text-xs font-semibold">QR not uploaded</div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="sm:col-span-2 space-y-3">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">UPI ID</Label>
+                            <div className="font-mono font-semibold text-foreground text-sm">{upiId || "—"}</div>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Payee Account Name</Label>
+                            <div className="font-semibold text-foreground text-sm">{accountName || "—"}</div>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Workshop / Event</Label>
+                            <div className="font-semibold text-amber-500 text-xs">
+                              {currentWorkshop?.title}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Field
+                        label="UTR / Transaction Number"
+                        error={form.formState.errors.utr_number?.message}
+                      >
+                        <Input
+                          {...form.register("utr_number")}
+                          placeholder="Minimum 8 characters"
+                          className="uppercase placeholder:normal-case font-semibold tracking-wide"
+                          onChange={(e) => {
+                            form.setValue("utr_number", e.target.value.toUpperCase(), {
+                              shouldValidate: true,
+                            });
+                          }}
+                        />
+                      </Field>
+
+                      <div>
+                        <Label>
+                          Payment Screenshot <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="mt-1 rounded-lg border border-dashed p-4 text-center">
+                          <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,application/pdf"
+                            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                            className="mt-2 block w-full text-sm mx-auto max-w-xs"
+                          />
+                          {file && (
+                            <div className="mt-2 text-xs text-muted-foreground font-semibold">
+                              {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                            </div>
+                          )}
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            JPG, JPEG, PNG, PDF · max 10 MB
+                          </p>
+                        </div>
+                      </div>
+
+                      <label className="flex items-start gap-2 text-sm cursor-pointer select-none py-1">
+                        <Checkbox
+                          checked={!!form.watch("declaration")}
+                          onCheckedChange={(v) =>
+                            form.setValue("declaration", v ? true : (undefined as unknown as true), {
+                              shouldValidate: true,
+                            })
+                          }
+                        />
+                        <span className="leading-none text-muted-foreground text-xs">
+                          I hereby declare that all information provided is correct and the payment is genuine for {currentWorkshop?.title}.
+                        </span>
+                      </label>
+                      {form.formState.errors.declaration && (
+                        <p className="text-xs text-destructive">
+                          {form.formState.errors.declaration.message}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStep(1)}
+                      className="flex-1 font-bold"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-1 bg-gradient-primary text-primary-foreground font-bold shadow-elegant"
+                    >
+                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Register for {currentWorkshop?.title ? (currentWorkshop.title.length > 30 ? currentWorkshop.title.slice(0, 30) + "…" : currentWorkshop.title) : "Workshop"}
+                    </Button>
                   </div>
-
-                  <label className="flex items-start gap-2 text-sm cursor-pointer select-none py-1">
-                    <Checkbox
-                      checked={!!form.watch("declaration")}
-                      onCheckedChange={(v) =>
-                        form.setValue("declaration", v ? true : (undefined as unknown as true), {
-                          shouldValidate: true,
-                        })
-                      }
-                    />
-                    <span className="leading-none text-muted-foreground text-xs">
-                      I hereby declare that all information provided is correct and the payment is genuine for {currentWorkshop?.title}.
-                    </span>
-                  </label>
-                  {form.formState.errors.declaration && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.declaration.message}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  className="flex-1 font-bold"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 bg-gradient-primary text-primary-foreground font-bold shadow-elegant"
-                >
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Register for {currentWorkshop?.title ? (currentWorkshop.title.length > 30 ? currentWorkshop.title.slice(0, 30) + "…" : currentWorkshop.title) : "Workshop"}
-                </Button>
-              </div>
+                </>
+              )}
             </div>
           )}
         </form>

@@ -187,6 +187,44 @@ export function saveLocalWorkshopOutcomes(slug: string, outcomes: WorkshopOutcom
   }
 }
 
+export interface WorkshopPaymentInfo {
+  upi_id?: string | null;
+  account_name?: string | null;
+  qr_code_url?: string | null;
+  registration_fee?: number | null;
+}
+
+export function getLocalWorkshopPayments(): Record<string, WorkshopPaymentInfo> {
+  try {
+    return JSON.parse(localStorage.getItem("gnits_workshop_payments") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalWorkshopPayment(slug: string, payment: WorkshopPaymentInfo) {
+  try {
+    const all = getLocalWorkshopPayments();
+    all[slug.toLowerCase()] = { ...(all[slug.toLowerCase()] || {}), ...payment };
+    localStorage.setItem("gnits_workshop_payments", JSON.stringify(all));
+
+    // Also update custom workshops if present
+    const list = getLocalCustomWorkshops();
+    const idx = list.findIndex((w) => w.slug.toLowerCase() === slug.toLowerCase());
+    if (idx >= 0) {
+      if (payment.upi_id !== undefined) list[idx].upi_id = payment.upi_id;
+      if (payment.account_name !== undefined) list[idx].account_name = payment.account_name;
+      if (payment.qr_code_url !== undefined) list[idx].qr_code_url = payment.qr_code_url;
+      if (payment.registration_fee !== undefined && payment.registration_fee !== null) {
+        list[idx].registration_fee = payment.registration_fee;
+      }
+      localStorage.setItem("gnits_custom_workshops", JSON.stringify(list));
+    }
+  } catch (e) {
+    console.error("Failed to save workshop payment info:", e);
+  }
+}
+
 export function getLocalWorkshopCredentials(): Record<string, { username?: string; password?: string }> {
   try {
     return JSON.parse(localStorage.getItem("gnits_workshop_credentials") || "{}");
@@ -368,9 +406,9 @@ export function useWorkshops() {
             registration_open: true,
             hero_banner_url: null,
             brochure_url: null,
-            upi_id: paymentSettings?.upi_id || null,
-            account_name: paymentSettings?.account_name || null,
-            qr_code_url: paymentSettings?.qr_code_url || null,
+            upi_id: null,
+            account_name: null,
+            qr_code_url: null,
             sort_order: 2,
             is_featured: false,
             admin_username: localCreds["agentic-ai-cloud"]?.username || "cse_admin",
@@ -395,10 +433,21 @@ export function useWorkshops() {
       );
 
       const localOutcomes = getLocalWorkshopOutcomes();
-      return finalWorkshops.map((ws) => ({
-        ...ws,
-        outcomes: localOutcomes[ws.slug.toLowerCase()] || ws.outcomes || getDefaultOutcomesForWorkshop(ws),
-      }));
+      const localPayments = getLocalWorkshopPayments();
+      return finalWorkshops.map((ws) => {
+        const pay = localPayments[ws.slug.toLowerCase()];
+        return {
+          ...ws,
+          upi_id: pay?.upi_id !== undefined ? pay.upi_id : (ws.upi_id || null),
+          account_name: pay?.account_name !== undefined ? pay.account_name : (ws.account_name || null),
+          qr_code_url: pay?.qr_code_url !== undefined ? pay.qr_code_url : (ws.qr_code_url || null),
+          registration_fee:
+            pay?.registration_fee !== undefined && pay?.registration_fee !== null
+              ? pay.registration_fee
+              : (ws.registration_fee ?? 250),
+          outcomes: localOutcomes[ws.slug.toLowerCase()] || ws.outcomes || getDefaultOutcomesForWorkshop(ws),
+        };
+      });
     },
   });
 }

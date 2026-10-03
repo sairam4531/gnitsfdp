@@ -7,6 +7,7 @@ import {
   useSpeakers,
   saveLocalWorkshopCredentials,
   saveLocalCustomWorkshop,
+  saveLocalWorkshopPayment,
   isRegistrationForWorkshop,
   Workshop,
   Coordinator,
@@ -588,6 +589,12 @@ function WorkshopAdminPage() {
         updated_at: new Date().toISOString(),
       };
       saveLocalCustomWorkshop(updatedWs);
+      saveLocalWorkshopPayment(ws.slug, {
+        upi_id: upi,
+        account_name: acct,
+        qr_code_url: qrUrl,
+        registration_fee: fee,
+      });
 
       if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
         try {
