@@ -90,6 +90,7 @@ import {
   Layers,
   Pencil,
   RotateCcw,
+  Target,
 } from "lucide-react";
 import {
   Bar,
