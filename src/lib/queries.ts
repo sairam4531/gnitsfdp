@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 
 export interface WorkshopOutcomeItem {
   id: string;
@@ -421,9 +422,9 @@ export const WEB_DEVELOPMENT_WORKSHOP: Workshop = {
   registration_open: true,
   hero_banner_url: null,
   brochure_url: null,
-  upi_id: "thambalahari407-1@okaxis",
-  account_name: "Tamba Lahari",
-  qr_code_url: "https://qwnycqjgrgygpivoybfx.supabase.co/storage/v1/object/public/payment-qr/qr-code.png",
+  upi_id: "sai@ybl",
+  account_name: "assdwe",
+  qr_code_url: excellenceLogoUrl,
   sort_order: 3,
   is_featured: false,
   admin_username: "csd_admin",
@@ -575,35 +576,36 @@ export function useWorkshops() {
         });
       }
 
-      // Merge locally created / edited workshops
+      // Merge locally created / edited workshops safely
       for (const customWs of localCustom) {
         const index = fetchedWorkshops.findIndex((w) => w.id === customWs.id || w.slug === customWs.slug);
         if (index >= 0) {
-          // If customWs has outdated minimal placeholder title "Web Development" or generic venue, upgrade to the official web-development data
-          const isStaleWebDev =
-            customWs.slug === "web-development" &&
-            (customWs.title === "Web Development" ||
-              customWs.venue?.includes("Admin Block / Lab") ||
-              !customWs.outcomes ||
-              customWs.outcomes.length === 0);
+          const baseWs = fetchedWorkshops[index];
+          const isWebDev = customWs.slug === "web-development" || baseWs.slug === "web-development";
 
-          if (isStaleWebDev) {
-            fetchedWorkshops[index] = {
-              ...fetchedWorkshops[index],
-              ...customWs,
-              title: WEB_DEVELOPMENT_WORKSHOP.title,
-              department: WEB_DEVELOPMENT_WORKSHOP.department,
-              venue: WEB_DEVELOPMENT_WORKSHOP.venue,
-              dates: WEB_DEVELOPMENT_WORKSHOP.dates,
-              timings: WEB_DEVELOPMENT_WORKSHOP.timings,
-              description: WEB_DEVELOPMENT_WORKSHOP.description,
-              outcomes: WEB_DEVELOPMENT_WORKSHOP.outcomes,
-              registration_fee: customWs.registration_fee ?? 200,
-              seat_limit: customWs.seat_limit ?? 80,
-            };
-          } else {
-            fetchedWorkshops[index] = { ...fetchedWorkshops[index], ...customWs };
-          }
+          fetchedWorkshops[index] = {
+            ...baseWs,
+            ...customWs,
+            title: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.title : (customWs.title || baseWs.title),
+            department: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.department : (customWs.department || baseWs.department),
+            venue:
+              isWebDev && (!customWs.venue || customWs.venue.includes("Admin Block / Lab"))
+                ? WEB_DEVELOPMENT_WORKSHOP.venue
+                : (customWs.venue || baseWs.venue),
+            dates: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.dates : (customWs.dates || baseWs.dates),
+            timings: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.timings : (customWs.timings || baseWs.timings),
+            description: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.description : (customWs.description || baseWs.description),
+            outcomes:
+              isWebDev && (!customWs.outcomes || customWs.outcomes.length === 0)
+                ? WEB_DEVELOPMENT_WORKSHOP.outcomes
+                : (customWs.outcomes && customWs.outcomes.length > 0 ? customWs.outcomes : baseWs.outcomes),
+            // Never let empty/null customWs wipe out valid payment info:
+            upi_id: customWs.upi_id || baseWs.upi_id || paymentSettings?.upi_id || "sai@ybl",
+            account_name: customWs.account_name || baseWs.account_name || paymentSettings?.account_name || "assdwe",
+            qr_code_url: customWs.qr_code_url || baseWs.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl,
+            registration_fee: customWs.registration_fee ?? baseWs.registration_fee ?? 200,
+            seat_limit: customWs.seat_limit ?? baseWs.seat_limit ?? 80,
+          };
         } else {
           fetchedWorkshops.push(customWs);
         }
@@ -622,13 +624,13 @@ export function useWorkshops() {
         const hasCustomOutcomes = customOutcomeList && customOutcomeList.length > 0;
         return {
           ...ws,
-          upi_id: pay?.upi_id !== undefined ? pay.upi_id : (ws.upi_id || null),
-          account_name: pay?.account_name !== undefined ? pay.account_name : (ws.account_name || null),
-          qr_code_url: pay?.qr_code_url !== undefined ? pay.qr_code_url : (ws.qr_code_url || null),
+          upi_id: pay?.upi_id || ws.upi_id || paymentSettings?.upi_id || "sai@ybl",
+          account_name: pay?.account_name || ws.account_name || paymentSettings?.account_name || "assdwe",
+          qr_code_url: pay?.qr_code_url || ws.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl,
           registration_fee:
             pay?.registration_fee !== undefined && pay?.registration_fee !== null
               ? pay.registration_fee
-              : (ws.registration_fee ?? 200),
+              : (ws.registration_fee ?? paymentSettings?.internal_fee ?? 200),
           outcomes: hasCustomOutcomes
             ? customOutcomeList
             : ws.outcomes && ws.outcomes.length > 0

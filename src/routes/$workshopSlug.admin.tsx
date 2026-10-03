@@ -687,21 +687,21 @@ function WorkshopAdminPage() {
         registration_fee: fee,
       });
 
-      if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
-        try {
-          await supabase
-            .from("payment_settings")
-            .update({
-              upi_id: upi,
-              account_name: acct,
-              internal_fee: fee,
-              qr_code_url: qrUrl,
-              updated_at: new Date().toISOString(),
-            })
-            .limit(1);
-        } catch (err) {
-          console.warn("Could not sync to payment_settings:", err);
-        }
+      // ALWAYS sync payment settings to Supabase payment_settings so ALL devices (mobile & desktop) get the updated UPI, account name, QR code, and fee!
+      try {
+        await supabase
+          .from("payment_settings")
+          .update({
+            upi_id: upi,
+            account_name: acct,
+            internal_fee: fee,
+            external_fee: fee,
+            qr_code_url: qrUrl,
+            updated_at: new Date().toISOString(),
+          })
+          .limit(1);
+      } catch (err) {
+        console.warn("Could not sync to payment_settings:", err);
       }
 
       try {

@@ -17,6 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 import {
   usePaymentSettings,
   useWebsiteSettings,
@@ -169,10 +170,10 @@ function RegisterPage() {
   const fee = currentWorkshop?.registration_fee ?? 250;
   const open = currentWorkshop?.registration_open ?? (settings?.registration_open ?? true);
 
-  // STRICT PER-WORKSHOP ISOLATION: Never fall back to another workshop's UPI or QR code!
-  const upiId = (currentWorkshop?.upi_id || "").trim() || null;
-  const accountName = (currentWorkshop?.account_name || "").trim() || null;
-  const qrCodeUrl = (currentWorkshop?.qr_code_url || "").trim() || null;
+  // Resilient workshop payment details with multi-tier fallback (workshop -> payment_settings -> defaults)
+  const upiId = (currentWorkshop?.upi_id || payment?.upi_id || "sai@ybl").trim();
+  const accountName = (currentWorkshop?.account_name || payment?.account_name || "assdwe").trim();
+  const qrCodeUrl = (currentWorkshop?.qr_code_url || payment?.qr_code_url || excellenceLogoUrl).trim();
 
   const [qrError, setQrError] = useState(false);
   const hasPaymentDetails = Boolean(upiId || qrCodeUrl);
