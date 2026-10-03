@@ -17,6 +17,7 @@ import { Route as WorkshopSlugIndexRouteImport } from './routes/$workshopSlug.in
 import { Route as WorkshopSlugAdminRouteImport } from './routes/$workshopSlug.admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminDiagnoseRouteImport } from './routes/admin.diagnose'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminWorkshopRouteImport } from './routes/admin.workshop'
@@ -68,6 +69,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDiagnoseRoute = AdminDiagnoseRouteImport.update({
+  id: '/diagnose',
+  path: '/diagnose',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRegistrationsRoute = AdminRegistrationsRouteImport.update({
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/it-admin': typeof ItAdminRoute
   '/$workshopSlug/admin': typeof WorkshopSlugAdminRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/diagnose': typeof AdminDiagnoseRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/it-admin': typeof ItAdminRoute
   '/$workshopSlug/admin': typeof WorkshopSlugAdminRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/diagnose': typeof AdminDiagnoseRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/it-admin': typeof ItAdminRoute
   '/$workshopSlug/admin': typeof WorkshopSlugAdminRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/diagnose': typeof AdminDiagnoseRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/workshop': typeof AdminWorkshopRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/it-admin'
     | '/$workshopSlug/admin'
     | '/admin/analytics'
+    | '/admin/diagnose'
     | '/admin/registrations'
     | '/admin/reports'
     | '/admin/workshop'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/it-admin'
     | '/$workshopSlug/admin'
     | '/admin/analytics'
+    | '/admin/diagnose'
     | '/admin/registrations'
     | '/admin/reports'
     | '/admin/workshop'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/it-admin'
     | '/$workshopSlug/admin'
     | '/admin/analytics'
+    | '/admin/diagnose'
     | '/admin/registrations'
     | '/admin/reports'
     | '/admin/workshop'
@@ -334,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/diagnose': {
+      id: '/admin/diagnose'
+      path: '/diagnose'
+      fullPath: '/admin/diagnose'
+      preLoaderRoute: typeof AdminDiagnoseRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/registrations': {
@@ -425,6 +444,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminDiagnoseRoute: typeof AdminDiagnoseRoute
   AdminRegistrationsRoute: typeof AdminRegistrationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminWorkshopRoute: typeof AdminWorkshopRoute
@@ -438,6 +458,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminDiagnoseRoute: AdminDiagnoseRoute,
   AdminRegistrationsRoute: AdminRegistrationsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminWorkshopRoute: AdminWorkshopRoute,
