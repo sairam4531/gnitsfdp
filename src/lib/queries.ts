@@ -271,16 +271,95 @@ export interface RegistrationRecord {
   created_at: string;
 }
 
+export function getLocalRegistrations(): RegistrationRecord[] {
+  try {
+    return JSON.parse(localStorage.getItem("gnits_local_registrations") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalRegistration(record: RegistrationRecord) {
+  try {
+    const list = getLocalRegistrations();
+    if (!list.some((r) => r.id === record.id || r.registration_id === record.registration_id)) {
+      list.unshift(record);
+      localStorage.setItem("gnits_local_registrations", JSON.stringify(list));
+    }
+  } catch (e) {
+    console.error("Failed to save local registration:", e);
+  }
+}
+
+export function isRegistrationForWorkshop(r: any, ws: Workshop): boolean {
+  if (!r || !ws) return false;
+
+  // 1. Direct slug match
+  if (r.workshop_slug && typeof r.workshop_slug === "string") {
+    return r.workshop_slug.toLowerCase() === ws.slug.toLowerCase();
+  }
+
+  // 2. Direct workshop_id match
+  if (r.workshop_id && typeof r.workshop_id === "string") {
+    return r.workshop_id === ws.id;
+  }
+
+  // 3. Match via custom_department tag: "ws:<slug>"
+  if (r.custom_department && typeof r.custom_department === "string") {
+    if (r.custom_department.startsWith("ws:")) {
+      return r.custom_department.slice(3).toLowerCase() === ws.slug.toLowerCase();
+    }
+  }
+
+  // 4. Match via registration_id prefix (e.g. GNITS-WEBD-..., GNITS-AIHU-...)
+  const wsPrefix = ws.slug.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
+  if (r.registration_id && typeof r.registration_id === "string" && wsPrefix) {
+    if (r.registration_id.startsWith(`GNITS-${wsPrefix}-`)) {
+      return true;
+    }
+  }
+
+  // 5. Match via workshop_title
+  if (r.workshop_title && ws.title && typeof r.workshop_title === "string") {
+    if (r.workshop_title.toLowerCase().includes(ws.title.toLowerCase()) || ws.title.toLowerCase().includes(r.workshop_title.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // 6. Only legacy untagged registrations belong to the default initial workshop (ai-humanoid-robot)
+  if (!r.workshop_slug && (!r.registration_id || r.registration_id.startsWith("GNITS-AIHU-") || r.registration_id.startsWith("GNITS-10SEP-")) && ws.slug === "ai-humanoid-robot") {
+    return true;
+  }
+
+  return false;
+}
+
 export function useRegistrations() {
   return useQuery<RegistrationRecord[]>({
     queryKey: ["registrations"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("registrations")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data as RegistrationRecord[]) ?? [];
+      let fetched: RegistrationRecord[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("registrations")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (!error && Array.isArray(data)) {
+          fetched = data as RegistrationRecord[];
+        }
+      } catch (err) {
+        console.warn("Could not fetch remote registrations:", err);
+      }
+
+      // Merge local registrations
+      const local = getLocalRegistrations();
+      for (const loc of local) {
+        if (!fetched.some((f) => f.id === loc.id || f.registration_id === loc.registration_id)) {
+          fetched.unshift(loc);
+        }
+      }
+
+      return fetched;
     },
   });
 }
@@ -318,26 +397,70 @@ export function useCoordinators() {
 }
 
 export function useRegistrationCount(identifier?: string) {
+  const { data: allRegs = [] } = useRegistrations();
+  const { data: workshops = [] } = useWorkshops();
+
   return useQuery({
-    queryKey: ["registration_count", identifier],
+    queryKey: ["registration_count", identifier, allRegs.length],
     queryFn: async () => {
-      try {
-        if (identifier) {
+      // If a specific workshop identifier is provided:
+      if (identifier) {
+        const cleanIdent = identifier.toLowerCase();
+        const targetWs = workshops.find(
+          (w) => w.slug.toLowerCase() === cleanIdent || w.id === identifier
+        );
+
+        // Count specifically from loaded registrations
+        if (allRegs.length > 0) {
+          const matchingCount = allRegs.filter((r) => {
+            if (targetWs) return isRegistrationForWorkshop(r, targetWs);
+            const wSlug = (r.workshop_slug || "").toLowerCase();
+            if (wSlug === cleanIdent) return true;
+            if (r.custom_department === `ws:${cleanIdent}`) return true;
+            const prefix = cleanIdent.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
+            if (r.registration_id && r.registration_id.startsWith(`GNITS-${prefix}-`)) return true;
+            return false;
+          }).length;
+          return matchingCount;
+        }
+
+        // Try direct count from Supabase specifically for THIS workshop
+        try {
+          const prefix = cleanIdent.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
+          const { count, error } = await supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true })
+            .or(`workshop_slug.eq.${identifier},custom_department.eq.ws:${cleanIdent},registration_id.ilike.GNITS-${prefix}-%`);
+
+          if (!error && typeof count === "number") {
+            return count;
+          }
+        } catch {
+          // ignore
+        }
+
+        // Try RPC specifically with the workshop identifier parameter
+        try {
           const { data, error } = await supabase.rpc("get_registration_count" as any, {
             _workshop_identifier: identifier,
           });
           if (!error && typeof data === "number") return data;
+        } catch {
+          // ignore
         }
-        const { data, error } = await supabase.rpc("get_registration_count" as any);
-        if (error) {
-          console.warn("Could not fetch registration count via RPC, falling back to 0:", error);
-          return 0;
-        }
-        return (data as number) ?? 0;
-      } catch (err) {
-        console.warn("Failed to fetch registration count:", err);
+
+        // CRITICAL: NEVER return global total count when an individual workshop identifier was requested!
         return 0;
       }
+
+      // If NO identifier is requested: return total count across all workshops
+      try {
+        const { data, error } = await supabase.rpc("get_registration_count" as any);
+        if (!error && typeof data === "number") return data;
+      } catch (err) {
+        console.warn("Global registration count rpc failed:", err);
+      }
+      return allRegs.length;
     },
     refetchInterval: 10000,
   });

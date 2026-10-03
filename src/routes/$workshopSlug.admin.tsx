@@ -7,6 +7,7 @@ import {
   useSpeakers,
   saveLocalWorkshopCredentials,
   saveLocalCustomWorkshop,
+  isRegistrationForWorkshop,
   Workshop,
   Coordinator,
   RegistrationRecord,
@@ -274,18 +275,10 @@ function WorkshopAdminPage() {
     toast.info("Signed out of Workshop Admin.");
   }
 
-  // Registrations belonging to this workshop
+  // Registrations belonging strictly to this workshop
   const workshopRegistrations = useMemo(() => {
     if (!ws) return [];
-    return allRegistrations.filter((r: any) => {
-      return (
-        r.workshop_slug === ws.slug ||
-        r.workshop_id === ws.id ||
-        (r.workshop_title &&
-          r.workshop_title.toLowerCase().includes(ws.title.toLowerCase())) ||
-        (!r.workshop_slug && ws.is_featured)
-      );
-    });
+    return allRegistrations.filter((r: any) => isRegistrationForWorkshop(r, ws));
   }, [allRegistrations, ws]);
 
   // Filtered registrations matching filters
