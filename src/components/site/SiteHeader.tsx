@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import logoUrl from "@/assets/logo.png";
 import csiLogoUrl from "@/assets/csi-logo.png";
 import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
+import sigaiLogoUrl from "@/assets/acm-w-sigai-logo.png";
 
 export function SiteHeader({ department }: { department?: string | null }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -50,6 +51,11 @@ export function SiteHeader({ department }: { department?: string | null }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <img
+            src={sigaiLogoUrl}
+            alt="ACM-W SIGAI Logo"
+            className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
+          />
           <img
             src={csiLogoUrl}
             alt="CSI Logo"
