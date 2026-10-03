@@ -17,8 +17,16 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { SiteFooter } from "@/components/site/SiteFooter";
-import { usePaymentSettings, useWebsiteSettings, useWorkshops, Workshop, saveLocalRegistration, compressImageToBase64 } from "@/lib/queries";
+import {
+  usePaymentSettings,
+  useWebsiteSettings,
+  useWorkshops,
+  Workshop,
+  saveLocalRegistration,
+  getLocalRegistrations,
+  isRegistrationForWorkshop,
+  compressImageToBase64,
+} from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -169,37 +177,72 @@ function RegisterPage() {
   const [qrError, setQrError] = useState(false);
   const hasPaymentDetails = Boolean(upiId || qrCodeUrl);
 
-  async function checkDuplicate(rollNumber: string, workshopIdentifier: string) {
+  async function checkDuplicate(rollNumber: string, targetWorkshop?: Workshop | null) {
+    if (!rollNumber || !targetWorkshop) return false;
+    const cleanRoll = rollNumber.trim().toUpperCase();
+    if (!cleanRoll) return false;
+
+    // 1. Check local registrations (instant check for current device)
     try {
-      // 1. Try RPC with workshop parameter
-      const { data, error } = await supabase.rpc("check_duplicate_registration" as any, {
-        _roll_number: rollNumber,
-        _workshop_identifier: workshopIdentifier,
+      const localRegs = getLocalRegistrations();
+      const isLocalDup = localRegs.some((r) => {
+        const rRoll = (r.faculty_id || "").trim().toUpperCase();
+        return rRoll === cleanRoll && isRegistrationForWorkshop(r, targetWorkshop);
       });
-      if (!error && typeof data === "boolean") {
-        return data;
-      }
-    } catch {
-      // Fallback
+      if (isLocalDup) return true;
+    } catch (e) {
+      console.warn("Local duplicate check notice:", e);
     }
 
+    // 2. Check remote registrations table in Supabase
     try {
-      // 2. Direct fallback query against registrations table
-      const { data: directData } = await supabase
+      const { data: remoteRegs, error } = await supabase
         .from("registrations")
-        .select("id")
-        .eq("faculty_id", rollNumber)
-        .or(`workshop_slug.eq.${workshopIdentifier},workshop_title.ilike.%${workshopIdentifier}%`)
-        .limit(1);
+        .select("*")
+        .ilike("faculty_id", cleanRoll);
 
-      if (directData && directData.length > 0) {
-        return true;
+      if (!error && Array.isArray(remoteRegs) && remoteRegs.length > 0) {
+        const isRemoteDup = remoteRegs.some((r) => isRegistrationForWorkshop(r, targetWorkshop));
+        if (isRemoteDup) return true;
       }
-    } catch {
-      // Ignore
+    } catch (dbErr) {
+      console.warn("Remote duplicate check notice:", dbErr);
+    }
+
+    // 3. Fallback check for single workshop RPC if legacy ai-humanoid-robot
+    if (targetWorkshop.slug === "ai-humanoid-robot") {
+      try {
+        const { data: rpcDup } = await supabase.rpc("check_duplicate_registration" as any, {
+          _roll_number: cleanRoll,
+        });
+        if (rpcDup === true) return true;
+      } catch {
+        // Ignore RPC error
+      }
     }
 
     return false;
+  }
+
+  async function checkRollOnBlur() {
+    const rollVal = (form.getValues("faculty_id") || "").toUpperCase().trim();
+    if (!rollVal || rollVal.length < 5 || !currentWorkshop) return;
+    try {
+      const isDup = await checkDuplicate(rollVal, currentWorkshop);
+      if (isDup) {
+        form.setError("faculty_id", {
+          type: "manual",
+          message: `Roll Number "${rollVal}" has already registered for "${currentWorkshop.title}". Multiple registrations for the same workshop are not allowed.`,
+        });
+        toast.error(`Roll Number ${rollVal} is already registered for this workshop!`);
+      } else {
+        if (form.formState.errors.faculty_id?.type === "manual") {
+          form.clearErrors("faculty_id");
+        }
+      }
+    } catch {
+      // Ignore background check failure
+    }
   }
 
   async function handleNext() {
@@ -228,14 +271,14 @@ function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const isDuplicate = await checkDuplicate(rollVal, currentWorkshop.slug);
+      const isDuplicate = await checkDuplicate(rollVal, currentWorkshop);
 
       if (isDuplicate) {
         form.setError("faculty_id", {
           type: "manual",
-          message: `This Roll Number has already registered for "${currentWorkshop.title}"`,
+          message: `Roll Number "${rollVal}" has already registered for "${currentWorkshop.title}". Multiple registrations for the same workshop are not allowed.`,
         });
-        toast.error(`You have already registered for ${currentWorkshop.title}!`);
+        toast.error(`Roll Number ${rollVal} has already registered for ${currentWorkshop.title}!`);
         return;
       }
 
@@ -275,13 +318,13 @@ function RegisterPage() {
     setSubmitting(true);
     try {
       // Re-verify duplicate registration
-      const isDuplicate = await checkDuplicate(rollNumber, currentWorkshop.slug);
+      const isDuplicate = await checkDuplicate(rollNumber, currentWorkshop);
       if (isDuplicate) {
         form.setError("faculty_id", {
           type: "manual",
-          message: `This Roll Number has already registered for this workshop`,
+          message: `Roll Number "${rollNumber}" has already registered for "${currentWorkshop.title}". Multiple registrations for the same workshop are not allowed.`,
         });
-        toast.error(`This Roll Number is already registered for ${currentWorkshop.title}!`);
+        toast.error(`Roll Number ${rollNumber} has already registered for ${currentWorkshop.title}!`);
         setSubmitting(false);
         setStep(1);
         return;
@@ -457,6 +500,7 @@ function RegisterPage() {
               onValueChange={(val) => {
                 setSelectedSlug(val);
                 setStep(1);
+                form.clearErrors("faculty_id");
               }}
             >
               <SelectTrigger className="w-full sm:w-[280px] text-xs font-semibold bg-background">
@@ -508,7 +552,7 @@ function RegisterPage() {
               <CardHeader>
                 <CardTitle>Student Details</CardTitle>
                 <CardDescription>
-                  All fields are mandatory. You may register for multiple workshops with the same Roll Number.
+                  All fields are mandatory. A Roll Number can be registered once per workshop.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -535,6 +579,7 @@ function RegisterPage() {
                           shouldValidate: true,
                         });
                       }}
+                      onBlur={checkRollOnBlur}
                     />
                   </Field>
                 </div>
