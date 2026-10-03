@@ -49,12 +49,6 @@ function SuccessPage() {
             <p className="mt-2 text-muted-foreground">
               Thank you. Your registration has been received successfully.
             </p>
-            {id && (
-              <div className="mt-4 p-3 bg-muted/40 rounded-lg max-w-xs mx-auto border text-xs">
-                <span className="text-muted-foreground">Registration ID:</span>{" "}
-                <span className="font-mono font-bold text-foreground">{id}</span>
-              </div>
-            )}
             <Button asChild className="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold px-8">
               <Link to={`/${targetSlug}` as any}>Back to home</Link>
             </Button>
