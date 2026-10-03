@@ -22,8 +22,10 @@ function AuthPage() {
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const loginEmail = email.includes("@") ? email.trim() : `${email.trim()}@gnits.ac.in`;
-    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+    const cleanEmail = email.trim();
+    const loginEmail = cleanEmail.includes("@") ? cleanEmail.toLowerCase() : `${cleanEmail.toLowerCase()}@gnits.ac.in`;
+    const cleanPassword = password.trim();
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: cleanPassword });
     setLoading(false);
     if (error) {
       toast.error(error.message);
@@ -50,6 +52,9 @@ function AuthPage() {
               <Input
                 type="text"
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="e.g. csmcsd"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -60,6 +65,9 @@ function AuthPage() {
               <Input
                 type="password"
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

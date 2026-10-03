@@ -54,7 +54,7 @@ export const Route = createFileRoute("/register/")({
       { title: "Register for Technical Workshop — GNITS" },
       {
         name: "viewport",
-        content: "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
+        content: "width=device-width, initial-scale=1.0, maximum-scale=5.0",
       },
       {
         name: "description",
@@ -142,26 +142,20 @@ function RegisterPage() {
     }
   }, [workshops, searchParams.workshop]);
 
-  useEffect(() => {
-    let meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "viewport");
-      document.head.appendChild(meta);
-    }
-    const prevContent = meta.getAttribute("content");
-    meta.setAttribute(
-      "content",
-      "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
-    );
-    return () => {
-      if (prevContent) meta.setAttribute("content", prevContent);
-    };
-  }, []);
-
   const form = useForm<FormVals>({
     resolver: zodResolver(schema),
-    defaultValues: { declaration: undefined as unknown as true },
+    defaultValues: {
+      faculty_name: "",
+      faculty_id: "",
+      email: "",
+      phone: "",
+      department: "" as any,
+      designation: "" as any,
+      category: "" as any,
+      institute: "" as any,
+      utr_number: "",
+      declaration: undefined as unknown as true,
+    },
   });
 
   const currentWorkshop: Workshop | undefined =
@@ -372,7 +366,7 @@ function RegisterPage() {
         created_at: new Date().toISOString(),
       });
 
-      const insertPayload: any = {
+      const insertPayload: Record<string, any> = {
         faculty_name: studentName,
         faculty_id: rollNumber,
         designation: values.designation,
@@ -388,21 +382,18 @@ function RegisterPage() {
         payment_screenshot_url: screenshotUrl,
         registration_id: regId,
         payment_status: "Approved",
-        workshop_id: currentWorkshop.id.startsWith("workshop-") ? null : currentWorkshop.id,
-        workshop_slug: currentWorkshop.slug,
-        workshop_title: currentWorkshop.title,
       };
 
       try {
-        const { error } = await supabase.from("registrations").insert(insertPayload as never);
-        if (error && error.message?.includes("workshop_slug")) {
-          delete insertPayload.workshop_id;
-          delete insertPayload.workshop_slug;
-          delete insertPayload.workshop_title;
-          const retry = await supabase.from("registrations").insert(insertPayload as never);
-          if (retry.error) console.warn("Supabase registrations insert retry notice:", retry.error);
-        } else if (error) {
-          console.warn("Supabase registrations insert notice:", error);
+        let { error } = await supabase.from("registrations").insert(insertPayload as never);
+        if (error) {
+          console.warn("Supabase registrations insert notice, attempting schema fallback:", error);
+          const match = error.message?.match(/Could not find the '([^']+)' column/);
+          if (match && match[1]) {
+            delete insertPayload[match[1]];
+            const retry = await supabase.from("registrations").insert(insertPayload as never);
+            if (retry.error) console.warn("Supabase registrations retry notice:", retry.error);
+          }
         }
       } catch (dbErr) {
         console.warn("Supabase registration insert notice:", dbErr);

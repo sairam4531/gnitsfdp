@@ -49,7 +49,7 @@ export const Route = createFileRoute("/$workshopSlug/")({
       { title: "Technical Workshop — GNITS" },
       {
         name: "viewport",
-        content: "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
+        content: "width=device-width, initial-scale=1.0, maximum-scale=5.0",
       },
     ],
   }),
@@ -397,23 +397,6 @@ function WorkshopUserPage() {
     (w) => w.slug.toLowerCase() === workshopSlug.toLowerCase(),
   );
 
-  // Set desktop viewport scale for consistency
-  useEffect(() => {
-    let meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "viewport");
-      document.head.appendChild(meta);
-    }
-    const prevContent = meta.getAttribute("content");
-    meta.setAttribute(
-      "content",
-      "width=1024, initial-scale=0.38, maximum-scale=3.0, user-scalable=yes",
-    );
-    return () => {
-      if (prevContent) meta.setAttribute("content", prevContent);
-    };
-  }, []);
 
   if (isLoading) {
     return (

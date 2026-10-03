@@ -480,31 +480,9 @@ export function useWorkshops() {
       const deletedList = getLocalDeletedWorkshops();
       const localCustom = getLocalCustomWorkshops();
 
-      let fetchedWorkshops: Workshop[] = [];
-
-      try {
-        const { data, error } = await supabase
-          .from("workshops" as never)
-          .select("*")
-          .order("sort_order");
-
-        if (!error && Array.isArray(data) && data.length > 0) {
-          fetchedWorkshops = (data as unknown as Workshop[]).map((ws) => {
-            const extra = localCreds[ws.slug] || {};
-            return {
-              ...ws,
-              admin_username: ws.admin_username || extra.username || "admin",
-              admin_password: ws.admin_password || extra.password || "admin123",
-            };
-          });
-        }
-      } catch (err) {
-        console.warn("Could not query workshops table directly, using fallback defaults:", err);
-      }
-
-      if (fetchedWorkshops.length === 0) {
-        // Seamless fallback from website_settings & payment_settings
-        fetchedWorkshops = [
+      // Note: Supabase does not have a 'workshops' table in PostgREST.
+      // Dynamic workshop configuration is seamlessly backed by website_settings, payment_settings, and custom updates.
+      let fetchedWorkshops: Workshop[] = [
           {
             id: "workshop-1-ai-humanoid",
             slug: "ai-humanoid-robot",
@@ -565,7 +543,6 @@ export function useWorkshops() {
             admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
           },
         ];
-      }
 
       // Always guarantee web-development workshop exists
       if (!fetchedWorkshops.some((w) => w.slug === "web-development")) {
@@ -813,11 +790,35 @@ export function useRegistrations() {
         console.warn("Could not fetch remote registrations:", err);
       }
 
-      // Merge local registrations
+      // Merge local registrations and sync any unsaved records to Supabase
       const local = getLocalRegistrations();
       for (const loc of local) {
-        if (!fetched.some((f) => f.id === loc.id || f.registration_id === loc.registration_id)) {
+        const remoteMatch = fetched.find((f) => f.registration_id === loc.registration_id);
+        if (!remoteMatch) {
           fetched.unshift(loc);
+          // Sync to Supabase in background
+          if (loc.registration_id && loc.faculty_id) {
+            const syncPayload = {
+              faculty_name: loc.faculty_name,
+              faculty_id: loc.faculty_id,
+              designation: loc.designation,
+              department: loc.department,
+              custom_department: loc.custom_department || (loc.workshop_slug ? `ws:${loc.workshop_slug}` : null),
+              institute: loc.institute,
+              custom_institute: null,
+              email: loc.email,
+              phone: loc.phone,
+              category: loc.category,
+              registration_fee: loc.registration_fee,
+              utr_number: loc.utr_number,
+              payment_screenshot_url: loc.payment_screenshot_url,
+              registration_id: loc.registration_id,
+              payment_status: loc.payment_status || "Approved",
+            };
+            supabase.from("registrations").insert(syncPayload as never).then(({ error }) => {
+              if (error) console.warn("Local registration sync notice:", error.message);
+            });
+          }
         }
       }
 
