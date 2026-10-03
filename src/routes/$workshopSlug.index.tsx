@@ -78,6 +78,7 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
   const slug = ws.slug.toLowerCase();
   const isHumanoid = slug.includes("humanoid") || slug.includes("robot");
   const isAgentic = slug.includes("agentic") || slug.includes("cloud");
+  const isWebDev = slug.includes("web") || slug === "web-development";
 
   const customOutcomes: WorkshopOutcome[] | null =
     ws.outcomes && ws.outcomes.length > 0
@@ -232,6 +233,81 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
         },
       ],
       ctaText: `Limited seats available. Open to all engineering students of ${ws.department || "GNITS"} at GNITS.`,
+    };
+  }
+
+  if (isWebDev) {
+    return {
+      aboutTitle:
+        ws.title ||
+        "Two-Days Hands-on Workshop on “Web Development: Frontend, Backend, APIs & Deployment”",
+      tags: [
+        {
+          name: "Frontend Development",
+          color: "border-amber-400/40 bg-amber-400/10 text-amber-600 dark:text-amber-300",
+        },
+        {
+          name: "Backend Architecture",
+          color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300",
+        },
+        {
+          name: "REST APIs",
+          color: "border-indigo-400/40 bg-indigo-400/10 text-indigo-600 dark:text-indigo-300",
+        },
+        {
+          name: "Database Integration",
+          color: "border-purple-400/40 bg-purple-400/10 text-purple-600 dark:text-purple-300",
+        },
+        {
+          name: "Authentication & Security",
+          color: "border-emerald-400/40 bg-emerald-400/10 text-emerald-600 dark:text-emerald-300",
+        },
+        {
+          name: "Git & Version Control",
+          color: "border-pink-400/40 bg-pink-400/10 text-pink-600 dark:text-pink-300",
+        },
+        {
+          name: "Postman & API Testing",
+          color: "border-amber-400/40 bg-amber-400/10 text-amber-600 dark:text-amber-300",
+        },
+        {
+          name: "Cloud Deployment",
+          color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300",
+        },
+      ],
+      outcomes: customOutcomes || [
+        {
+          icon: Terminal,
+          title: "Frontend Development",
+          desc: "Build responsive and interactive web interfaces using modern frontend technologies and develop the user-facing components of web applications.",
+        },
+        {
+          icon: Cpu,
+          title: "Backend Development",
+          desc: "Develop server-side applications and implement backend functionality to support complete web application workflows.",
+        },
+        {
+          icon: Sliders,
+          title: "REST APIs & Integration",
+          desc: "Learn to create, consume, and integrate REST APIs to enable effective communication between frontend and backend systems.",
+        },
+        {
+          icon: Eye,
+          title: "Database Integration",
+          desc: "Connect web applications with databases and learn how to integrate and manage application data effectively.",
+        },
+        {
+          icon: CheckCircle2,
+          title: "Authentication & Version Control",
+          desc: "Implement authentication mechanisms and apply version control practices for organized and collaborative application development.",
+        },
+        {
+          icon: Target,
+          title: "API Testing & Deployment",
+          desc: "Perform API testing and learn application deployment techniques, culminating in the development of a complete real-world web application.",
+        },
+      ],
+      ctaText: `Limited seats available. Open to all students of ${ws.department || "CSE(DATA SCIENCE)"} at GNITS.`,
     };
   }
 

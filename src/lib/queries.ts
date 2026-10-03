@@ -120,6 +120,47 @@ export function getDefaultOutcomesForWorkshop(slugOrWs?: string | Workshop): Wor
     ];
   }
 
+  if (slug.includes("web") || slug.includes("frontend") || slug.includes("backend")) {
+    return [
+      {
+        id: "outcome-1",
+        icon: "Terminal",
+        title: "Frontend Development",
+        desc: "Build responsive and interactive web interfaces using modern frontend technologies and develop the user-facing components of web applications.",
+      },
+      {
+        id: "outcome-2",
+        icon: "Cpu",
+        title: "Backend Development",
+        desc: "Develop server-side applications and implement backend functionality to support complete web application workflows.",
+      },
+      {
+        id: "outcome-3",
+        icon: "Workflow",
+        title: "REST APIs & Integration",
+        desc: "Learn to create, consume, and integrate REST APIs to enable effective communication between frontend and backend systems.",
+      },
+      {
+        id: "outcome-4",
+        icon: "Sliders",
+        title: "Database Integration",
+        desc: "Connect web applications with databases and learn how to integrate and manage application data effectively.",
+      },
+      {
+        id: "outcome-5",
+        icon: "CheckCircle2",
+        title: "Authentication & Version Control",
+        desc: "Implement authentication mechanisms and apply version control practices for organized and collaborative application development.",
+      },
+      {
+        id: "outcome-6",
+        icon: "Target",
+        title: "API Testing & Deployment",
+        desc: "Perform API testing and learn application deployment techniques, culminating in the development of a complete real-world web application.",
+      },
+    ];
+  }
+
   // General default matching the landing page outcomes
   return [
     {
@@ -364,6 +405,69 @@ export function usePaymentSettings() {
   });
 }
 
+export const WEB_DEVELOPMENT_WORKSHOP: Workshop = {
+  id: "workshop-3-web-development",
+  slug: "web-development",
+  title: "Two-Days Hands-on Workshop on “Web Development: Frontend, Backend, APIs & Deployment”",
+  subtitle: "under GNITS CSI & ACM-W Student Chapter",
+  description:
+    "A two-days hands-on workshop designed to equip students with hands-on, industry-oriented skills in full-stack web application development. The workshop covers frontend technologies, backend development, REST APIs, database integration, authentication, version control, API testing, and application deployment, culminating in the development of a complete real-world web application.",
+  department: "CSE(DATA SCIENCE)",
+  dates: "12th October 2026 – 13th October 2026",
+  timings: "9:00 AM to 4:00 PM",
+  venue: "Computer Lab - 12 & 13, IV Floor, Admin Block, GNITS, Hyderabad.",
+  registration_fee: 200,
+  seat_limit: 80,
+  registration_open: true,
+  hero_banner_url: null,
+  brochure_url: null,
+  upi_id: "thambalahari407-1@okaxis",
+  account_name: "Tamba Lahari",
+  qr_code_url: "https://qwnycqjgrgygpivoybfx.supabase.co/storage/v1/object/public/payment-qr/qr-code.png",
+  sort_order: 3,
+  is_featured: false,
+  admin_username: "csd_admin",
+  admin_password: "gnits@csd2026",
+  outcomes: [
+    {
+      id: "outcome-1",
+      icon: "Terminal",
+      title: "Frontend Development",
+      desc: "Build responsive and interactive web interfaces using modern frontend technologies and develop the user-facing components of web applications.",
+    },
+    {
+      id: "outcome-2",
+      icon: "Cpu",
+      title: "Backend Development",
+      desc: "Develop server-side applications and implement backend functionality to support complete web application workflows.",
+    },
+    {
+      id: "outcome-3",
+      icon: "Workflow",
+      title: "REST APIs & Integration",
+      desc: "Learn to create, consume, and integrate REST APIs to enable effective communication between frontend and backend systems.",
+    },
+    {
+      id: "outcome-4",
+      icon: "Sliders",
+      title: "Database Integration",
+      desc: "Connect web applications with databases and learn how to integrate and manage application data effectively.",
+    },
+    {
+      id: "outcome-5",
+      icon: "CheckCircle2",
+      title: "Authentication & Version Control",
+      desc: "Implement authentication mechanisms and apply version control practices for organized and collaborative application development.",
+    },
+    {
+      id: "outcome-6",
+      icon: "Target",
+      title: "API Testing & Deployment",
+      desc: "Perform API testing and learn application deployment techniques, culminating in the development of a complete real-world web application.",
+    },
+  ],
+};
+
 export function useWorkshops() {
   const { data: websiteSettings } = useWebsiteSettings();
   const { data: paymentSettings } = usePaymentSettings();
@@ -454,14 +558,52 @@ export function useWorkshops() {
             admin_username: localCreds["agentic-ai-cloud"]?.username || "cse_admin",
             admin_password: localCreds["agentic-ai-cloud"]?.password || "gnits@cse2026",
           },
+          {
+            ...WEB_DEVELOPMENT_WORKSHOP,
+            admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
+            admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
+          },
         ];
+      }
+
+      // Always guarantee web-development workshop exists
+      if (!fetchedWorkshops.some((w) => w.slug === "web-development")) {
+        fetchedWorkshops.push({
+          ...WEB_DEVELOPMENT_WORKSHOP,
+          admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
+          admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
+        });
       }
 
       // Merge locally created / edited workshops
       for (const customWs of localCustom) {
         const index = fetchedWorkshops.findIndex((w) => w.id === customWs.id || w.slug === customWs.slug);
         if (index >= 0) {
-          fetchedWorkshops[index] = { ...fetchedWorkshops[index], ...customWs };
+          // If customWs has outdated minimal placeholder title "Web Development" or generic venue, upgrade to the official web-development data
+          const isStaleWebDev =
+            customWs.slug === "web-development" &&
+            (customWs.title === "Web Development" ||
+              customWs.venue?.includes("Admin Block / Lab") ||
+              !customWs.outcomes ||
+              customWs.outcomes.length === 0);
+
+          if (isStaleWebDev) {
+            fetchedWorkshops[index] = {
+              ...fetchedWorkshops[index],
+              ...customWs,
+              title: WEB_DEVELOPMENT_WORKSHOP.title,
+              department: WEB_DEVELOPMENT_WORKSHOP.department,
+              venue: WEB_DEVELOPMENT_WORKSHOP.venue,
+              dates: WEB_DEVELOPMENT_WORKSHOP.dates,
+              timings: WEB_DEVELOPMENT_WORKSHOP.timings,
+              description: WEB_DEVELOPMENT_WORKSHOP.description,
+              outcomes: WEB_DEVELOPMENT_WORKSHOP.outcomes,
+              registration_fee: customWs.registration_fee ?? 200,
+              seat_limit: customWs.seat_limit ?? 80,
+            };
+          } else {
+            fetchedWorkshops[index] = { ...fetchedWorkshops[index], ...customWs };
+          }
         } else {
           fetchedWorkshops.push(customWs);
         }
@@ -476,6 +618,8 @@ export function useWorkshops() {
       const localPayments = getLocalWorkshopPayments();
       return finalWorkshops.map((ws) => {
         const pay = localPayments[ws.slug.toLowerCase()];
+        const customOutcomeList = localOutcomes[ws.slug.toLowerCase()];
+        const hasCustomOutcomes = customOutcomeList && customOutcomeList.length > 0;
         return {
           ...ws,
           upi_id: pay?.upi_id !== undefined ? pay.upi_id : (ws.upi_id || null),
@@ -484,8 +628,12 @@ export function useWorkshops() {
           registration_fee:
             pay?.registration_fee !== undefined && pay?.registration_fee !== null
               ? pay.registration_fee
-              : (ws.registration_fee ?? 250),
-          outcomes: localOutcomes[ws.slug.toLowerCase()] || ws.outcomes || getDefaultOutcomesForWorkshop(ws),
+              : (ws.registration_fee ?? 200),
+          outcomes: hasCustomOutcomes
+            ? customOutcomeList
+            : ws.outcomes && ws.outcomes.length > 0
+              ? ws.outcomes
+              : getDefaultOutcomesForWorkshop(ws),
         };
       });
     },
