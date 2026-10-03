@@ -544,6 +544,51 @@ export function saveLocalRegistration(record: RegistrationRecord) {
   }
 }
 
+export function updateLocalRegistrationScreenshot(id: string, screenshotUrl: string) {
+  try {
+    const list = getLocalRegistrations();
+    const idx = list.findIndex((r) => r.id === id || r.registration_id === id);
+    if (idx !== -1) {
+      list[idx].payment_screenshot_url = screenshotUrl;
+      localStorage.setItem("gnits_local_registrations", JSON.stringify(list));
+    }
+  } catch (e) {
+    console.error("Failed to update local registration screenshot:", e);
+  }
+}
+
+export function compressImageToBase64(file: File, maxWidth = 1200, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } else {
+          resolve((e.target?.result as string) || "");
+        }
+      };
+      img.onerror = () => resolve((e.target?.result as string) || "");
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
+
 export function isRegistrationForWorkshop(r: any, ws: Workshop): boolean {
   if (!r || !ws) return false;
 

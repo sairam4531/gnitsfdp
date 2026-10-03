@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { usePaymentSettings, useWebsiteSettings, useWorkshops, Workshop, saveLocalRegistration } from "@/lib/queries";
+import { usePaymentSettings, useWebsiteSettings, useWorkshops, Workshop, saveLocalRegistration, compressImageToBase64 } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -289,38 +289,14 @@ function RegisterPage() {
         return;
       }
 
-      // Upload payment screenshot with robust URL resolution
-      let screenshotUrl = "";
-      try {
-        const ext = file.name.split(".").pop();
-        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("payment-screenshots")
-          .upload(path, file, { contentType: file.type });
-        if (!upErr) {
-          const { data: pubData } = supabase.storage.from("payment-screenshots").getPublicUrl(path);
-          screenshotUrl = pubData?.publicUrl || path;
-        } else {
-          // If storage bucket fails or permissions restricted, fallback to Base64 Data URL
-          screenshotUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => resolve("");
-            reader.readAsDataURL(file);
-          });
-        }
-      } catch {
-        screenshotUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => resolve("");
-          reader.readAsDataURL(file);
-        });
-      }
+      // Convert payment screenshot to Base64 Data URL.
+      // This is 100% self-contained and guarantees that the receipt image is always preserved
+      // and displayed directly inside the responses modal without bucket or CORS failures.
+      let screenshotUrl = await compressImageToBase64(file, 1200, 0.85);
       if (!screenshotUrl) {
         screenshotUrl = await new Promise<string>((resolve) => {
           const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
+          reader.onload = () => resolve((reader.result as string) || "");
           reader.onerror = () => resolve("");
           reader.readAsDataURL(file);
         });

@@ -10,6 +10,8 @@ import {
   saveLocalWorkshopPayment,
   uploadFileOrConvertToBase64,
   isRegistrationForWorkshop,
+  compressImageToBase64,
+  updateLocalRegistrationScreenshot,
   Workshop,
   Coordinator,
   RegistrationRecord,
@@ -61,6 +63,7 @@ import {
   Search,
   Download,
   ExternalLink,
+  AlertCircle,
   Eye,
   EyeOff,
   LogOut,
@@ -204,6 +207,8 @@ function WorkshopAdminPage() {
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [selectedRegs, setSelectedRegs] = useState<Set<string>>(new Set());
   const [viewScreenshotUrl, setViewScreenshotUrl] = useState<string | null>(null);
+  const [viewReceiptRecord, setViewReceiptRecord] = useState<any | null>(null);
+  const [uploadingReceiptModal, setUploadingReceiptModal] = useState(false);
 
   // ----------------------------------------------------
   // Screenshot 2: Feedback Forms & Questions State
@@ -270,6 +275,38 @@ function WorkshopAdminPage() {
     }
     const { data } = supabase.storage.from("payment-screenshots").getPublicUrl(trimmed);
     return data?.publicUrl || trimmed;
+  }
+
+  async function handleAttachReceipt(record: any, file: File) {
+    if (!record) return;
+    setUploadingReceiptModal(true);
+    try {
+      const base64 = await compressImageToBase64(file, 1200, 0.85);
+      if (!base64) throw new Error("Could not process image file");
+
+      updateLocalRegistrationScreenshot(record.id, base64);
+
+      try {
+        if (!record.id.startsWith("local-")) {
+          await supabase
+            .from("registrations")
+            .update({ payment_screenshot_url: base64 })
+            .eq("id", record.id);
+        }
+      } catch (err) {
+        console.warn("Could not sync screenshot to Supabase:", err);
+      }
+
+      setViewReceiptRecord((prev: any) => (prev ? { ...prev, payment_screenshot_url: base64 } : null));
+      setViewScreenshotUrl(base64);
+
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+      toast.success("Receipt screenshot attached successfully!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update screenshot");
+    } finally {
+      setUploadingReceiptModal(false);
+    }
   }
 
   function handleLogin(e: React.FormEvent) {
@@ -2126,15 +2163,16 @@ function WorkshopAdminPage() {
                                     ? `UTR: ${r.utr_number}`
                                     : "Pending Payment"}
                                 </Badge>
-                                {r.payment_screenshot_url && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setViewScreenshotUrl(r.payment_screenshot_url)}
-                                    className="text-[10px] text-purple-600 underline font-semibold flex items-center"
-                                  >
-                                    View Receipt
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setViewReceiptRecord(r);
+                                    setViewScreenshotUrl(r.payment_screenshot_url || null);
+                                  }}
+                                  className="text-[10px] text-purple-600 underline font-semibold flex items-center hover:text-purple-800"
+                                >
+                                  {r.payment_screenshot_url ? "View Receipt" : "Add Receipt"}
+                                </button>
                               </div>
                             </td>
                             <td className="p-3">
@@ -2866,52 +2904,137 @@ function WorkshopAdminPage() {
         </Dialog>
       )}
 
-      {/* Payment Screenshot Modal */}
-      {viewScreenshotUrl && (
-        <Dialog open={!!viewScreenshotUrl} onOpenChange={() => setViewScreenshotUrl(null)}>
+      {/* Payment Screenshot / Receipt Modal (Strictly in-page modal, never navigates away) */}
+      {(viewReceiptRecord || viewScreenshotUrl) && (
+        <Dialog
+          open={!!(viewReceiptRecord || viewScreenshotUrl)}
+          onOpenChange={() => {
+            setViewReceiptRecord(null);
+            setViewScreenshotUrl(null);
+          }}
+        >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-base font-bold flex items-center justify-between">
-                <span>Payment Receipt Screenshot</span>
-                <a
-                  href={getFullScreenshotUrl(viewScreenshotUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-normal text-purple-600 hover:underline flex items-center gap-1"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
-                </a>
+                <span>
+                  {viewReceiptRecord
+                    ? `Payment Receipt — ${viewReceiptRecord.faculty_name}`
+                    : "Payment Receipt Screenshot"}
+                </span>
+                {viewReceiptRecord?.payment_status && (
+                  <Badge
+                    variant="outline"
+                    className={`rounded-full text-[10px] font-bold ${
+                      viewReceiptRecord.payment_status === "Approved"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
+                        : "border-amber-400 bg-amber-400/10 text-amber-600"
+                    }`}
+                  >
+                    {viewReceiptRecord.payment_status}
+                  </Badge>
+                )}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Verify UTR, payer account details, and transaction amount.
-              </DialogDescription>
+              {viewReceiptRecord && (
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Roll: <span className="font-mono font-bold text-foreground">{viewReceiptRecord.faculty_id}</span> • UTR:{" "}
+                  <span className="font-mono font-bold text-foreground">{viewReceiptRecord.utr_number || "—"}</span> • Fee:{" "}
+                  <span className="font-bold text-foreground">₹{viewReceiptRecord.registration_fee || ws?.registration_fee || 250}</span>
+                </DialogDescription>
+              )}
             </DialogHeader>
-            <div className="mt-2 text-center bg-slate-950 p-3 rounded-xl border flex flex-col items-center justify-center min-h-[250px]">
-              <img
-                src={getFullScreenshotUrl(viewScreenshotUrl)}
-                alt="Receipt"
-                className="max-h-[65vh] max-w-full mx-auto object-contain rounded-lg shadow-md"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  target.style.display = "none";
-                  const fallback = target.parentElement?.querySelector(".receipt-fallback");
-                  if (fallback) (fallback as HTMLElement).style.display = "flex";
-                }}
-              />
-              <div className="receipt-fallback hidden flex-col items-center justify-center p-6 text-slate-300 text-center gap-2">
-                <p className="text-xs font-medium text-amber-300">
-                  Unable to preview image directly in modal.
-                </p>
-                <a
-                  href={getFullScreenshotUrl(viewScreenshotUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" /> Open Receipt URL
-                </a>
+
+            <div className="mt-2 text-center bg-slate-950 p-3 rounded-xl border flex flex-col items-center justify-center min-h-[300px] relative">
+              {getFullScreenshotUrl(viewReceiptRecord?.payment_screenshot_url || viewScreenshotUrl) ? (
+                <img
+                  src={getFullScreenshotUrl(viewReceiptRecord?.payment_screenshot_url || viewScreenshotUrl)}
+                  alt="Receipt"
+                  className="max-h-[65vh] max-w-full mx-auto object-contain rounded-lg shadow-md"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = "none";
+                    const fallback = target.parentElement?.querySelector(".receipt-fallback");
+                    if (fallback) (fallback as HTMLElement).style.display = "flex";
+                  }}
+                />
+              ) : null}
+
+              <div
+                className={`receipt-fallback ${
+                  getFullScreenshotUrl(viewReceiptRecord?.payment_screenshot_url || viewScreenshotUrl)
+                    ? "hidden"
+                    : "flex"
+                } flex-col items-center justify-center p-6 text-slate-300 text-center gap-3`}
+              >
+                <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Receipt Screenshot Not Available</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                    The screenshot was not stored in the cloud. You can attach or replace the receipt screenshot image directly below.
+                  </p>
+                </div>
+                {viewReceiptRecord && (
+                  <Label className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-xs font-bold shadow-md transition-colors">
+                    <Upload className="h-4 w-4" />
+                    <span>{uploadingReceiptModal ? "Uploading…" : "Attach Receipt Image"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        e.target.files?.[0] &&
+                        handleAttachReceipt(viewReceiptRecord, e.target.files[0])
+                      }
+                    />
+                  </Label>
+                )}
               </div>
             </div>
+
+            <DialogFooter className="flex flex-row items-center justify-between sm:justify-between gap-2 pt-2">
+              <div className="flex items-center gap-2">
+                {viewReceiptRecord && (
+                  <Label className="cursor-pointer inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition-colors">
+                    <Upload className="h-3.5 w-3.5 text-purple-600" />
+                    <span>{uploadingReceiptModal ? "Uploading…" : "Replace Image"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        e.target.files?.[0] &&
+                        handleAttachReceipt(viewReceiptRecord, e.target.files[0])
+                      }
+                    />
+                  </Label>
+                )}
+                {viewReceiptRecord && viewReceiptRecord.payment_status !== "Approved" && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      updatePaymentStatus(viewReceiptRecord.id, "Approved");
+                      setViewReceiptRecord((p: any) => p ? { ...p, payment_status: "Approved" } : null);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+                  >
+                    Approve Payment
+                  </Button>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setViewReceiptRecord(null);
+                  setViewScreenshotUrl(null);
+                }}
+                className="text-xs h-8"
+              >
+                Close
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
