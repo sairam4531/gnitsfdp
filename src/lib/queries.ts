@@ -544,6 +544,19 @@ export function saveLocalRegistration(record: RegistrationRecord) {
   }
 }
 
+export function deleteLocalRegistration(id: string) {
+  try {
+    const list = getLocalRegistrations();
+    const updated = list.filter(
+      (r) => r.id !== id && r.registration_id !== id && `local-${r.registration_id}` !== id
+    );
+    localStorage.setItem("gnits_local_registrations", JSON.stringify(updated));
+  } catch (e) {
+    console.error("Failed to delete local registration:", e);
+  }
+}
+
+
 export function updateLocalRegistrationScreenshot(id: string, screenshotUrl: string) {
   try {
     const list = getLocalRegistrations();

@@ -12,6 +12,7 @@ import {
   isRegistrationForWorkshop,
   compressImageToBase64,
   updateLocalRegistrationScreenshot,
+  deleteLocalRegistration,
   Workshop,
   Coordinator,
   RegistrationRecord,
@@ -450,8 +451,26 @@ function WorkshopAdminPage() {
   async function deleteOneRegistration(id: string) {
     if (!confirm("Are you sure you want to delete this registration?")) return;
     try {
-      const { error } = await supabase.from("registrations").delete().eq("id", id);
-      if (error) throw error;
+      // 1. Delete from local storage immediately so UI updates
+      deleteLocalRegistration(id);
+      setSelectedRegs((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+
+      // 2. Delete remotely
+      try {
+        if (!id.startsWith("local-")) {
+          await supabase.from("registrations").delete().eq("id", id);
+        } else {
+          const cleanRegId = id.replace(/^local-/, "");
+          await supabase.from("registrations").delete().eq("registration_id", cleanRegId);
+        }
+      } catch (e) {
+        console.warn("Could not delete from Supabase registrations:", e);
+      }
+
       toast.success("Registration deleted.");
       qc.invalidateQueries({ queryKey: ["registrations"] });
     } catch (err: any) {
@@ -463,13 +482,31 @@ function WorkshopAdminPage() {
     if (selectedRegs.size === 0) return;
     if (!confirm(`Delete ${selectedRegs.size} selected registrations?`)) return;
     try {
-      const { error } = await supabase
-        .from("registrations")
-        .delete()
-        .in("id", Array.from(selectedRegs));
-      if (error) throw error;
-      toast.success("Selected registrations deleted.");
+      const idsToDelete = Array.from(selectedRegs);
+      idsToDelete.forEach((id) => deleteLocalRegistration(id));
       setSelectedRegs(new Set());
+
+      const remoteIds = idsToDelete.filter((id) => !id.startsWith("local-"));
+      if (remoteIds.length > 0) {
+        try {
+          await supabase.from("registrations").delete().in("id", remoteIds);
+        } catch (e) {
+          console.warn("Remote bulk delete notice:", e);
+        }
+      }
+
+      const localCleanIds = idsToDelete
+        .filter((id) => id.startsWith("local-"))
+        .map((id) => id.replace(/^local-/, ""));
+      if (localCleanIds.length > 0) {
+        try {
+          await supabase.from("registrations").delete().in("registration_id", localCleanIds);
+        } catch (e) {
+          console.warn("Remote registration_id bulk delete notice:", e);
+        }
+      }
+
+      toast.success("Selected registrations deleted.");
       qc.invalidateQueries({ queryKey: ["registrations"] });
     } catch (err: any) {
       toast.error(err?.message || "Failed to bulk delete.");
@@ -2081,7 +2118,6 @@ function WorkshopAdminPage() {
                           />
                         </th>
                         <th className="p-3">S.No</th>
-                        <th className="p-3">Workshop</th>
                         <th className="p-3">Roll Number</th>
                         <th className="p-3">Student Details</th>
                         <th className="p-3">Dept</th>
@@ -2096,7 +2132,7 @@ function WorkshopAdminPage() {
                     <tbody className="divide-y divide-border">
                       {filteredRegistrations.length === 0 ? (
                         <tr>
-                          <td colSpan={12} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={11} className="p-8 text-center text-muted-foreground">
                             No registrations found matching the filters.
                           </td>
                         </tr>
@@ -2115,14 +2151,6 @@ function WorkshopAdminPage() {
                               />
                             </td>
                             <td className="p-3 font-mono text-muted-foreground">{i + 1}</td>
-                            <td className="p-3">
-                              <Badge
-                                variant="outline"
-                                className="border-amber-400/50 bg-amber-400/10 text-amber-600 font-bold text-[11px] rounded-full whitespace-nowrap"
-                              >
-                                {r.workshop_title || ws?.title || "Workshop"}
-                              </Badge>
-                            </td>
                             <td className="p-3 font-mono font-bold text-foreground">
                               {r.faculty_id}
                             </td>
