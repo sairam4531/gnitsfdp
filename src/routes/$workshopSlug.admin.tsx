@@ -134,7 +134,6 @@ export const Route = createFileRoute("/$workshopSlug/admin")({
 type AdminNavTab =
   | "dashboard"
   | "workshops"
-  | "outcomes"
   | "registrations"
   | "feedback-forms"
   | "feedback-responses"
@@ -145,8 +144,7 @@ type AdminNavTab =
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "workshops", label: "Settings", icon: Settings },
-  { id: "outcomes", label: "Learning Outcomes", icon: Target },
+  { id: "workshops", label: "Workshop Details", icon: Settings },
   { id: "registrations", label: "Responses", icon: Users },
   { id: "feedback-forms", label: "Feedback Forms", icon: MessageSquare },
   { id: "feedback-responses", label: "Feedback Responses", icon: ClipboardList },
@@ -1458,13 +1456,13 @@ function WorkshopAdminPage() {
             </div>
           )}
 
-          {/* TAB 2: WORKSHOPS (Workshop Management Suite with all 6 Subtabs) */}
+          {/* TAB 2: WORKSHOP DETAILS (Workshop Details Suite with all Subtabs) */}
           {activeTab === "workshops" && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Workshop Management</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Workshop Details</h1>
                 <p className="text-sm text-muted-foreground">
-                  Configure registration status, landing page details, payment metrics, and speakers.
+                  Configure registration status, landing page details, payment metrics, outcomes, and speakers.
                 </p>
               </div>
 
@@ -1975,13 +1973,6 @@ function WorkshopAdminPage() {
                   {ws && <LearningOutcomesEditor workshop={ws} />}
                 </TabsContent>
               </Tabs>
-            </div>
-          )}
-
-          {/* TAB: LEARNING OUTCOMES (DIRECT MAIN NAV) */}
-          {activeTab === "outcomes" && ws && (
-            <div className="space-y-6">
-              <LearningOutcomesEditor workshop={ws} />
             </div>
           )}
 
