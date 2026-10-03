@@ -1,0 +1,75 @@
+import React from "react";
+import {
+  Cpu,
+  Terminal,
+  Sliders,
+  Eye,
+  Brain,
+  Target,
+  Code,
+  Sparkles,
+  Workflow,
+  Layers,
+  Rocket,
+  ShieldCheck,
+  Globe,
+  Database,
+  Server,
+  Laptop,
+  CheckCircle,
+  Lightbulb,
+  Award,
+  Bot,
+  Zap,
+} from "lucide-react";
+
+export const OUTCOME_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Cpu,
+  Terminal,
+  Sliders,
+  Eye,
+  Brain,
+  Target,
+  Code,
+  Sparkles,
+  Workflow,
+  Layers,
+  Rocket,
+  ShieldCheck,
+  Globe,
+  Database,
+  Server,
+  Laptop,
+  CheckCircle,
+  Lightbulb,
+  Award,
+  Bot,
+  Zap,
+};
+
+export const AVAILABLE_OUTCOME_ICONS = [
+  { id: "Cpu", label: "CPU / Hardware", icon: Cpu },
+  { id: "Terminal", label: "Terminal / Code", icon: Terminal },
+  { id: "Sliders", label: "Sliders / Control", icon: Sliders },
+  { id: "Eye", label: "Eye / Computer Vision", icon: Eye },
+  { id: "Brain", label: "Brain / AI & Logic", icon: Brain },
+  { id: "Target", label: "Target / Capstone", icon: Target },
+  { id: "Bot", label: "Bot / Robotics", icon: Bot },
+  { id: "Code", label: "Code / Programming", icon: Code },
+  { id: "Workflow", label: "Workflow / Pipelines", icon: Workflow },
+  { id: "Layers", label: "Layers / Architecture", icon: Layers },
+  { id: "Database", label: "Database / Storage", icon: Database },
+  { id: "Server", label: "Server / Cloud-Native", icon: Server },
+  { id: "Globe", label: "Globe / Web & APIs", icon: Globe },
+  { id: "ShieldCheck", label: "Shield / Security", icon: ShieldCheck },
+  { id: "Rocket", label: "Rocket / Deployment", icon: Rocket },
+  { id: "Sparkles", label: "Sparkles / Innovation", icon: Sparkles },
+  { id: "Laptop", label: "Laptop / Hands-on Lab", icon: Laptop },
+  { id: "Lightbulb", label: "Lightbulb / Problem Solving", icon: Lightbulb },
+  { id: "Award", label: "Award / Certification", icon: Award },
+];
+
+export function getOutcomeIcon(name?: string): React.ComponentType<{ className?: string }> {
+  if (!name) return Cpu;
+  return OUTCOME_ICON_MAP[name] || Cpu;
+}

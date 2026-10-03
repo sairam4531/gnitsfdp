@@ -112,6 +112,8 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+import { LearningOutcomesEditor } from "@/components/LearningOutcomesEditor";
+
 export const Route = createFileRoute("/$workshopSlug/admin")({
   head: () => ({
     meta: [{ title: "Workshop Admin Portal — GNITS" }],
@@ -122,6 +124,7 @@ export const Route = createFileRoute("/$workshopSlug/admin")({
 type AdminNavTab =
   | "dashboard"
   | "workshops"
+  | "outcomes"
   | "registrations"
   | "feedback-forms"
   | "feedback-responses"
@@ -133,6 +136,7 @@ type AdminNavTab =
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "workshops", label: "Settings", icon: Settings },
+  { id: "outcomes", label: "Learning Outcomes", icon: Target },
   { id: "registrations", label: "Responses", icon: Users },
   { id: "feedback-forms", label: "Feedback Forms", icon: MessageSquare },
   { id: "feedback-responses", label: "Feedback Responses", icon: ClipboardList },
@@ -1356,7 +1360,7 @@ function WorkshopAdminPage() {
               </div>
 
               <Tabs defaultValue="registration" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 max-w-2xl">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 max-w-3xl">
                   <TabsTrigger value="registration" className="flex items-center gap-1.5 font-bold">
                     <CalendarCheck className="h-4 w-4" /> Registration
                   </TabsTrigger>
@@ -1365,6 +1369,9 @@ function WorkshopAdminPage() {
                   </TabsTrigger>
                   <TabsTrigger value="payment" className="flex items-center gap-1.5">
                     <CreditCard className="h-4 w-4" /> Payment
+                  </TabsTrigger>
+                  <TabsTrigger value="outcomes" className="flex items-center gap-1.5 font-bold">
+                    <Target className="h-4 w-4" /> Outcomes
                   </TabsTrigger>
                   <TabsTrigger value="speakers" className="flex items-center gap-1.5">
                     <Mic className="h-4 w-4" /> Speakers
@@ -1843,7 +1850,19 @@ function WorkshopAdminPage() {
                     ))}
                   </div>
                 </TabsContent>
+
+                {/* SUBTAB: LEARNING OUTCOMES */}
+                <TabsContent value="outcomes" className="space-y-6">
+                  {ws && <LearningOutcomesEditor workshop={ws} />}
+                </TabsContent>
               </Tabs>
+            </div>
+          )}
+
+          {/* TAB: LEARNING OUTCOMES (DIRECT MAIN NAV) */}
+          {activeTab === "outcomes" && ws && (
+            <div className="space-y-6">
+              <LearningOutcomesEditor workshop={ws} />
             </div>
           )}
 

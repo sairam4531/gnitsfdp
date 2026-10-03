@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface WorkshopOutcomeItem {
+  id: string;
+  icon: string;
+  title: string;
+  desc: string;
+}
+
 export interface Workshop {
   id: string;
   slug: string;
@@ -23,8 +30,161 @@ export interface Workshop {
   admin_password?: string | null;
   sort_order: number;
   is_featured: boolean;
+  outcomes?: WorkshopOutcomeItem[] | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export function getDefaultOutcomesForWorkshop(slugOrWs?: string | Workshop): WorkshopOutcomeItem[] {
+  const slug = (typeof slugOrWs === "string" ? slugOrWs : slugOrWs?.slug || "").toLowerCase();
+
+  if (slug.includes("humanoid") || slug.includes("bionic") || slug.includes("robot")) {
+    return [
+      {
+        id: "outcome-1",
+        icon: "Cpu",
+        title: "Robot Kinematics & Mobility",
+        desc: "Master servo calibration, locomotion, and articulated limb movements.",
+      },
+      {
+        id: "outcome-2",
+        icon: "Terminal",
+        title: "Voice Recognition & Speech",
+        desc: "Build bidirectional NLP voice interaction and audio synthesis pipelines.",
+      },
+      {
+        id: "outcome-3",
+        icon: "Sliders",
+        title: "Visual Perception & Computer Vision",
+        desc: "Deploy real-time object tracking, facial recognition, and obstacle avoidance.",
+      },
+      {
+        id: "outcome-4",
+        icon: "Eye",
+        title: "Autonomous Decision Making",
+        desc: "Integrate sensor telemetry with edge compute logic for autonomous reaction.",
+      },
+      {
+        id: "outcome-5",
+        icon: "Brain",
+        title: "AI Concepts in Robotics",
+        desc: "Apply advanced AI decision-making concepts to humanoid robots.",
+      },
+      {
+        id: "outcome-6",
+        icon: "Target",
+        title: "YOLO Simulation & Projects",
+        desc: "Develop YOLO tracking simulations in custom robotics projects.",
+      },
+    ];
+  }
+
+  if (slug.includes("agentic") || slug.includes("agent") || slug.includes("cloud")) {
+    return [
+      {
+        id: "outcome-1",
+        icon: "Brain",
+        title: "Autonomous Agent Architectures",
+        desc: "Design and implement autonomous agents using state-of-the-art frameworks.",
+      },
+      {
+        id: "outcome-2",
+        icon: "Terminal",
+        title: "LangChain & LlamaIndex Mastery",
+        desc: "Build complex RAG pipelines and tool-augmented reasoning workflows.",
+      },
+      {
+        id: "outcome-3",
+        icon: "Cpu",
+        title: "Cloud-Native Microservices",
+        desc: "Package, containerize, and orchestrate scalable services using Docker & Kubernetes.",
+      },
+      {
+        id: "outcome-4",
+        icon: "Eye",
+        title: "Vector DB & Semantic Search",
+        desc: "Integrate high-performance vector databases for enterprise semantic discovery.",
+      },
+      {
+        id: "outcome-5",
+        icon: "Sliders",
+        title: "API Orchestration & Security",
+        desc: "Secure and streamline multi-agent communication and cloud endpoints.",
+      },
+      {
+        id: "outcome-6",
+        icon: "Target",
+        title: "End-to-End Capstone Project",
+        desc: "Build and deploy an enterprise-ready agentic cloud system from scratch.",
+      },
+    ];
+  }
+
+  // General default matching the landing page outcomes
+  return [
+    {
+      id: "outcome-1",
+      icon: "Cpu",
+      title: "Core Architecture & Foundations",
+      desc: "Gain in-depth practical understanding of modern tools, hardware, and runtime platforms.",
+    },
+    {
+      id: "outcome-2",
+      icon: "Terminal",
+      title: "Applied Programming & Development",
+      desc: "Build functional solutions, scripts, and workflows following industry standards.",
+    },
+    {
+      id: "outcome-3",
+      icon: "Sliders",
+      title: "Control, Optimization & Performance",
+      desc: "Learn precision parameter tuning, efficiency enhancement, and debugging techniques.",
+    },
+    {
+      id: "outcome-4",
+      icon: "Eye",
+      title: "Integration & System Design",
+      desc: "Connect diverse toolkits, APIs, and modern frameworks into cohesive workflows.",
+    },
+    {
+      id: "outcome-5",
+      icon: "Brain",
+      title: "Advanced Problem Solving",
+      desc: "Apply intelligent logic, algorithms, and real-time decision making to complex challenges.",
+    },
+    {
+      id: "outcome-6",
+      icon: "Target",
+      title: "Capstone Project Deployment",
+      desc: "Build and test an end-to-end practical project ready for your technical portfolio.",
+    },
+  ];
+}
+
+export function getLocalWorkshopOutcomes(): Record<string, WorkshopOutcomeItem[]> {
+  try {
+    return JSON.parse(localStorage.getItem("gnits_workshop_outcomes") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalWorkshopOutcomes(slug: string, outcomes: WorkshopOutcomeItem[]) {
+  try {
+    const all = getLocalWorkshopOutcomes();
+    all[slug.toLowerCase()] = outcomes;
+    localStorage.setItem("gnits_workshop_outcomes", JSON.stringify(all));
+
+    // Also sync into custom workshops cache if present
+    const list = getLocalCustomWorkshops();
+    const idx = list.findIndex((w) => w.slug.toLowerCase() === slug.toLowerCase());
+    if (idx >= 0) {
+      list[idx].outcomes = outcomes;
+      localStorage.setItem("gnits_custom_workshops", JSON.stringify(list));
+    }
+  } catch (e) {
+    console.error("Failed to save workshop outcomes:", e);
+  }
 }
 
 export function getLocalWorkshopCredentials(): Record<string, { username?: string; password?: string }> {
@@ -234,7 +394,11 @@ export function useWorkshops() {
         (ws) => !deletedList.includes(ws.id) && !deletedList.includes(ws.slug)
       );
 
-      return finalWorkshops;
+      const localOutcomes = getLocalWorkshopOutcomes();
+      return finalWorkshops.map((ws) => ({
+        ...ws,
+        outcomes: localOutcomes[ws.slug.toLowerCase()] || ws.outcomes || getDefaultOutcomesForWorkshop(ws),
+      }));
     },
   });
 }

@@ -38,6 +38,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { getOutcomeIcon } from "@/components/OutcomeIcons";
 import heroBg from "@/assets/hero-bg.png";
 import heroVideo from "@/assets/second_AI_Powered_Humanoid.mp4";
 
@@ -77,6 +78,15 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
   const isHumanoid = slug.includes("humanoid") || slug.includes("robot");
   const isAgentic = slug.includes("agentic") || slug.includes("cloud");
 
+  const customOutcomes: WorkshopOutcome[] | null =
+    ws.outcomes && ws.outcomes.length > 0
+      ? ws.outcomes.map((o) => ({
+          icon: getOutcomeIcon(o.icon),
+          title: o.title,
+          desc: o.desc,
+        }))
+      : null;
+
   if (isHumanoid) {
     return {
       aboutTitle: "Two Days Hands-on Workathon in Humanoid Robotics & AI",
@@ -114,7 +124,7 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
           color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300",
         },
       ],
-      outcomes: [
+      outcomes: customOutcomes || [
         {
           icon: Cpu,
           title: "BionicBot Hardware Setup",
@@ -188,7 +198,7 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
           color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300",
         },
       ],
-      outcomes: [
+      outcomes: customOutcomes || [
         {
           icon: Brain,
           title: "Autonomous Agent Architectures",
@@ -261,7 +271,7 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
         color: "border-cyan-400/40 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300",
       },
     ],
-    outcomes: [
+    outcomes: customOutcomes || [
       {
         icon: Cpu,
         title: "Core Architecture & Foundations",

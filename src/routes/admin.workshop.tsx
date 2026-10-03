@@ -54,7 +54,9 @@ import {
   Layers,
   IndianRupee,
   ExternalLink,
+  Target,
 } from "lucide-react";
+import { LearningOutcomesEditor } from "@/components/LearningOutcomesEditor";
 
 export const Route = createFileRoute("/admin/workshop")({
   component: WorkshopPage,
@@ -119,6 +121,15 @@ function WorkshopPage() {
 
   // Multi-Workshop states
   const { data: workshops = [] } = useWorkshops();
+  const [activeTabState, setActiveTabState] = useState("workshops");
+  const [selectedOutcomeWorkshopSlug, setSelectedOutcomeWorkshopSlug] = useState<string>("");
+
+  useEffect(() => {
+    if (!selectedOutcomeWorkshopSlug && workshops.length > 0) {
+      setSelectedOutcomeWorkshopSlug(workshops[0].slug);
+    }
+  }, [workshops, selectedOutcomeWorkshopSlug]);
+
   const [editingWorkshop, setEditingWorkshop] = useState<Partial<Workshop> | null>(null);
   const [isNewWorkshop, setIsNewWorkshop] = useState(false);
   const [savingWorkshop, setSavingWorkshop] = useState(false);
@@ -517,8 +528,8 @@ function WorkshopPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="workshops" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 max-w-3xl">
+      <Tabs value={activeTabState} onValueChange={setActiveTabState} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7 max-w-4xl">
           <TabsTrigger value="workshops" className="flex items-center gap-1.5 font-bold">
             <Layers className="h-4 w-4" /> Workshops
           </TabsTrigger>
@@ -530,6 +541,9 @@ function WorkshopPage() {
           </TabsTrigger>
           <TabsTrigger value="payment" className="flex items-center gap-1.5">
             <CreditCard className="h-4 w-4" /> Payment
+          </TabsTrigger>
+          <TabsTrigger value="outcomes" className="flex items-center gap-1.5 font-bold">
+            <Target className="h-4 w-4" /> Outcomes
           </TabsTrigger>
           <TabsTrigger value="speakers" className="flex items-center gap-1.5">
             <Mic className="h-4 w-4" /> Speakers
@@ -634,7 +648,18 @@ function WorkshopPage() {
                   >
                     View Public Form <ExternalLink className="h-3 w-3" />
                   </a>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedOutcomeWorkshopSlug(ws.slug);
+                        setActiveTabState("outcomes");
+                      }}
+                      className="text-xs font-semibold border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                    >
+                      <Target className="h-3.5 w-3.5 mr-1 text-amber-500" /> Outcomes
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1298,6 +1323,49 @@ function WorkshopPage() {
               )}
             </div>
           </div>
+        </TabsContent>
+
+        {/* --- LEARNING OUTCOMES TAB --- */}
+        <TabsContent value="outcomes" className="space-y-6 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-xl bg-muted/20">
+            <div>
+              <Label className="text-sm font-bold text-foreground">Select Workshop:</Label>
+              <p className="text-xs text-muted-foreground">
+                Choose which workshop&apos;s learning outcomes to customize.
+              </p>
+            </div>
+            <div className="w-full sm:w-80">
+              <Select
+                value={selectedOutcomeWorkshopSlug || (workshops[0]?.slug ?? "")}
+                onValueChange={setSelectedOutcomeWorkshopSlug}
+              >
+                <SelectTrigger className="w-full font-bold">
+                  <SelectValue placeholder="Select a Workshop" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workshops.map((w) => (
+                    <SelectItem key={w.id} value={w.slug}>
+                      {w.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {(() => {
+            const currentWs =
+              workshops.find((w) => w.slug === selectedOutcomeWorkshopSlug) ||
+              workshops[0];
+            if (!currentWs) {
+              return (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  No workshops available to edit outcomes.
+                </div>
+              );
+            }
+            return <LearningOutcomesEditor workshop={currentWs} />;
+          })()}
         </TabsContent>
       </Tabs>
 
