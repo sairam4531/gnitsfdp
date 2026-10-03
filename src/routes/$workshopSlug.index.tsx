@@ -307,7 +307,7 @@ function getWorkshopContent(ws: Workshop): WorkshopContent {
           desc: "Perform API testing and learn application deployment techniques, culminating in the development of a complete real-world web application.",
         },
       ],
-      ctaText: `Limited seats available. Open to all students of ${ws.department || "CSE,CSE(AI&ML),CSE(Data Science) and IT"} at GNITS.`,
+      ctaText: "Limited seats available. Open to all students of CSE,CSE(AI&ML),CSE(DATA SCIENCE) and IT at GNITS.",
     };
   }
 
