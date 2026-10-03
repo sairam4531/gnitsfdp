@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+import { Workshop } from "@/lib/queries";
+
 // Types
 export type FeedbackForm = {
   id: string;
@@ -8,9 +10,82 @@ export type FeedbackForm = {
   feedback_button_name: string;
   feedback_date: string | null;
   is_enabled: boolean;
+  workshop_slug?: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export function getLocalWorkshopFeedbackForms(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem("gnits_workshop_feedback_map") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function saveLocalWorkshopFeedbackForm(formId: string, workshopSlug: string) {
+  try {
+    const map = getLocalWorkshopFeedbackForms();
+    map[formId] = workshopSlug.toLowerCase();
+    localStorage.setItem("gnits_workshop_feedback_map", JSON.stringify(map));
+  } catch (e) {
+    console.error("Failed to map feedback form to workshop:", e);
+  }
+}
+
+export function isFeedbackFormForWorkshop(
+  form: FeedbackForm | undefined | null,
+  ws: Workshop | undefined | null
+): boolean {
+  if (!form || !ws) return false;
+
+  // 1. Explicit local mapping check
+  const localMap = getLocalWorkshopFeedbackForms();
+  if (localMap[form.id]) {
+    return localMap[form.id] === ws.slug.toLowerCase();
+  }
+
+  // 2. Explicit workshop_slug property check
+  if (form.workshop_slug) {
+    return form.workshop_slug.toLowerCase() === ws.slug.toLowerCase();
+  }
+
+  // 3. String matching on fdp_title
+  const formTitle = (form.fdp_title || "").toLowerCase().trim();
+  const wsTitle = (ws.title || "").toLowerCase().trim();
+  const wsSlug = (ws.slug || "").toLowerCase().trim();
+
+  // If the title contains the slug or exact title
+  if (formTitle.includes(wsSlug) || wsTitle.includes(formTitle) || formTitle.includes(wsTitle)) {
+    return true;
+  }
+
+  // Specific domain matching to avoid cross-contamination
+  const isFormHumanoid =
+    formTitle.includes("humanoid") || formTitle.includes("robot") || formTitle.includes("bionic");
+  const isWsHumanoid =
+    wsSlug.includes("humanoid") || wsSlug.includes("robot") || wsSlug.includes("bionic");
+
+  if (isFormHumanoid) {
+    return isWsHumanoid;
+  }
+
+  const isFormAgentic = formTitle.includes("agentic") || formTitle.includes("cloud-native");
+  const isWsAgentic = wsSlug.includes("agentic") || wsSlug.includes("cloud");
+
+  if (isFormAgentic) {
+    return isWsAgentic;
+  }
+
+  const isFormWeb = formTitle.includes("web") || formTitle.includes("frontend") || formTitle.includes("backend");
+  const isWsWeb = wsSlug.includes("web") || wsSlug.includes("dev");
+
+  if (isFormWeb) {
+    return isWsWeb;
+  }
+
+  return false;
+}
 
 export type FeedbackQuestion = {
   id: string;

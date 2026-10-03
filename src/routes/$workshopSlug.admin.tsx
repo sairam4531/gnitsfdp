@@ -19,6 +19,8 @@ import {
   useFeedbackResponses,
   feedbackDb,
   FeedbackForm,
+  isFeedbackFormForWorkshop,
+  saveLocalWorkshopFeedbackForm,
 } from "@/lib/feedback";
 import {
   useQuizExams,
@@ -93,6 +95,7 @@ import {
   Pencil,
   RotateCcw,
   Target,
+  QrCode,
 } from "lucide-react";
 import {
   Bar,
@@ -230,6 +233,7 @@ function WorkshopAdminPage() {
   const [acct, setAcct] = useState("");
   const [fee, setFee] = useState(250);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [qrImgError, setQrImgError] = useState(false);
   const [uploadingQR, setUploadingQR] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [editingSpeaker, setEditingSpeaker] = useState<Partial<SpeakerRow> | null>(null);
@@ -248,9 +252,25 @@ function WorkshopAdminPage() {
       setAcct(ws.account_name || "");
       setFee(ws.registration_fee || 250);
       setQrUrl(ws.qr_code_url || null);
+      setQrImgError(false);
       setFeedbackTitleInput(ws.title);
     }
   }, [ws]);
+
+  function getFullScreenshotUrl(rawUrl: string | null): string {
+    if (!rawUrl) return "";
+    const trimmed = rawUrl.trim();
+    if (
+      trimmed.startsWith("data:") ||
+      trimmed.startsWith("blob:") ||
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://")
+    ) {
+      return trimmed;
+    }
+    const { data } = supabase.storage.from("payment-screenshots").getPublicUrl(trimmed);
+    return data?.publicUrl || trimmed;
+  }
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -636,9 +656,15 @@ function WorkshopAdminPage() {
 
   async function uploadQR(file: File) {
     setUploadingQR(true);
+    setQrImgError(false);
     try {
-      const url = await uploadFileOrConvertToBase64(file, ["payment-screenshots", "website-assets"]);
-      setQrUrl(url);
+      const base64Url = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read image file"));
+        reader.readAsDataURL(file);
+      });
+      setQrUrl(base64Url);
       toast.success("Payment QR uploaded! Remember to click Save Payment Settings.");
     } catch (err: any) {
       toast.error(err?.message || "Upload failed");
@@ -780,8 +806,11 @@ function WorkshopAdminPage() {
       toast.success("Feedback form updated");
       setEditingFeedbackForm(null);
     } else {
-      const { error } = await feedbackDb.from("feedback_forms").insert(payload);
+      const { data, error } = await feedbackDb.from("feedback_forms").insert(payload).select().single();
       if (error) return toast.error(error.message);
+      if (data?.id && ws?.slug) {
+        saveLocalWorkshopFeedbackForm(data.id, ws.slug);
+      }
       toast.success("Feedback form created");
       setCreatingFeedbackForm(false);
     }
@@ -796,9 +825,17 @@ function WorkshopAdminPage() {
     qc.invalidateQueries({ queryKey: ["feedback_forms"] });
   }
 
-  // --- Feedback Responses Filter & Dynamic Questions (Screenshot 3) ---
+  const workshopFeedbackForms = useMemo(() => {
+    return feedbackForms.filter((f) => isFeedbackFormForWorkshop(f, ws));
+  }, [feedbackForms, ws]);
+
+  const workshopFeedbackFormIds = useMemo(() => {
+    return new Set(workshopFeedbackForms.map((f) => f.id));
+  }, [workshopFeedbackForms]);
+
   const filteredFeedbackResponses = useMemo(() => {
     return feedbackResponses.filter((r) => {
+      if (!workshopFeedbackFormIds.has(r.feedback_form_id)) return false;
       if (feedbackFormFilter !== "all" && r.feedback_form_id !== feedbackFormFilter) return false;
       if (feedbackDateFilter) {
         const d = new Date(r.submitted_at).toISOString().slice(0, 10);
@@ -806,7 +843,7 @@ function WorkshopAdminPage() {
       }
       return true;
     });
-  }, [feedbackResponses, feedbackFormFilter, feedbackDateFilter]);
+  }, [feedbackResponses, workshopFeedbackFormIds, feedbackFormFilter, feedbackDateFilter]);
 
   const uniqueFeedbackQuestions = useMemo(() => {
     const qTexts = new Set<string>();
@@ -1682,15 +1719,22 @@ function WorkshopAdminPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="flex flex-col items-center justify-center p-4 border rounded-xl bg-card">
-                          {qrUrl ? (
+                          {qrUrl && !qrImgError ? (
                             <img
                               src={qrUrl}
                               alt="QR Code"
                               className="h-44 w-44 object-contain rounded-lg border p-2 bg-white shadow-sm"
+                              onError={() => setQrImgError(true)}
                             />
                           ) : (
-                            <div className="h-44 w-44 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground">
-                              No QR uploaded
+                            <div className="h-44 w-44 rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-3 text-center text-xs text-muted-foreground gap-1.5">
+                              <QrCode className="h-8 w-8 text-muted-foreground/50" />
+                              <span>{qrImgError ? "QR image failed to load" : "No QR uploaded"}</span>
+                              {qrImgError && (
+                                <span className="text-[10px] text-destructive">
+                                  Please re-upload below
+                                </span>
+                              )}
                             </div>
                           )}
 
@@ -1701,7 +1745,10 @@ function WorkshopAdminPage() {
                               type="file"
                               accept="image/*"
                               className="hidden"
-                              onChange={(e) => e.target.files?.[0] && uploadQR(e.target.files[0])}
+                              onChange={(e) => {
+                                setQrImgError(false);
+                                e.target.files?.[0] && uploadQR(e.target.files[0]);
+                              }}
                             />
                           </Label>
                         </div>
@@ -2036,9 +2083,7 @@ function WorkshopAdminPage() {
                                 variant="outline"
                                 className="border-amber-400/50 bg-amber-400/10 text-amber-600 font-bold text-[11px] rounded-full whitespace-nowrap"
                               >
-                                {r.workshop_slug === "agentic-ai-cloud"
-                                  ? "Agentic AI"
-                                  : ws?.department || "AI Humanoid"}
+                                {r.workshop_title || ws?.title || "Workshop"}
                               </Badge>
                             </td>
                             <td className="p-3 font-mono font-bold text-foreground">
@@ -2156,84 +2201,95 @@ function WorkshopAdminPage() {
 
               {/* Exact Cards Matching Screenshot 2 */}
               <div className="grid gap-4">
-                {feedbackForms.map((f) => (
-                  <Card key={f.id} className="rounded-xl border shadow-sm">
-                    <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-bold text-base text-foreground uppercase tracking-wide">
-                            {f.fdp_title}
-                          </h3>
-                          {f.is_enabled ? (
-                            <Badge className="bg-emerald-600 text-white text-[11px] font-bold">
-                              ON
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-[11px]">
-                              OFF
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span>
-                            Button: <strong>{f.feedback_button_name}</strong>
-                          </span>
-                          {f.feedback_date && <span>Date: {f.feedback_date}</span>}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5">
-                          <Switch
-                            checked={f.is_enabled}
-                            onCheckedChange={(v) => toggleFeedbackEnabled(f, v)}
-                          />
-                          <span className="text-xs font-bold">{f.is_enabled ? "ON" : "OFF"}</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setManagingQuestionsFor(f)}
-                          className="text-xs"
-                        >
-                          <ListChecks className="mr-1.5 h-4 w-4" /> Questions
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingFeedbackForm(f);
-                            setFeedbackTitleInput(f.fdp_title);
-                            setFeedbackBtnInput(f.feedback_button_name);
-                            setFeedbackDateInput(f.feedback_date || "");
-                          }}
-                          className="text-xs"
-                        >
-                          <Pencil className="mr-1.5 h-4 w-4" /> Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setFeedbackFormFilter(f.id);
-                            setActiveTab("feedback-responses");
-                          }}
-                          className="text-xs"
-                        >
-                          <Eye className="mr-1.5 h-4 w-4" /> Responses
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteFeedbackForm(f.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
+                {workshopFeedbackForms.length === 0 ? (
+                  <Card className="rounded-xl border border-dashed p-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No feedback forms found for this workshop yet.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Click &quot;New Feedback Form&quot; above to create one.
+                    </p>
                   </Card>
-                ))}
+                ) : (
+                  workshopFeedbackForms.map((f) => (
+                    <Card key={f.id} className="rounded-xl border shadow-sm">
+                      <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-bold text-base text-foreground uppercase tracking-wide">
+                              {f.fdp_title}
+                            </h3>
+                            {f.is_enabled ? (
+                              <Badge className="bg-emerald-600 text-white text-[11px] font-bold">
+                                ON
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[11px]">
+                                OFF
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span>
+                              Button: <strong>{f.feedback_button_name}</strong>
+                            </span>
+                            {f.feedback_date && <span>Date: {f.feedback_date}</span>}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5">
+                            <Switch
+                              checked={f.is_enabled}
+                              onCheckedChange={(v) => toggleFeedbackEnabled(f, v)}
+                            />
+                            <span className="text-xs font-bold">{f.is_enabled ? "ON" : "OFF"}</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setManagingQuestionsFor(f)}
+                            className="text-xs"
+                          >
+                            <ListChecks className="mr-1.5 h-4 w-4" /> Questions
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingFeedbackForm(f);
+                              setFeedbackTitleInput(f.fdp_title);
+                              setFeedbackBtnInput(f.feedback_button_name);
+                              setFeedbackDateInput(f.feedback_date || "");
+                            }}
+                            className="text-xs"
+                          >
+                            <Pencil className="mr-1.5 h-4 w-4" /> Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setFeedbackFormFilter(f.id);
+                              setActiveTab("feedback-responses");
+                            }}
+                            className="text-xs"
+                          >
+                            <Eye className="mr-1.5 h-4 w-4" /> Responses
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteFeedbackForm(f.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -2285,7 +2341,7 @@ function WorkshopAdminPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Forms</SelectItem>
-                          {feedbackForms.map((f) => (
+                          {workshopFeedbackForms.map((f) => (
                             <SelectItem key={f.id} value={f.id}>
                               {f.feedback_button_name} ({f.fdp_title})
                             </SelectItem>
@@ -2813,19 +2869,48 @@ function WorkshopAdminPage() {
       {/* Payment Screenshot Modal */}
       {viewScreenshotUrl && (
         <Dialog open={!!viewScreenshotUrl} onOpenChange={() => setViewScreenshotUrl(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold">Payment Receipt Screenshot</DialogTitle>
+              <DialogTitle className="text-base font-bold flex items-center justify-between">
+                <span>Payment Receipt Screenshot</span>
+                <a
+                  href={getFullScreenshotUrl(viewScreenshotUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-normal text-purple-600 hover:underline flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
+                </a>
+              </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Verify UTR and transaction amount.
+                Verify UTR, payer account details, and transaction amount.
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-2 text-center bg-slate-950 p-2 rounded-xl border">
+            <div className="mt-2 text-center bg-slate-950 p-3 rounded-xl border flex flex-col items-center justify-center min-h-[250px]">
               <img
-                src={viewScreenshotUrl}
+                src={getFullScreenshotUrl(viewScreenshotUrl)}
                 alt="Receipt"
-                className="max-h-[70vh] max-w-full mx-auto object-contain rounded-lg"
+                className="max-h-[65vh] max-w-full mx-auto object-contain rounded-lg shadow-md"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = "none";
+                  const fallback = target.parentElement?.querySelector(".receipt-fallback");
+                  if (fallback) (fallback as HTMLElement).style.display = "flex";
+                }}
               />
+              <div className="receipt-fallback hidden flex-col items-center justify-center p-6 text-slate-300 text-center gap-2">
+                <p className="text-xs font-medium text-amber-300">
+                  Unable to preview image directly in modal.
+                </p>
+                <a
+                  href={getFullScreenshotUrl(viewScreenshotUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Open Receipt URL
+                </a>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

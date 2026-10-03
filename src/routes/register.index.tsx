@@ -168,6 +168,7 @@ function RegisterPage() {
   const qrCodeUrl = (currentWorkshop?.qr_code_url || "").trim() || null;
   const bannerUrl = currentWorkshop?.hero_banner_url || settings?.hero_banner_url || heroBg;
 
+  const [qrError, setQrError] = useState(false);
   const hasPaymentDetails = Boolean(upiId || qrCodeUrl);
 
   async function checkDuplicate(rollNumber: string, workshopIdentifier: string) {
@@ -288,13 +289,42 @@ function RegisterPage() {
         return;
       }
 
-      // Upload payment screenshot
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("payment-screenshots")
-        .upload(path, file, { contentType: file.type });
-      if (upErr) throw upErr;
+      // Upload payment screenshot with robust URL resolution
+      let screenshotUrl = "";
+      try {
+        const ext = file.name.split(".").pop();
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("payment-screenshots")
+          .upload(path, file, { contentType: file.type });
+        if (!upErr) {
+          const { data: pubData } = supabase.storage.from("payment-screenshots").getPublicUrl(path);
+          screenshotUrl = pubData?.publicUrl || path;
+        } else {
+          // If storage bucket fails or permissions restricted, fallback to Base64 Data URL
+          screenshotUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(file);
+          });
+        }
+      } catch {
+        screenshotUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(file);
+        });
+      }
+      if (!screenshotUrl) {
+        screenshotUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(file);
+        });
+      }
 
       // Unique prefix per workshop
       const prefix = currentWorkshop.slug.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase() || "GNIT";
@@ -314,7 +344,7 @@ function RegisterPage() {
         category: values.category,
         registration_fee: fee,
         utr_number: utrNumber,
-        payment_screenshot_url: path,
+        payment_screenshot_url: screenshotUrl,
         registration_id: regId,
         payment_status: "Approved",
         workshop_id: currentWorkshop.id.startsWith("workshop-") ? null : currentWorkshop.id,
@@ -336,7 +366,7 @@ function RegisterPage() {
         category: values.category,
         registration_fee: fee,
         utr_number: utrNumber,
-        payment_screenshot_url: path,
+        payment_screenshot_url: screenshotUrl,
         registration_id: regId,
         payment_status: "Approved",
         workshop_id: currentWorkshop.id.startsWith("workshop-") ? null : currentWorkshop.id,
@@ -744,16 +774,19 @@ function RegisterPage() {
                     <CardContent className="space-y-4">
                       <div className="grid gap-4 sm:grid-cols-3">
                         <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4">
-                          {qrCodeUrl ? (
+                          {qrCodeUrl && !qrError ? (
                             <img
                               src={qrCodeUrl}
                               alt={`${currentWorkshop?.title} QR Code`}
                               className="h-40 w-40 object-contain rounded-md border bg-white p-1"
+                              onError={() => setQrError(true)}
                             />
                           ) : (
                             <div className="text-center text-muted-foreground">
-                              <QrCode className="mx-auto h-10 w-10" />
-                              <div className="mt-2 text-xs font-semibold">QR not uploaded</div>
+                              <QrCode className="mx-auto h-10 w-10 text-muted-foreground/60" />
+                              <div className="mt-2 text-xs font-semibold">
+                                {qrError ? "QR unavailable" : "QR not uploaded"}
+                              </div>
                             </div>
                           )}
                         </div>

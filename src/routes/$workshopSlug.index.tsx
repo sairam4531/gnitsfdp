@@ -9,7 +9,7 @@ import {
   useRegistrationCount,
   Workshop,
 } from "@/lib/queries";
-import { useEnabledFeedbackForms } from "@/lib/feedback";
+import { useEnabledFeedbackForms, isFeedbackFormForWorkshop } from "@/lib/feedback";
 import { useEnabledQuizExam } from "@/lib/quiz";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -376,7 +376,7 @@ function WorkshopUserPage() {
 
   const content = getWorkshopContent(ws);
   const remainingSeats = Math.max(0, ws.seat_limit - regCount);
-  const feedbackForm = enabledFeedback[0];
+  const feedbackForm = enabledFeedback.find((f) => isFeedbackFormForWorkshop(f, ws));
 
   return (
     <div className="min-h-screen bg-background">
