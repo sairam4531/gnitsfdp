@@ -659,6 +659,7 @@ export interface RegistrationRecord {
   faculty_id: string;
   designation: string;
   department: string;
+  custom_department?: string | null;
   category: string;
   institute: string;
   email: string;
@@ -902,7 +903,7 @@ export function useRegistrationCount(identifier?: string) {
 
         // Try RPC specifically with the workshop identifier parameter
         try {
-          const { data, error } = await supabase.rpc("get_registration_count" as any, {
+          const { data, error } = await (supabase.rpc as any)("get_registration_count", {
             _workshop_identifier: identifier,
           });
           if (!error && typeof data === "number") return data;
@@ -916,7 +917,7 @@ export function useRegistrationCount(identifier?: string) {
 
       // If NO identifier is requested: return total count across all workshops
       try {
-        const { data, error } = await supabase.rpc("get_registration_count" as any);
+        const { data, error } = await (supabase.rpc as any)("get_registration_count");
         if (!error && typeof data === "number") return data;
       } catch (err) {
         console.warn("Global registration count rpc failed:", err);

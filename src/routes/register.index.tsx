@@ -17,6 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 import {
   usePaymentSettings,
@@ -213,7 +214,7 @@ function RegisterPage() {
     // 3. Fallback check for single workshop RPC if legacy ai-humanoid-robot
     if (targetWorkshop.slug === "ai-humanoid-robot") {
       try {
-        const { data: rpcDup } = await supabase.rpc("check_duplicate_registration" as any, {
+        const { data: rpcDup } = await (supabase.rpc as any)("check_duplicate_registration", {
           _roll_number: cleanRoll,
         });
         if (rpcDup === true) return true;

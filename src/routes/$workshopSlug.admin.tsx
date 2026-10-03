@@ -596,9 +596,9 @@ function WorkshopAdminPage() {
           await supabase
             .from("website_settings")
             .update({
-              fdp_title: detailsForm.title,
-              fdp_subtitle: detailsForm.subtitle,
-              description: detailsForm.description,
+              fdp_title: detailsForm.title || undefined,
+              fdp_subtitle: detailsForm.subtitle || undefined,
+              description: detailsForm.description || undefined,
               fdp_dates: detailsForm.dates,
               timings: detailsForm.timings,
               venue: detailsForm.venue,
@@ -821,8 +821,8 @@ function WorkshopAdminPage() {
 
       const isEdit = !!editingCoordinator.id;
       const { error } = isEdit
-        ? await supabase.from("coordinators" as never).update(payload).eq("id", editingCoordinator.id)
-        : await supabase.from("coordinators" as never).insert(payload);
+        ? await (supabase as any).from("coordinators").update(payload).eq("id", editingCoordinator.id)
+        : await (supabase as any).from("coordinators").insert(payload);
 
       if (error) throw error;
       toast.success("Coordinator Saved!");
@@ -1210,7 +1210,7 @@ function WorkshopAdminPage() {
 
             <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
               <Link
-                to={`/${ws.slug}`}
+                to={`/${ws.slug}` as any}
                 className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1"
               >
                 ← View Public Workshop Page

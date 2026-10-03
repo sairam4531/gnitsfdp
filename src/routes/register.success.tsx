@@ -56,7 +56,7 @@ function SuccessPage() {
               </div>
             )}
             <Button asChild className="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold px-8">
-              <Link to={`/${targetSlug}`}>Back to home</Link>
+              <Link to={`/${targetSlug}` as any}>Back to home</Link>
             </Button>
           </CardContent>
         </Card>

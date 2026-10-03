@@ -483,11 +483,11 @@ function WorkshopPage() {
 
     const isEdit = !!editingCoordinator.id;
     const { error } = isEdit
-      ? await supabase
-          .from("coordinators" as never)
+      ? await (supabase as any)
+          .from("coordinators")
           .update(payload)
           .eq("id", editingCoordinator.id)
-      : await supabase.from("coordinators" as never).insert(payload);
+      : await (supabase as any).from("coordinators").insert(payload);
 
     if (error) toast.error(error.message);
     else {
@@ -499,8 +499,8 @@ function WorkshopPage() {
 
   async function deleteCoordinator(id: string) {
     if (!confirm("Delete this coordinator?")) return;
-    const { error } = await supabase
-      .from("coordinators" as never)
+    const { error } = await (supabase as any)
+      .from("coordinators")
       .delete()
       .eq("id", id);
     if (error) toast.error(error.message);
