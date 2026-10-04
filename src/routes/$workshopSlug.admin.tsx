@@ -359,7 +359,7 @@ function WorkshopAdminPage() {
       await supabase.auth.signInWithPassword({
         email: "csmcsd@gnits.ac.in",
         password: "csmcsd@1234",
-      }).catch(() => {});
+      }).catch(() => { });
       qc.invalidateQueries({ queryKey: ["registrations"] });
       toast.success(`Welcome to ${ws?.title || "Workshop"} Admin Portal!`);
     } else {
@@ -1221,7 +1221,7 @@ function WorkshopAdminPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-slate-200">Admin Username</Label>
-                  <span className="text-[10px] text-amber-400 font-mono">csmcsd / csd_admin</span>
+
                 </div>
                 <Input
                   type="text"
@@ -1229,7 +1229,7 @@ function WorkshopAdminPage() {
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  placeholder="e.g. csmcsd or csd_admin"
+                  placeholder="Enter Username"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   className="mt-1.5 bg-slate-950 border-slate-700 text-white font-mono text-sm"
