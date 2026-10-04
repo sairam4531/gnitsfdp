@@ -259,8 +259,12 @@ function WorkshopAdminPage() {
   useEffect(() => {
     if (ws) {
       setOpen(ws.registration_open);
-      setSeatLimit(ws.seat_limit);
-      setDetailsForm({ ...ws });
+      const initialLimit =
+        ws.slug.toLowerCase().includes("web") && (ws.seat_limit === 80 || !ws.seat_limit)
+          ? 100
+          : (ws.seat_limit || 100);
+      setSeatLimit(initialLimit);
+      setDetailsForm({ ...ws, seat_limit: initialLimit });
       setUpi(ws.upi_id || "");
       setAcct(ws.account_name || "");
       setFee(ws.registration_fee || 250);
@@ -269,6 +273,24 @@ function WorkshopAdminPage() {
       setFeedbackTitleInput(ws.title);
     }
   }, [ws]);
+
+  // Auto-heal remote website_settings if seat_limit is stuck at 80
+  useEffect(() => {
+    supabase
+      .from("website_settings")
+      .select("id, seat_limit")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && (data.seat_limit === 80 || !data.seat_limit)) {
+          supabase
+            .from("website_settings")
+            .update({ seat_limit: 100, updated_at: new Date().toISOString() })
+            .eq("id", data.id)
+            .then(() => qc.invalidateQueries({ queryKey: ["website_settings"] }));
+        }
+      });
+  }, [qc]);
 
   function getFullScreenshotUrl(rawUrl: string | null): string {
     if (!rawUrl) return "";
@@ -446,7 +468,11 @@ function WorkshopAdminPage() {
     (s, r) => s + (r.registration_fee || ws?.registration_fee || 0),
     0,
   );
-  const remainingSeats = ws ? Math.max(0, ws.seat_limit - workshopRegistrations.length) : 0;
+  const effectiveSeatLimit =
+    ws && (ws.slug.toLowerCase().includes("web") && (ws.seat_limit === 80 || !ws.seat_limit))
+      ? 100
+      : (ws?.seat_limit || 100);
+  const remainingSeats = ws ? Math.max(0, effectiveSeatLimit - workshopRegistrations.length) : 0;
 
   // Chart data
   const daily = Array.from({ length: 14 }).map((_, i) => {

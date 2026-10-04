@@ -351,7 +351,22 @@ export function markWorkshopDeleted(idOrSlug: string) {
 
 export function getLocalCustomWorkshops(): Workshop[] {
   try {
-    return JSON.parse(localStorage.getItem("gnits_custom_workshops") || "[]");
+    const list: Workshop[] = JSON.parse(localStorage.getItem("gnits_custom_workshops") || "[]");
+    let needsResave = false;
+    const sanitized = list.map((w) => {
+      if (
+        (w.slug === "web-development" || w.id === "workshop-3-web-development") &&
+        (w.seat_limit === 80 || !w.seat_limit)
+      ) {
+        needsResave = true;
+        return { ...w, seat_limit: 100 };
+      }
+      return w;
+    });
+    if (needsResave) {
+      localStorage.setItem("gnits_custom_workshops", JSON.stringify(sanitized));
+    }
+    return sanitized;
   } catch {
     return [];
   }
@@ -503,9 +518,9 @@ export function useWorkshops() {
             ? websiteSettings.venue
             : WEB_DEVELOPMENT_WORKSHOP.venue,
         seat_limit:
-          websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500
+          websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500 && websiteSettings.seat_limit !== 80
             ? websiteSettings.seat_limit
-            : WEB_DEVELOPMENT_WORKSHOP.seat_limit,
+            : 100,
         registration_open: websiteSettings?.registration_open ?? WEB_DEVELOPMENT_WORKSHOP.registration_open,
         hero_banner_url: websiteSettings?.hero_banner_url || WEB_DEVELOPMENT_WORKSHOP.hero_banner_url,
         brochure_url: websiteSettings?.brochure_url || WEB_DEVELOPMENT_WORKSHOP.brochure_url,
@@ -608,7 +623,10 @@ export function useWorkshops() {
             account_name: customWs.account_name || baseWs.account_name || paymentSettings?.account_name || "assdwe",
             qr_code_url: customWs.qr_code_url || baseWs.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl,
             registration_fee: customWs.registration_fee ?? baseWs.registration_fee ?? 200,
-            seat_limit: customWs.seat_limit ?? baseWs.seat_limit ?? 100,
+            seat_limit:
+              isWebDev
+                ? (customWs.seat_limit && customWs.seat_limit !== 80 ? customWs.seat_limit : (baseWs.seat_limit && baseWs.seat_limit !== 80 ? baseWs.seat_limit : 100))
+                : (customWs.seat_limit ?? baseWs.seat_limit ?? 100),
           };
         } else {
           fetchedWorkshops.push(customWs);

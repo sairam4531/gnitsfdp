@@ -435,7 +435,11 @@ function WorkshopUserPage() {
   }
 
   const content = getWorkshopContent(ws);
-  const remainingSeats = Math.max(0, ws.seat_limit - regCount);
+  const effectiveSeatLimit =
+    (ws.slug.toLowerCase().includes("web") && (ws.seat_limit === 80 || !ws.seat_limit))
+      ? 100
+      : (ws.seat_limit || 100);
+  const remainingSeats = Math.max(0, effectiveSeatLimit - regCount);
   const feedbackForm = enabledFeedback.find((f) => isFeedbackFormForWorkshop(f, ws));
   const isWebDev = ws.slug.toLowerCase() === "web-development" || ws.slug.toLowerCase().includes("web");
   const activeVideo = isWebDev ? webDevVideo : heroVideo;
