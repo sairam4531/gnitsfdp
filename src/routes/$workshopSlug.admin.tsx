@@ -572,7 +572,7 @@ function WorkshopAdminPage() {
       };
       saveLocalCustomWorkshop(updatedWs);
 
-      if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
+      if (ws.is_featured || ws.slug === "ai-humanoid-robot" || ws.slug === "web-development") {
         try {
           await supabase
             .from("website_settings")

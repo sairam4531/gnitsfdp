@@ -418,7 +418,7 @@ export const WEB_DEVELOPMENT_WORKSHOP: Workshop = {
   timings: "9:00 AM to 4:00 PM",
   venue: "Computer Lab - 12 & 13, IV Floor, Admin Block, GNITS, Hyderabad.",
   registration_fee: 200,
-  seat_limit: 80,
+  seat_limit: 100,
   registration_open: true,
   hero_banner_url: null,
   brochure_url: null,
@@ -539,6 +539,10 @@ export function useWorkshops() {
           },
           {
             ...WEB_DEVELOPMENT_WORKSHOP,
+            seat_limit:
+              websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500
+                ? websiteSettings.seat_limit
+                : WEB_DEVELOPMENT_WORKSHOP.seat_limit,
             admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
             admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
           },
@@ -548,6 +552,10 @@ export function useWorkshops() {
       if (!fetchedWorkshops.some((w) => w.slug === "web-development")) {
         fetchedWorkshops.push({
           ...WEB_DEVELOPMENT_WORKSHOP,
+          seat_limit:
+            websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500
+              ? websiteSettings.seat_limit
+              : WEB_DEVELOPMENT_WORKSHOP.seat_limit,
           admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
           admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
         });
@@ -581,7 +589,7 @@ export function useWorkshops() {
             account_name: customWs.account_name || baseWs.account_name || paymentSettings?.account_name || "assdwe",
             qr_code_url: customWs.qr_code_url || baseWs.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl,
             registration_fee: customWs.registration_fee ?? baseWs.registration_fee ?? 200,
-            seat_limit: customWs.seat_limit ?? baseWs.seat_limit ?? 80,
+            seat_limit: customWs.seat_limit ?? baseWs.seat_limit ?? 100,
           };
         } else {
           fetchedWorkshops.push(customWs);
