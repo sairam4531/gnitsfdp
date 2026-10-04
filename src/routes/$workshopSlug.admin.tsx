@@ -1265,9 +1265,7 @@ function WorkshopAdminPage() {
               >
                 ← View Public Workshop Page
               </Link>
-              <Link to="/auth" className="text-slate-400 hover:text-white font-mono">
-                Central Admin
-              </Link>
+
             </div>
           </CardContent>
         </Card>
