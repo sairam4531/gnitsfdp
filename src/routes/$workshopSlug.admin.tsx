@@ -119,6 +119,7 @@ import {
 } from "recharts";
 import { format, startOfDay, subDays } from "date-fns";
 import logoUrl from "@/assets/logo.png";
+import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -265,10 +266,16 @@ function WorkshopAdminPage() {
           : (ws.seat_limit || 100);
       setSeatLimit(initialLimit);
       setDetailsForm({ ...ws, seat_limit: initialLimit });
-      setUpi(ws.upi_id || "");
-      setAcct(ws.account_name || "");
-      setFee(ws.registration_fee || 250);
-      setQrUrl(ws.qr_code_url || null);
+      const isWebDev = ws.slug.toLowerCase().includes("web");
+      const initialUpi = ws.upi_id || (isWebDev ? "sai@ybl" : "");
+      const initialAcct = ws.account_name || (isWebDev ? "assdwe" : "");
+      const initialFee = ws.registration_fee || (isWebDev ? 200 : 250);
+      const initialQr = ws.qr_code_url || (isWebDev ? excellenceLogoUrl : null);
+
+      setUpi(initialUpi);
+      setAcct(initialAcct);
+      setFee(initialFee);
+      setQrUrl(initialQr);
       setQrImgError(false);
       setFeedbackTitleInput(ws.title);
     }
@@ -770,21 +777,24 @@ function WorkshopAdminPage() {
         registration_fee: fee,
       });
 
-      // ALWAYS sync payment settings to Supabase payment_settings so ALL devices (mobile & desktop) get the updated UPI, account name, QR code, and fee!
-      try {
-        await supabase
-          .from("payment_settings")
-          .update({
-            upi_id: upi,
-            account_name: acct,
-            internal_fee: fee,
-            external_fee: fee,
-            qr_code_url: qrUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .limit(1);
-      } catch (err) {
-        console.warn("Could not sync to payment_settings:", err);
+      // Only sync payment settings to Supabase payment_settings if this is the humanoid robot workshop
+      // so other workshops never overwrite or mix up payment details!
+      if (ws.slug === "ai-humanoid-robot" || ws.id === "workshop-1-ai-humanoid") {
+        try {
+          await supabase
+            .from("payment_settings")
+            .update({
+              upi_id: upi,
+              account_name: acct,
+              internal_fee: fee,
+              external_fee: fee,
+              qr_code_url: qrUrl,
+              updated_at: new Date().toISOString(),
+            })
+            .limit(1);
+        } catch (err) {
+          console.warn("Could not sync to payment_settings:", err);
+        }
       }
 
       try {

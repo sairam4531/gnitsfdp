@@ -162,13 +162,29 @@ function RegisterPage() {
     workshops.find((w) => w.slug.toLowerCase() === selectedSlug?.toLowerCase() || w.id === selectedSlug) ||
     workshops[0];
 
-  const fee = currentWorkshop?.registration_fee ?? 250;
+  const isWebDev = currentWorkshop?.slug?.toLowerCase().includes("web");
+
+  const fee = isWebDev
+    ? (currentWorkshop?.registration_fee ?? 200)
+    : (currentWorkshop?.registration_fee ?? payment?.internal_fee ?? 250);
   const open = currentWorkshop?.registration_open ?? (settings?.registration_open ?? true);
 
-  // Resilient workshop payment details with multi-tier fallback (workshop -> payment_settings -> defaults)
-  const upiId = (currentWorkshop?.upi_id || payment?.upi_id || "sai@ybl").trim();
-  const accountName = (currentWorkshop?.account_name || payment?.account_name || "assdwe").trim();
-  const qrCodeUrl = (currentWorkshop?.qr_code_url || payment?.qr_code_url || excellenceLogoUrl).trim();
+  // Resilient workshop payment details with multi-tier fallback (workshop -> defaults)
+  const upiId = (
+    currentWorkshop?.upi_id ||
+    (isWebDev ? "sai@ybl" : payment?.upi_id) ||
+    "sai@ybl"
+  ).trim();
+  const accountName = (
+    currentWorkshop?.account_name ||
+    (isWebDev ? "assdwe" : payment?.account_name) ||
+    "assdwe"
+  ).trim();
+  const qrCodeUrl = (
+    currentWorkshop?.qr_code_url ||
+    (isWebDev ? excellenceLogoUrl : payment?.qr_code_url) ||
+    excellenceLogoUrl
+  ).trim();
 
   const [qrError, setQrError] = useState(false);
   const hasPaymentDetails = Boolean(upiId || qrCodeUrl);

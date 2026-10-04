@@ -524,10 +524,10 @@ export function useWorkshops() {
         registration_open: websiteSettings?.registration_open ?? WEB_DEVELOPMENT_WORKSHOP.registration_open,
         hero_banner_url: websiteSettings?.hero_banner_url || WEB_DEVELOPMENT_WORKSHOP.hero_banner_url,
         brochure_url: websiteSettings?.brochure_url || WEB_DEVELOPMENT_WORKSHOP.brochure_url,
-        upi_id: paymentSettings?.upi_id || WEB_DEVELOPMENT_WORKSHOP.upi_id,
-        account_name: paymentSettings?.account_name || WEB_DEVELOPMENT_WORKSHOP.account_name,
-        qr_code_url: paymentSettings?.qr_code_url || WEB_DEVELOPMENT_WORKSHOP.qr_code_url,
-        registration_fee: paymentSettings?.internal_fee ?? WEB_DEVELOPMENT_WORKSHOP.registration_fee,
+        upi_id: WEB_DEVELOPMENT_WORKSHOP.upi_id,
+        account_name: WEB_DEVELOPMENT_WORKSHOP.account_name,
+        qr_code_url: WEB_DEVELOPMENT_WORKSHOP.qr_code_url,
+        registration_fee: WEB_DEVELOPMENT_WORKSHOP.registration_fee,
         admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
         admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
       };
@@ -619,10 +619,10 @@ export function useWorkshops() {
                 ? WEB_DEVELOPMENT_WORKSHOP.outcomes
                 : (customWs.outcomes && customWs.outcomes.length > 0 ? customWs.outcomes : baseWs.outcomes),
             // Never let empty/null customWs wipe out valid payment info:
-            upi_id: customWs.upi_id || baseWs.upi_id || paymentSettings?.upi_id || "sai@ybl",
-            account_name: customWs.account_name || baseWs.account_name || paymentSettings?.account_name || "assdwe",
-            qr_code_url: customWs.qr_code_url || baseWs.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl,
-            registration_fee: customWs.registration_fee ?? baseWs.registration_fee ?? 200,
+            upi_id: isWebDev ? (customWs.upi_id || WEB_DEVELOPMENT_WORKSHOP.upi_id) : (customWs.upi_id || baseWs.upi_id || paymentSettings?.upi_id || "sai@ybl"),
+            account_name: isWebDev ? (customWs.account_name || WEB_DEVELOPMENT_WORKSHOP.account_name) : (customWs.account_name || baseWs.account_name || paymentSettings?.account_name || "assdwe"),
+            qr_code_url: isWebDev ? (customWs.qr_code_url || WEB_DEVELOPMENT_WORKSHOP.qr_code_url) : (customWs.qr_code_url || baseWs.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl),
+            registration_fee: isWebDev ? (customWs.registration_fee ?? WEB_DEVELOPMENT_WORKSHOP.registration_fee ?? 200) : (customWs.registration_fee ?? baseWs.registration_fee ?? 200),
             seat_limit:
               isWebDev
                 ? (customWs.seat_limit && customWs.seat_limit !== 80 ? customWs.seat_limit : (baseWs.seat_limit && baseWs.seat_limit !== 80 ? baseWs.seat_limit : 100))
@@ -644,15 +644,22 @@ export function useWorkshops() {
         const pay = localPayments[ws.slug.toLowerCase()];
         const customOutcomeList = localOutcomes[ws.slug.toLowerCase()];
         const hasCustomOutcomes = customOutcomeList && customOutcomeList.length > 0;
+        const isWebDev = ws.slug.toLowerCase() === "web-development" || ws.slug.toLowerCase().includes("web");
         return {
           ...ws,
-          upi_id: pay?.upi_id || ws.upi_id || paymentSettings?.upi_id || "sai@ybl",
-          account_name: pay?.account_name || ws.account_name || paymentSettings?.account_name || "assdwe",
-          qr_code_url: pay?.qr_code_url || ws.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl,
+          upi_id:
+            pay?.upi_id ||
+            (isWebDev ? (ws.upi_id || WEB_DEVELOPMENT_WORKSHOP.upi_id) : (ws.upi_id || paymentSettings?.upi_id || "sai@ybl")),
+          account_name:
+            pay?.account_name ||
+            (isWebDev ? (ws.account_name || WEB_DEVELOPMENT_WORKSHOP.account_name) : (ws.account_name || paymentSettings?.account_name || "assdwe")),
+          qr_code_url:
+            pay?.qr_code_url ||
+            (isWebDev ? (ws.qr_code_url || WEB_DEVELOPMENT_WORKSHOP.qr_code_url) : (ws.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl)),
           registration_fee:
             pay?.registration_fee !== undefined && pay?.registration_fee !== null
               ? pay.registration_fee
-              : (ws.registration_fee ?? paymentSettings?.internal_fee ?? 200),
+              : (isWebDev ? (ws.registration_fee ?? WEB_DEVELOPMENT_WORKSHOP.registration_fee ?? 200) : (ws.registration_fee ?? paymentSettings?.internal_fee ?? 200)),
           outcomes: hasCustomOutcomes
             ? customOutcomeList
             : ws.outcomes && ws.outcomes.length > 0
