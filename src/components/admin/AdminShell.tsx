@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -15,6 +15,8 @@ import {
   GraduationCap,
   ListChecks,
   ShieldCheck,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
@@ -40,6 +42,9 @@ export function AdminShell() {
   const { user, loading } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const currentLabel =
+    [...nav].reverse().find((n) => (n.exact ? pathname === n.to : pathname.startsWith(n.to)))?.label ?? "Admin";
 
   useEffect(() => {
     if (!loading && !user) {
@@ -110,10 +115,54 @@ export function AdminShell() {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 overflow-x-hidden">
-        <header className="flex h-14 items-center justify-between border-b bg-background px-4 md:px-6">
-          <div className="font-semibold">Workshop Portal — Admin</div>
-          <Button variant="ghost" size="sm" onClick={logout} className="md:hidden">
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-foreground/50" onClick={() => setMenuOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-sidebar text-sidebar-foreground shadow-xl">
+            <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <img src={logoUrl} alt="GNITS Logo" className="h-8 w-8 shrink-0 object-contain rounded-md" />
+                <div className="truncate text-sm font-bold">Workshop Admin</div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+              {nav.map((n) => {
+                const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    onClick={() => setMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition ${active ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" : "hover:bg-sidebar-accent"}`}
+                  >
+                    <n.icon className="h-4 w-4 shrink-0" />
+                    {n.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="border-t border-sidebar-border p-3">
+              <div className="mb-2 truncate px-2 text-xs opacity-70">{user.email}</div>
+              <Button variant="secondary" size="sm" className="w-full" onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" /> Logout
+              </Button>
+            </div>
+          </aside>
+        </div>
+      )}
+      <main className="min-w-0 flex-1 overflow-x-hidden">
+        <header className="sticky top-0 z-40 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b bg-background px-3 md:flex md:justify-between md:px-6">
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="truncate font-semibold">
+            <span className="md:hidden">{currentLabel}</span>
+            <span className="hidden md:inline">Workshop Portal — Admin</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={logout} className="md:hidden" aria-label="Logout">
             <LogOut className="h-4 w-4" />
           </Button>
         </header>

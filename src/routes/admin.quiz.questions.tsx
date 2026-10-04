@@ -457,9 +457,9 @@ function QuestionsManager({ examId }: { examId: string }) {
     <div className="space-y-6">
       <Card>
         <CardContent className="space-y-4 p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">{editingId ? "Edit Question" : "Add Question"}</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 ref={fileRef}
                 type="file"
