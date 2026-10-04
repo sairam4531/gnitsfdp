@@ -1203,9 +1203,7 @@ function WorkshopAdminPage() {
             <CardTitle className="mt-2 text-xl font-black text-white">
               {ws.title}
             </CardTitle>
-            <CardDescription className="text-xs text-slate-400 font-mono mt-1">
-              Admin & Coordinator Portal
-            </CardDescription>
+
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -1302,11 +1300,10 @@ function WorkshopAdminPage() {
                 key={n.id}
                 type="button"
                 onClick={() => setActiveTab(n.id as AdminNavTab)}
-                className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
-                    : "hover:bg-sidebar-accent text-sidebar-foreground"
-                }`}
+                className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${active
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                  : "hover:bg-sidebar-accent text-sidebar-foreground"
+                  }`}
               >
                 <n.icon className="h-4 w-4 shrink-0" />
                 <span>{n.label}</span>
@@ -1613,9 +1610,8 @@ function WorkshopAdminPage() {
                       <CardContent className="p-5">
                         <div className="text-xs text-muted-foreground font-semibold">Status</div>
                         <div
-                          className={`mt-1 text-2xl font-black ${
-                            open ? "text-emerald-600" : "text-destructive"
-                          }`}
+                          className={`mt-1 text-2xl font-black ${open ? "text-emerald-600" : "text-destructive"
+                            }`}
                         >
                           {open ? "OPEN" : "CLOSED"}
                         </div>
@@ -2276,17 +2272,16 @@ function WorkshopAdminPage() {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <Badge
                                   variant="outline"
-                                  className={`rounded-full text-[10px] font-bold ${
-                                    r.payment_status === "Approved"
-                                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
-                                      : r.payment_status === "Rejected"
-                                        ? "border-rose-500 bg-rose-500/10 text-rose-600"
-                                        : "border-amber-400 bg-amber-400/10 text-amber-600"
-                                  }`}
+                                  className={`rounded-full text-[10px] font-bold ${r.payment_status === "Approved"
+                                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
+                                    : r.payment_status === "Rejected"
+                                      ? "border-rose-500 bg-rose-500/10 text-rose-600"
+                                      : "border-amber-400 bg-amber-400/10 text-amber-600"
+                                    }`}
                                 >
                                   {r.utr_number &&
-                                  r.utr_number !== "Pending Payment" &&
-                                  r.utr_number !== "PENDING"
+                                    r.utr_number !== "Pending Payment" &&
+                                    r.utr_number !== "PENDING"
                                     ? `UTR: ${r.utr_number}`
                                     : "Pending Payment"}
                                 </Badge>
@@ -2597,9 +2592,8 @@ function WorkshopAdminPage() {
                           return (
                             <tr
                               key={r.id}
-                              className={`hover:bg-muted/30 transition-colors ${
-                                isSelected ? "bg-purple-50/50 dark:bg-purple-950/20" : ""
-                              }`}
+                              className={`hover:bg-muted/30 transition-colors ${isSelected ? "bg-purple-50/50 dark:bg-purple-950/20" : ""
+                                }`}
                             >
                               <td className="p-3 text-center">
                                 <Checkbox
@@ -3103,11 +3097,10 @@ function WorkshopAdminPage() {
                 {viewReceiptRecord?.payment_status && (
                   <Badge
                     variant="outline"
-                    className={`rounded-full text-[10px] font-bold ${
-                      viewReceiptRecord.payment_status === "Approved"
-                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
-                        : "border-amber-400 bg-amber-400/10 text-amber-600"
-                    }`}
+                    className={`rounded-full text-[10px] font-bold ${viewReceiptRecord.payment_status === "Approved"
+                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
+                      : "border-amber-400 bg-amber-400/10 text-amber-600"
+                      }`}
                   >
                     {viewReceiptRecord.payment_status}
                   </Badge>
@@ -3138,11 +3131,10 @@ function WorkshopAdminPage() {
               ) : null}
 
               <div
-                className={`receipt-fallback ${
-                  getFullScreenshotUrl(viewReceiptRecord?.payment_screenshot_url || viewScreenshotUrl)
-                    ? "hidden"
-                    : "flex"
-                } flex-col items-center justify-center p-6 text-slate-300 text-center gap-3`}
+                className={`receipt-fallback ${getFullScreenshotUrl(viewReceiptRecord?.payment_screenshot_url || viewScreenshotUrl)
+                  ? "hidden"
+                  : "flex"
+                  } flex-col items-center justify-center p-6 text-slate-300 text-center gap-3`}
               >
                 <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
                   <AlertCircle className="h-6 w-6" />
