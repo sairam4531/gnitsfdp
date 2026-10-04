@@ -317,44 +317,55 @@ function WorkshopAdminPage() {
     }
   }
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginLoading(true);
 
-    setTimeout(() => {
-      const inputUser = usernameInput.trim().toLowerCase();
-      const inputPass = passwordInput.trim();
-      const expectedUser = (ws?.admin_username || `${ws?.slug || workshopSlug}_admin`).trim().toLowerCase();
-      const expectedPass = (ws?.admin_password || "gnits@admin2026").trim();
+    const inputUser = usernameInput.trim().toLowerCase();
+    const inputPass = passwordInput.trim();
+    const expectedUser = (ws?.admin_username || `${ws?.slug || workshopSlug}_admin`).trim().toLowerCase();
+    const expectedPass = (ws?.admin_password || "gnits@admin2026").trim();
 
-      const isMasterAdmin =
-        inputUser === "sairohit45" &&
-        (inputPass === "Rohitsharma45" || inputPass.toLowerCase() === "rohitsharma45");
+    // Check 1: Master Admin
+    const isMasterAdmin =
+      (inputUser === "sairohit45" || inputUser === "admin") &&
+      (inputPass === "Rohitsharma45" || inputPass.toLowerCase() === "rohitsharma45" || inputPass === "admin123" || inputPass === "gnits@admin2026");
 
-      const isWorkshopAdmin =
-        (inputUser === expectedUser || inputUser === `${(ws?.slug || workshopSlug).toLowerCase()}_admin` || inputUser === "admin") &&
-        (inputPass === expectedPass || inputPass === "gnits@admin2026" || inputPass === "admin123" || inputPass === "gnits@csd2026");
+    // Check 2: GNITS Department Admin (csmcsd / csmcsd@gnits.ac.in)
+    const isCsmCsd =
+      (inputUser === "csmcsd" || inputUser === "csmcsd@gnits.ac.in") &&
+      (inputPass === "csmcsd@1234" || inputPass === "gnits@csd2026" || inputPass === "gnits@admin2026" || inputPass === expectedPass);
 
-      const isLegacyAdmin =
-        inputUser === "csd_admin" && (inputPass === "gnits@csd2026" || inputPass === expectedPass);
+    // Check 3: Workshop Specific Admin (csd_admin / expectedUser)
+    const isWorkshopAdmin =
+      (inputUser === expectedUser || inputUser === "csd_admin" || inputUser === `${(ws?.slug || workshopSlug).toLowerCase()}_admin`) &&
+      (inputPass === expectedPass || inputPass === "gnits@csd2026" || inputPass === "csmcsd@1234" || inputPass === "gnits@admin2026");
 
-      if (isMasterAdmin || isWorkshopAdmin || isLegacyAdmin) {
-        setIsWsAuth(true);
-        sessionStorage.setItem(`gnits_ws_admin_${workshopSlug}`, "true");
-        localStorage.setItem(`gnits_ws_admin_${workshopSlug}`, "true");
-        // Authenticate with Supabase Auth to enable remote RLS permissions
-        supabase.auth.signInWithPassword({
-          email: "csmcsd@gnits.ac.in",
-          password: "csmcsd@1234",
-        }).then(() => {
-          qc.invalidateQueries({ queryKey: ["registrations"] });
-        });
-        toast.success(`Welcome to ${ws?.title || "Workshop"} Admin Portal!`);
-      } else {
-        toast.error("Invalid credentials for this workshop. Please check username & password.");
-      }
-      setLoginLoading(false);
-    }, 300);
+    // Check 4: Try live Supabase authentication
+    let supabaseSuccess = false;
+    try {
+      const emailToTry = inputUser.includes("@") ? inputUser : `${inputUser}@gnits.ac.in`;
+      const { error: sbErr } = await supabase.auth.signInWithPassword({ email: emailToTry, password: inputPass });
+      if (!sbErr) supabaseSuccess = true;
+    } catch {
+      // ignore
+    }
+
+    if (isMasterAdmin || isCsmCsd || isWorkshopAdmin || supabaseSuccess) {
+      setIsWsAuth(true);
+      sessionStorage.setItem(`gnits_ws_admin_${workshopSlug}`, "true");
+      localStorage.setItem(`gnits_ws_admin_${workshopSlug}`, "true");
+      // Authenticate with Supabase Auth to enable remote RLS permissions
+      await supabase.auth.signInWithPassword({
+        email: "csmcsd@gnits.ac.in",
+        password: "csmcsd@1234",
+      }).catch(() => {});
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+      toast.success(`Welcome to ${ws?.title || "Workshop"} Admin Portal!`);
+    } else {
+      toast.error("Invalid credentials for this workshop. Please check username & password.");
+    }
+    setLoginLoading(false);
   }
 
   // Ensure Supabase authenticated session is active whenever admin portal is accessed
@@ -637,7 +648,7 @@ function WorkshopAdminPage() {
       };
       saveLocalCustomWorkshop(updatedWs);
 
-      if (ws.is_featured || ws.slug === "ai-humanoid-robot") {
+      if (ws.is_featured || ws.slug === "ai-humanoid-robot" || ws.slug === "web-development") {
         try {
           await supabase
             .from("website_settings")
@@ -1208,14 +1219,17 @@ function WorkshopAdminPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label className="text-xs font-semibold text-slate-200">Admin Username</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-200">Admin Username</Label>
+                  <span className="text-[10px] text-amber-400 font-mono">csmcsd / csd_admin</span>
+                </div>
                 <Input
                   type="text"
                   required
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  placeholder={`e.g. ${ws.admin_username || `${ws.slug}_admin`}`}
+                  placeholder="e.g. csmcsd or csd_admin"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   className="mt-1.5 bg-slate-950 border-slate-700 text-white font-mono text-sm"

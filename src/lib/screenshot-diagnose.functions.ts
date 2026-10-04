@@ -33,15 +33,6 @@ export const diagnoseScreenshot = createServerFn({ method: "POST" })
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured.");
 
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const { streamText } = await import("ai");
-
-    const provider = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey,
-      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    });
-
     const text = [
       data.pageUrl ? `Page URL: ${data.pageUrl}` : "",
       data.note ? `Admin note: ${data.note}` : "",
@@ -50,46 +41,43 @@ export const diagnoseScreenshot = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    let failure: string | null = null;
-    const result = streamText({
-      model: provider.responses("openai/gpt-6-astra"),
-      system: SYSTEM,
-      maxRetries: 0,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text },
-            { type: "file", data: data.imageDataUrl, mediaType: data.imageDataUrl.slice(5, data.imageDataUrl.indexOf(";")) },
-          ],
-        },
-      ],
-      providerOptions: {
-        openai: {
-          forceReasoning: true,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          store: false,
-          include: ["reasoning.encrypted_content"],
-        },
-      },
-      onError: ({ error }) => {
-        const e = error as { statusCode?: number; message?: string };
-        if (e?.statusCode === 402) failure = "AI credits are used up. Please add credits in workspace billing.";
-        else if (e?.statusCode === 429) failure = "Too many requests. Please wait a minute and try again.";
-        else if (e?.statusCode === 403) failure = e.message || "AI access was denied.";
-        else failure = e?.message || "AI analysis failed.";
-        console.error("diagnoseScreenshot error", error);
-      },
-    });
-
-    let out = "";
     try {
-      out = await result.text;
-    } catch {
-      /* handled via onError */
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "Lovable-API-Key": apiKey,
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: [
+            { role: "system", content: SYSTEM },
+            {
+              role: "user",
+              content: [
+                { type: "text", text },
+                {
+                  type: "image_url",
+                  image_url: { url: data.imageDataUrl },
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 402) return { ok: false as const, error: "AI credits are used up. Please add credits in workspace billing." };
+        if (response.status === 429) return { ok: false as const, error: "Too many requests. Please wait a minute and try again." };
+        return { ok: false as const, error: `AI service error (${response.status})` };
+      }
+
+      const resJson = (await response.json()) as any;
+      const out = resJson.choices?.[0]?.message?.content || "";
+      if (!out.trim()) return { ok: false as const, error: "The AI returned no analysis. Try another screenshot." };
+      return { ok: true as const, analysis: out };
+    } catch (err: any) {
+      return { ok: false as const, error: err?.message || "AI analysis failed." };
     }
-    if (failure) return { ok: false as const, error: failure };
-    if (!out.trim()) return { ok: false as const, error: "The AI returned no analysis. Try another screenshot." };
-    return { ok: true as const, analysis: out };
   });

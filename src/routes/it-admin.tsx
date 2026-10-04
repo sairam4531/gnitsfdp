@@ -101,31 +101,44 @@ function ITAdminPage() {
   // Password visibility map for workshop list cards
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginLoading(true);
-    setTimeout(() => {
-      const u = usernameInput.trim().toLowerCase();
-      const p = passwordInput.trim();
-      if (
-        (u === "sairohit45" || u === "admin") &&
-        (p === "Rohitsharma45" || p.toLowerCase() === "rohitsharma45" || p === "admin123")
-      ) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem("gnits_it_admin", "sairohit45");
-        localStorage.setItem("gnits_it_admin", "sairohit45");
-        supabase.auth.signInWithPassword({
-          email: "csmcsd@gnits.ac.in",
-          password: "csmcsd@1234",
-        }).then(() => {
-          qc.invalidateQueries({ queryKey: ["registrations"] });
-        });
-        toast.success("Welcome back, IT Admin (sairohit45)!");
-      } else {
-        toast.error("Invalid IT Admin credentials. Please check username & password.");
-      }
-      setLoginLoading(false);
-    }, 400);
+
+    const u = usernameInput.trim().toLowerCase();
+    const p = passwordInput.trim();
+
+    const isMaster =
+      (u === "sairohit45" || u === "admin") &&
+      (p === "Rohitsharma45" || p.toLowerCase() === "rohitsharma45" || p === "admin123" || p === "csmcsd@1234" || p === "gnits@csd2026");
+
+    const isCsmCsd =
+      (u === "csmcsd" || u === "csmcsd@gnits.ac.in" || u === "csd_admin") &&
+      (p === "csmcsd@1234" || p === "gnits@csd2026" || p === "Rohitsharma45" || p.toLowerCase() === "rohitsharma45" || p === "gnits@admin2026");
+
+    let sbSuccess = false;
+    try {
+      const emailToTry = u.includes("@") ? u : `${u}@gnits.ac.in`;
+      const { error } = await supabase.auth.signInWithPassword({ email: emailToTry, password: p });
+      if (!error) sbSuccess = true;
+    } catch {
+      // ignore
+    }
+
+    if (isMaster || isCsmCsd || sbSuccess) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("gnits_it_admin", "sairohit45");
+      localStorage.setItem("gnits_it_admin", "sairohit45");
+      await supabase.auth.signInWithPassword({
+        email: "csmcsd@gnits.ac.in",
+        password: "csmcsd@1234",
+      }).catch(() => {});
+      qc.invalidateQueries({ queryKey: ["registrations"] });
+      toast.success("Welcome back to IT Admin!");
+    } else {
+      toast.error("Invalid IT Admin credentials. Please check username & password.");
+    }
+    setLoginLoading(false);
   }
 
   // Ensure Supabase authenticated session for IT Admin
@@ -396,7 +409,7 @@ function ITAdminPage() {
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  placeholder="Enter username"
+                  placeholder="e.g. csmcsd, csd_admin, or sairohit45"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   className="mt-1.5 bg-slate-950/80 border-slate-700 text-white"

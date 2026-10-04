@@ -474,14 +474,49 @@ export function useWorkshops() {
   const { data: paymentSettings } = usePaymentSettings();
 
   return useQuery<Workshop[]>({
-    queryKey: ["workshops", websiteSettings?.id, paymentSettings?.id],
+    queryKey: [
+      "workshops",
+      websiteSettings?.id,
+      paymentSettings?.id,
+      websiteSettings?.updated_at,
+      paymentSettings?.updated_at,
+      websiteSettings?.seat_limit,
+      websiteSettings?.registration_open,
+      paymentSettings?.internal_fee,
+      paymentSettings?.upi_id,
+    ],
     queryFn: async () => {
       const localCreds = getLocalWorkshopCredentials();
       const deletedList = getLocalDeletedWorkshops();
       const localCustom = getLocalCustomWorkshops();
 
-      // Note: Supabase does not have a 'workshops' table in PostgREST.
-      // Dynamic workshop configuration is seamlessly backed by website_settings, payment_settings, and custom updates.
+      // Note: Supabase dynamic workshop configuration is seamlessly backed by website_settings, payment_settings, and custom updates.
+      const webDevDynamic: Workshop = {
+        ...WEB_DEVELOPMENT_WORKSHOP,
+        dates:
+          websiteSettings?.fdp_dates && !websiteSettings.fdp_dates.includes("10 September")
+            ? websiteSettings.fdp_dates
+            : WEB_DEVELOPMENT_WORKSHOP.dates,
+        timings: websiteSettings?.timings || WEB_DEVELOPMENT_WORKSHOP.timings,
+        venue:
+          websiteSettings?.venue && !websiteSettings.venue.includes("CL-12 & 13, 4th Floor")
+            ? websiteSettings.venue
+            : WEB_DEVELOPMENT_WORKSHOP.venue,
+        seat_limit:
+          websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500
+            ? websiteSettings.seat_limit
+            : WEB_DEVELOPMENT_WORKSHOP.seat_limit,
+        registration_open: websiteSettings?.registration_open ?? WEB_DEVELOPMENT_WORKSHOP.registration_open,
+        hero_banner_url: websiteSettings?.hero_banner_url || WEB_DEVELOPMENT_WORKSHOP.hero_banner_url,
+        brochure_url: websiteSettings?.brochure_url || WEB_DEVELOPMENT_WORKSHOP.brochure_url,
+        upi_id: paymentSettings?.upi_id || WEB_DEVELOPMENT_WORKSHOP.upi_id,
+        account_name: paymentSettings?.account_name || WEB_DEVELOPMENT_WORKSHOP.account_name,
+        qr_code_url: paymentSettings?.qr_code_url || WEB_DEVELOPMENT_WORKSHOP.qr_code_url,
+        registration_fee: paymentSettings?.internal_fee ?? WEB_DEVELOPMENT_WORKSHOP.registration_fee,
+        admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
+        admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
+      };
+
       let fetchedWorkshops: Workshop[] = [
           {
             id: "workshop-1-ai-humanoid",
@@ -537,28 +572,12 @@ export function useWorkshops() {
             admin_username: localCreds["agentic-ai-cloud"]?.username || "cse_admin",
             admin_password: localCreds["agentic-ai-cloud"]?.password || "gnits@cse2026",
           },
-          {
-            ...WEB_DEVELOPMENT_WORKSHOP,
-            seat_limit:
-              websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500
-                ? websiteSettings.seat_limit
-                : WEB_DEVELOPMENT_WORKSHOP.seat_limit,
-            admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
-            admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
-          },
+          webDevDynamic,
         ];
 
       // Always guarantee web-development workshop exists
       if (!fetchedWorkshops.some((w) => w.slug === "web-development")) {
-        fetchedWorkshops.push({
-          ...WEB_DEVELOPMENT_WORKSHOP,
-          seat_limit:
-            websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500
-              ? websiteSettings.seat_limit
-              : WEB_DEVELOPMENT_WORKSHOP.seat_limit,
-          admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
-          admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
-        });
+        fetchedWorkshops.push(webDevDynamic);
       }
 
       // Merge locally created / edited workshops safely
