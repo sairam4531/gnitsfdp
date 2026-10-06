@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import logoUrl from "@/assets/logo.png";
-import csiLogoUrl from "@/assets/csi-logo.png";
 import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 import sigaiLogoUrl from "@/assets/acm-w-sigai-logo.png";
 
@@ -55,11 +54,6 @@ export function SiteHeader({ department }: { department?: string | null }) {
             src={sigaiLogoUrl}
             alt="ACM-W SIGAI Logo"
             className="h-10 w-auto max-h-10 object-contain bg-white rounded-md px-1.5 py-0.5 shadow-sm border border-amber-400/30"
-          />
-          <img
-            src={csiLogoUrl}
-            alt="CSI Logo"
-            className="h-9 w-9 object-contain bg-white rounded-full p-0.5 shadow-sm border border-amber-400/30"
           />
           <img
             src={excellenceLogoUrl}
