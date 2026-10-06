@@ -826,8 +826,11 @@ function WorkshopPage() {
                   <div>
                     <Label>Footer Text</Label>
                     <Input
-                      value={String(s.footer_text ?? "")}
-                      onChange={(e) => up("footer_text", e.target.value)}
+                      value={String(s.footer_text ?? "").split("<!--")[0].trim()}
+                      onChange={(e) => {
+                        const existingConfig = String(s.footer_text ?? "").match(/<!--GNITS_CONFIG:.*?-->/)?.[0] || "";
+                        up("footer_text", e.target.value + existingConfig);
+                      }}
                     />
                   </div>
                 </CardContent>

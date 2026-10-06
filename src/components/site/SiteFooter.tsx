@@ -117,7 +117,7 @@ export function SiteFooter({
         </div>
       </div>
       <div className="border-t border-slate-800/80 py-5 text-center text-xs text-slate-400 font-medium">
-        {footerText ?? "© G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad. All Rights Reserved."}
+        {(footerText ? footerText.split("<!--")[0].trim() : null) || "© G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad. All Rights Reserved."}
       </div>
     </footer>
   );

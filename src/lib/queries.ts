@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import excellenceLogoUrl from "@/assets/excellence-logo.jpg";
 
@@ -203,6 +204,189 @@ export function getDefaultOutcomesForWorkshop(slugOrWs?: string | Workshop): Wor
   ];
 }
 
+export async function ensureAdminSession(force = false) {
+  if (typeof window === "undefined") return;
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (!data?.session) {
+      const hasItAdmin =
+        sessionStorage.getItem("gnits_it_admin") === "sairohit45" ||
+        localStorage.getItem("gnits_it_admin") === "sairohit45";
+      const hasWsAdmin =
+        Object.keys(localStorage).some(
+          (k) => k.startsWith("gnits_ws_admin_") && localStorage.getItem(k) === "true"
+        ) ||
+        Object.keys(sessionStorage).some(
+          (k) => k.startsWith("gnits_ws_admin_") && sessionStorage.getItem(k) === "true"
+        );
+
+      if (hasItAdmin || hasWsAdmin || force) {
+        await supabase.auth.signInWithPassword({
+          email: "csmcsd@gnits.ac.in",
+          password: "csmcsd@1234",
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("ensureAdminSession error:", err);
+  }
+}
+
+export function parseRemoteWorkshopConfig(footerText?: string | null): Record<string, Partial<Workshop>> {
+  if (!footerText) return {};
+  try {
+    const match = footerText.match(/<!--GNITS_CONFIG:(.*?)-->/);
+    if (match && match[1]) {
+      return JSON.parse(match[1]);
+    }
+  } catch (e) {
+    console.warn("Failed to parse remote workshop config:", e);
+  }
+  return {};
+}
+
+export async function saveCustomWorkshopToRemote(ws: Workshop) {
+  try {
+    await ensureAdminSession(true);
+
+    const { data: currentSettings, error: fetchErr } = await supabase
+      .from("website_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (fetchErr || !currentSettings) {
+      console.warn("Could not fetch website_settings to sync workshop:", fetchErr);
+      return;
+    }
+
+    const existingConfig = parseRemoteWorkshopConfig(currentSettings.footer_text);
+    const key = ws.slug.toLowerCase();
+
+    existingConfig[key] = {
+      ...(existingConfig[key] || {}),
+      ...ws,
+      updated_at: new Date().toISOString(),
+    };
+
+    const rawFooter = currentSettings.footer_text || "© G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad";
+    const cleanBaseFooter = rawFooter.split("<!--")[0].trim();
+    const newFooterText = `${cleanBaseFooter}<!--GNITS_CONFIG:${JSON.stringify(existingConfig)}-->`;
+
+    const updatePayload: Record<string, any> = {
+      footer_text: newFooterText,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (ws.slug === "ai-humanoid-robot" || ws.is_featured) {
+      if (ws.title) updatePayload.fdp_title = ws.title;
+      if (ws.subtitle) updatePayload.fdp_subtitle = ws.subtitle;
+      if (ws.description) updatePayload.description = ws.description;
+      if (ws.dates) updatePayload.fdp_dates = ws.dates;
+      if (ws.timings) updatePayload.timings = ws.timings;
+      if (ws.venue) updatePayload.venue = ws.venue;
+      if (ws.seat_limit !== undefined) updatePayload.seat_limit = ws.seat_limit;
+      if (ws.registration_open !== undefined) updatePayload.registration_open = ws.registration_open;
+      if (ws.hero_banner_url !== undefined) updatePayload.hero_banner_url = ws.hero_banner_url;
+      if (ws.brochure_url !== undefined) updatePayload.brochure_url = ws.brochure_url;
+    }
+
+    const { error: updErr } = await supabase
+      .from("website_settings")
+      .update(updatePayload)
+      .eq("id", currentSettings.id);
+
+    if (updErr) {
+      console.error("Failed to sync workshop config to database:", updErr);
+    }
+
+    if (ws.upi_id || ws.account_name || ws.qr_code_url || ws.registration_fee !== undefined) {
+      await saveLocalWorkshopPayment(ws.slug, {
+        upi_id: ws.upi_id,
+        account_name: ws.account_name,
+        qr_code_url: ws.qr_code_url,
+        registration_fee: ws.registration_fee,
+      });
+    }
+  } catch (e) {
+    console.error("saveCustomWorkshopToRemote error:", e);
+  }
+}
+
+export async function deleteCustomWorkshopFromRemote(idOrSlug: string) {
+  try {
+    await ensureAdminSession(true);
+    const { data: currentSettings } = await supabase
+      .from("website_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (!currentSettings) return;
+
+    const existingConfig = parseRemoteWorkshopConfig(currentSettings.footer_text);
+    const key = idOrSlug.toLowerCase();
+    let found = false;
+
+    for (const k of Object.keys(existingConfig)) {
+      if (k === key || existingConfig[k]?.id === idOrSlug || existingConfig[k]?.slug === idOrSlug) {
+        delete existingConfig[k];
+        found = true;
+      }
+    }
+
+    if (found) {
+      const rawFooter = currentSettings.footer_text || "© G. Narayanamma Institute of Technology and Science (GNITS), Hyderabad";
+      const cleanBaseFooter = rawFooter.split("<!--")[0].trim();
+      const newFooterText = `${cleanBaseFooter}<!--GNITS_CONFIG:${JSON.stringify(existingConfig)}-->`;
+
+      await supabase
+        .from("website_settings")
+        .update({ footer_text: newFooterText, updated_at: new Date().toISOString() })
+        .eq("id", currentSettings.id);
+    }
+  } catch (e) {
+    console.error("deleteCustomWorkshopFromRemote error:", e);
+  }
+}
+
+export function useRealtimeSync() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel("gnits-realtime-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "website_settings" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["website_settings"] });
+          qc.invalidateQueries({ queryKey: ["workshops"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "workshop_payments" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["workshops"] });
+          qc.invalidateQueries({ queryKey: ["payment_settings"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "registrations" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["registrations"] });
+          qc.invalidateQueries({ queryKey: ["registration_count"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+}
+
 export function getLocalWorkshopOutcomes(): Record<string, WorkshopOutcomeItem[]> {
   try {
     return JSON.parse(localStorage.getItem("gnits_workshop_outcomes") || "{}");
@@ -223,6 +407,9 @@ export function saveLocalWorkshopOutcomes(slug: string, outcomes: WorkshopOutcom
     if (idx >= 0) {
       list[idx].outcomes = outcomes;
       localStorage.setItem("gnits_custom_workshops", JSON.stringify(list));
+      saveCustomWorkshopToRemote(list[idx]).catch(console.error);
+    } else {
+      saveCustomWorkshopToRemote({ slug, outcomes } as Workshop).catch(console.error);
     }
   } catch (e) {
     console.error("Failed to save workshop outcomes:", e);
@@ -271,12 +458,14 @@ export function saveLocalWorkshopPayment(slug: string, payment: WorkshopPaymentI
   if (payment.account_name !== undefined) row.account_name = payment.account_name;
   if (payment.qr_code_url !== undefined) row.qr_code_url = payment.qr_code_url;
   if (payment.registration_fee !== undefined) row.registration_fee = payment.registration_fee;
-  return supabase
-    .from("workshop_payments" as never)
-    .upsert(row as never, { onConflict: "slug" })
-    .then(({ error }) => {
-      if (error) console.error("Failed to save workshop payment to database:", error);
-    });
+  return ensureAdminSession(true).then(() => {
+    return supabase
+      .from("workshop_payments" as never)
+      .upsert(row as never, { onConflict: "slug" })
+      .then(({ error }) => {
+        if (error) console.error("Failed to save workshop payment to database:", error);
+      });
+  });
 }
 
 async function fetchDbWorkshopPayments(): Promise<Record<string, WorkshopPaymentInfo>> {
@@ -371,6 +560,7 @@ export function markWorkshopDeleted(idOrSlug: string) {
   } catch (e) {
     console.error("Failed to mark workshop as deleted:", e);
   }
+  deleteCustomWorkshopFromRemote(idOrSlug).catch(console.error);
 }
 
 export function getLocalCustomWorkshops(): Workshop[] {
@@ -413,6 +603,7 @@ export function saveLocalCustomWorkshop(ws: Workshop) {
   } catch (e) {
     console.error("Failed to save local custom workshop:", e);
   }
+  saveCustomWorkshopToRemote(ws).catch(console.error);
 }
 
 export function useWebsiteSettings() {
@@ -523,137 +714,118 @@ export function useWorkshops() {
       websiteSettings?.registration_open,
       paymentSettings?.internal_fee,
       paymentSettings?.upi_id,
+      websiteSettings?.footer_text,
     ],
     queryFn: async () => {
       const localCreds = getLocalWorkshopCredentials();
       const deletedList = getLocalDeletedWorkshops();
       const localCustom = getLocalCustomWorkshops();
+      const remoteOverrides = parseRemoteWorkshopConfig(websiteSettings?.footer_text);
+      const dbPayments = await fetchDbWorkshopPayments();
+      const localOutcomes = getLocalWorkshopOutcomes();
+      const localPayments = getLocalWorkshopPayments();
 
-      // Note: Supabase dynamic workshop configuration is seamlessly backed by website_settings, payment_settings, and custom updates.
       const webDevDynamic: Workshop = {
         ...WEB_DEVELOPMENT_WORKSHOP,
-        dates:
-          websiteSettings?.fdp_dates && !websiteSettings.fdp_dates.includes("10 September")
-            ? websiteSettings.fdp_dates
-            : WEB_DEVELOPMENT_WORKSHOP.dates,
-        timings: websiteSettings?.timings || WEB_DEVELOPMENT_WORKSHOP.timings,
-        venue:
-          websiteSettings?.venue && !websiteSettings.venue.includes("CL-12 & 13, 4th Floor")
-            ? websiteSettings.venue
-            : WEB_DEVELOPMENT_WORKSHOP.venue,
-        seat_limit:
-          websiteSettings?.seat_limit && websiteSettings.seat_limit !== 500 && websiteSettings.seat_limit !== 80
-            ? websiteSettings.seat_limit
-            : 100,
-        registration_open: websiteSettings?.registration_open ?? WEB_DEVELOPMENT_WORKSHOP.registration_open,
-        hero_banner_url: websiteSettings?.hero_banner_url || WEB_DEVELOPMENT_WORKSHOP.hero_banner_url,
-        brochure_url: websiteSettings?.brochure_url || WEB_DEVELOPMENT_WORKSHOP.brochure_url,
-        upi_id: WEB_DEVELOPMENT_WORKSHOP.upi_id,
-        account_name: WEB_DEVELOPMENT_WORKSHOP.account_name,
-        qr_code_url: WEB_DEVELOPMENT_WORKSHOP.qr_code_url,
-        registration_fee: WEB_DEVELOPMENT_WORKSHOP.registration_fee,
         admin_username: localCreds["web-development"]?.username || WEB_DEVELOPMENT_WORKSHOP.admin_username,
         admin_password: localCreds["web-development"]?.password || WEB_DEVELOPMENT_WORKSHOP.admin_password,
       };
 
       let fetchedWorkshops: Workshop[] = [
-          {
-            id: "workshop-1-ai-humanoid",
-            slug: "ai-humanoid-robot",
-            title:
-              websiteSettings?.fdp_title ||
-              "Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT'",
-            subtitle:
-              websiteSettings?.fdp_subtitle ||
-              "under GNITS CSI Student Chapter — Gain hands-on experience in AI humanoid robot technologies.",
-            description:
-              websiteSettings?.description ||
-              "Department of CSE (Data Science) is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter.",
-            department: "CSE (Data Science)",
-            dates: websiteSettings?.fdp_dates || "10 September 2026 – 11 September 2026",
-            timings: websiteSettings?.timings || "9:00 AM to 4:00 PM",
-            venue: websiteSettings?.venue || "CL-12 & 13, 4th Floor, Admin Block, GNITS, Hyderabad",
-            registration_fee: paymentSettings?.internal_fee ?? 250,
-            seat_limit: websiteSettings?.seat_limit ?? 500,
-            registration_open: websiteSettings?.registration_open ?? true,
-            hero_banner_url: websiteSettings?.hero_banner_url || null,
-            brochure_url: websiteSettings?.brochure_url || null,
-            upi_id: paymentSettings?.upi_id || null,
-            account_name: paymentSettings?.account_name || null,
-            qr_code_url: paymentSettings?.qr_code_url || null,
-            sort_order: 1,
-            is_featured: true,
-            admin_username: localCreds["ai-humanoid-robot"]?.username || "csd_admin",
-            admin_password: localCreds["ai-humanoid-robot"]?.password || "gnits@csd2026",
-          },
-          {
-            id: "workshop-2-agentic-ai",
-            slug: "agentic-ai-cloud",
-            title: "Two Days Hands-On Workshop on 'AGENTIC AI & CLOUD-NATIVE SYSTEMS'",
-            subtitle:
-              "Master autonomous AI agents, LLM pipelines, and scalable cloud deployment architectures.",
-            description:
-              "Department of Computer Science & Engineering is organizing an intensive 2-day workshop focused on practical Agentic AI workflows, LangChain, LlamaIndex, and cloud-native containerized microservices.",
-            department: "CSE",
-            dates: "18 September 2026 – 19 September 2026",
-            timings: "9:30 AM to 4:30 PM",
-            venue: "Main Seminar Hall & Lab 3, CSE Block, GNITS, Hyderabad",
-            registration_fee: paymentSettings?.internal_fee ?? 250,
-            seat_limit: 400,
-            registration_open: true,
-            hero_banner_url: null,
-            brochure_url: null,
-            upi_id: null,
-            account_name: null,
-            qr_code_url: null,
-            sort_order: 2,
-            is_featured: false,
-            admin_username: localCreds["agentic-ai-cloud"]?.username || "cse_admin",
-            admin_password: localCreds["agentic-ai-cloud"]?.password || "gnits@cse2026",
-          },
-          webDevDynamic,
-        ];
+        {
+          id: "workshop-1-ai-humanoid",
+          slug: "ai-humanoid-robot",
+          title:
+            websiteSettings?.fdp_title ||
+            "Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT'",
+          subtitle:
+            websiteSettings?.fdp_subtitle ||
+            "under GNITS CSI Student Chapter — Gain hands-on experience in AI humanoid robot technologies.",
+          description:
+            websiteSettings?.description ||
+            "Department of CSE (Data Science) is organizing a Two Days Hands-On Workathon on 'ARTIFICIAL INTELLIGENCE HUMANOID ROBOT' under GNITS CSI Student Chapter.",
+          department: "CSE (Data Science)",
+          dates: websiteSettings?.fdp_dates || "23rd September 2026 – 24th September 2026.",
+          timings: websiteSettings?.timings || "9:00 AM to 4:00 PM",
+          venue: websiteSettings?.venue || "CL-12 & CL-13, Admin Block, GNITS, Hyderabad.",
+          registration_fee: paymentSettings?.internal_fee ?? 250,
+          seat_limit: websiteSettings?.seat_limit ?? 100,
+          registration_open: websiteSettings?.registration_open ?? true,
+          hero_banner_url: websiteSettings?.hero_banner_url || null,
+          brochure_url: websiteSettings?.brochure_url || null,
+          upi_id: paymentSettings?.upi_id || null,
+          account_name: paymentSettings?.account_name || null,
+          qr_code_url: paymentSettings?.qr_code_url || null,
+          sort_order: 1,
+          is_featured: true,
+          admin_username: localCreds["ai-humanoid-robot"]?.username || "csd_admin",
+          admin_password: localCreds["ai-humanoid-robot"]?.password || "gnits@csd2026",
+        },
+        {
+          id: "workshop-2-agentic-ai",
+          slug: "agentic-ai-cloud",
+          title: "Two Days Hands-On Workshop on 'AGENTIC AI & CLOUD-NATIVE SYSTEMS'",
+          subtitle:
+            "Master autonomous AI agents, LLM pipelines, and scalable cloud deployment architectures.",
+          description:
+            "Department of Computer Science & Engineering is organizing an intensive 2-day workshop focused on practical Agentic AI workflows, LangChain, LlamaIndex, and cloud-native containerized microservices.",
+          department: "CSE",
+          dates: "18 September 2026 – 19 September 2026",
+          timings: "9:30 AM to 4:30 PM",
+          venue: "Main Seminar Hall & Lab 3, CSE Block, GNITS, Hyderabad",
+          registration_fee: paymentSettings?.internal_fee ?? 250,
+          seat_limit: 400,
+          registration_open: true,
+          hero_banner_url: null,
+          brochure_url: null,
+          upi_id: null,
+          account_name: null,
+          qr_code_url: null,
+          sort_order: 2,
+          is_featured: false,
+          admin_username: localCreds["agentic-ai-cloud"]?.username || "cse_admin",
+          admin_password: localCreds["agentic-ai-cloud"]?.password || "gnits@cse2026",
+        },
+        webDevDynamic,
+      ];
 
-      // Always guarantee web-development workshop exists
+      // Guarantee web-development workshop exists in base list
       if (!fetchedWorkshops.some((w) => w.slug === "web-development")) {
         fetchedWorkshops.push(webDevDynamic);
       }
 
-      // Merge locally created / edited workshops safely
+      // 1. Merge localCustom workshops (as local offline fallback)
       for (const customWs of localCustom) {
-        const index = fetchedWorkshops.findIndex((w) => w.id === customWs.id || w.slug === customWs.slug);
+        const index = fetchedWorkshops.findIndex(
+          (w) => w.id === customWs.id || w.slug.toLowerCase() === customWs.slug.toLowerCase()
+        );
         if (index >= 0) {
-          const baseWs = fetchedWorkshops[index];
-          const isWebDev = customWs.slug === "web-development" || baseWs.slug === "web-development";
-
           fetchedWorkshops[index] = {
-            ...baseWs,
+            ...fetchedWorkshops[index],
             ...customWs,
-            title: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.title : (customWs.title || baseWs.title),
-            department: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.department : (customWs.department || baseWs.department),
-            venue:
-              isWebDev && (!customWs.venue || customWs.venue.includes("Admin Block / Lab"))
-                ? WEB_DEVELOPMENT_WORKSHOP.venue
-                : (customWs.venue || baseWs.venue),
-            dates: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.dates : (customWs.dates || baseWs.dates),
-            timings: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.timings : (customWs.timings || baseWs.timings),
-            description: isWebDev ? WEB_DEVELOPMENT_WORKSHOP.description : (customWs.description || baseWs.description),
-            outcomes:
-              isWebDev && (!customWs.outcomes || customWs.outcomes.length === 0)
-                ? WEB_DEVELOPMENT_WORKSHOP.outcomes
-                : (customWs.outcomes && customWs.outcomes.length > 0 ? customWs.outcomes : baseWs.outcomes),
-            // Never let empty/null customWs wipe out valid payment info:
-            upi_id: isWebDev ? (customWs.upi_id || WEB_DEVELOPMENT_WORKSHOP.upi_id) : (customWs.upi_id || baseWs.upi_id || paymentSettings?.upi_id || "sai@ybl"),
-            account_name: isWebDev ? (customWs.account_name || WEB_DEVELOPMENT_WORKSHOP.account_name) : (customWs.account_name || baseWs.account_name || paymentSettings?.account_name || "assdwe"),
-            qr_code_url: isWebDev ? (customWs.qr_code_url || WEB_DEVELOPMENT_WORKSHOP.qr_code_url) : (customWs.qr_code_url || baseWs.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl),
-            registration_fee: isWebDev ? (customWs.registration_fee ?? WEB_DEVELOPMENT_WORKSHOP.registration_fee ?? 200) : (customWs.registration_fee ?? baseWs.registration_fee ?? 200),
-            seat_limit:
-              isWebDev
-                ? (customWs.seat_limit && customWs.seat_limit !== 80 ? customWs.seat_limit : (baseWs.seat_limit && baseWs.seat_limit !== 80 ? baseWs.seat_limit : 100))
-                : (customWs.seat_limit ?? baseWs.seat_limit ?? 100),
           };
         } else {
           fetchedWorkshops.push(customWs);
+        }
+      }
+
+      // 2. Merge remoteOverrides from Supabase (Source of Truth across all browsers & devices)
+      for (const [slugKey, remoteWs] of Object.entries(remoteOverrides)) {
+        if (!remoteWs || typeof remoteWs !== "object") continue;
+        const index = fetchedWorkshops.findIndex(
+          (w) => w.slug.toLowerCase() === slugKey.toLowerCase() || (remoteWs.id && w.id === remoteWs.id)
+        );
+        if (index >= 0) {
+          fetchedWorkshops[index] = {
+            ...fetchedWorkshops[index],
+            ...remoteWs,
+            seat_limit:
+              remoteWs.seat_limit && remoteWs.seat_limit !== 80
+                ? remoteWs.seat_limit
+                : (fetchedWorkshops[index].seat_limit || 100),
+          };
+        } else {
+          fetchedWorkshops.push(remoteWs as Workshop);
         }
       }
 
@@ -662,9 +834,6 @@ export function useWorkshops() {
         (ws) => !deletedList.includes(ws.id) && !deletedList.includes(ws.slug)
       );
 
-      const localOutcomes = getLocalWorkshopOutcomes();
-      const localPayments = getLocalWorkshopPayments();
-      const dbPayments = await fetchDbWorkshopPayments();
       return finalWorkshops.map((ws) => {
         const key = ws.slug.toLowerCase();
         const db = dbPayments[key];
@@ -677,30 +846,40 @@ export function useWorkshops() {
               registration_fee: db?.registration_fee ?? loc?.registration_fee,
             }
           : undefined;
+
         if (db?.qr_code_url) ws = { ...ws, qr_code_url: db.qr_code_url };
-        const customOutcomeList = localOutcomes[ws.slug.toLowerCase()];
+        const customOutcomeList = localOutcomes[key];
         const hasCustomOutcomes = customOutcomeList && customOutcomeList.length > 0;
-        const isWebDev = ws.slug.toLowerCase() === "web-development" || ws.slug.toLowerCase().includes("web");
+        const isWebDev = key === "web-development" || key.includes("web");
+
         return {
           ...ws,
           upi_id:
             pay?.upi_id ||
-            (isWebDev ? (ws.upi_id || WEB_DEVELOPMENT_WORKSHOP.upi_id) : (ws.upi_id || paymentSettings?.upi_id || "sai@ybl")),
+            ws.upi_id ||
+            (isWebDev ? WEB_DEVELOPMENT_WORKSHOP.upi_id : (paymentSettings?.upi_id || "sai@ybl")),
           account_name:
             pay?.account_name ||
-            (isWebDev ? (ws.account_name || WEB_DEVELOPMENT_WORKSHOP.account_name) : (ws.account_name || paymentSettings?.account_name || "assdwe")),
+            ws.account_name ||
+            (isWebDev ? WEB_DEVELOPMENT_WORKSHOP.account_name : (paymentSettings?.account_name || "assdwe")),
           qr_code_url:
             pay?.qr_code_url ||
-            (isWebDev ? (ws.qr_code_url || WEB_DEVELOPMENT_WORKSHOP.qr_code_url) : (ws.qr_code_url || paymentSettings?.qr_code_url || excellenceLogoUrl)),
+            ws.qr_code_url ||
+            (isWebDev ? WEB_DEVELOPMENT_WORKSHOP.qr_code_url : (paymentSettings?.qr_code_url || excellenceLogoUrl)),
           registration_fee:
             pay?.registration_fee !== undefined && pay?.registration_fee !== null
               ? pay.registration_fee
-              : (isWebDev ? (ws.registration_fee ?? WEB_DEVELOPMENT_WORKSHOP.registration_fee ?? 200) : (ws.registration_fee ?? paymentSettings?.internal_fee ?? 200)),
-          outcomes: hasCustomOutcomes
-            ? customOutcomeList
-            : ws.outcomes && ws.outcomes.length > 0
+              : (ws.registration_fee !== undefined && ws.registration_fee !== null
+                ? ws.registration_fee
+                : (isWebDev ? 200 : (paymentSettings?.internal_fee ?? 250))),
+          outcomes:
+            ws.outcomes && ws.outcomes.length > 0
               ? ws.outcomes
-              : getDefaultOutcomesForWorkshop(ws),
+              : hasCustomOutcomes
+                ? customOutcomeList
+                : isWebDev
+                  ? WEB_DEVELOPMENT_WORKSHOP.outcomes
+                  : getDefaultOutcomesForWorkshop(ws),
         };
       });
     },
@@ -885,33 +1064,6 @@ export function isRegistrationForWorkshop(r: any, ws: Workshop): boolean {
   return false;
 }
 
-export async function ensureAdminSession() {
-  if (typeof window === "undefined") return;
-  try {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      const hasItAdmin =
-        sessionStorage.getItem("gnits_it_admin") === "sairohit45" ||
-        localStorage.getItem("gnits_it_admin") === "sairohit45";
-      const hasWsAdmin =
-        Object.keys(localStorage).some(
-          (k) => k.startsWith("gnits_ws_admin_") && localStorage.getItem(k) === "true"
-        ) ||
-        Object.keys(sessionStorage).some(
-          (k) => k.startsWith("gnits_ws_admin_") && sessionStorage.getItem(k) === "true"
-        );
-
-      if (hasItAdmin || hasWsAdmin) {
-        await supabase.auth.signInWithPassword({
-          email: "csmcsd@gnits.ac.in",
-          password: "csmcsd@1234",
-        });
-      }
-    }
-  } catch (err) {
-    console.warn("ensureAdminSession error:", err);
-  }
-}
 
 export function useRegistrations() {
   return useQuery<RegistrationRecord[]>({
