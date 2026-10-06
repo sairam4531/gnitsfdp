@@ -265,6 +265,30 @@ export function saveLocalWorkshopPayment(slug: string, payment: WorkshopPaymentI
   } catch (e) {
     console.error("Failed to save workshop payment info:", e);
   }
+  // Persist to the database so every device/browser sees the same payment details
+  const row: Record<string, unknown> = { slug: slug.toLowerCase(), updated_at: new Date().toISOString() };
+  if (payment.upi_id !== undefined) row.upi_id = payment.upi_id;
+  if (payment.account_name !== undefined) row.account_name = payment.account_name;
+  if (payment.qr_code_url !== undefined) row.qr_code_url = payment.qr_code_url;
+  if (payment.registration_fee !== undefined) row.registration_fee = payment.registration_fee;
+  return supabase
+    .from("workshop_payments" as never)
+    .upsert(row as never, { onConflict: "slug" })
+    .then(({ error }) => {
+      if (error) console.error("Failed to save workshop payment to database:", error);
+    });
+}
+
+async function fetchDbWorkshopPayments(): Promise<Record<string, WorkshopPaymentInfo>> {
+  try {
+    const { data, error } = await supabase.from("workshop_payments" as never).select("*");
+    if (error || !data) return {};
+    const out: Record<string, WorkshopPaymentInfo> = {};
+    for (const r of data as any[]) out[String(r.slug).toLowerCase()] = r;
+    return out;
+  } catch {
+    return {};
+  }
 }
 
 export async function uploadFileOrConvertToBase64(
@@ -640,8 +664,20 @@ export function useWorkshops() {
 
       const localOutcomes = getLocalWorkshopOutcomes();
       const localPayments = getLocalWorkshopPayments();
+      const dbPayments = await fetchDbWorkshopPayments();
       return finalWorkshops.map((ws) => {
-        const pay = localPayments[ws.slug.toLowerCase()];
+        const key = ws.slug.toLowerCase();
+        const db = dbPayments[key];
+        const loc = localPayments[key];
+        const pay: WorkshopPaymentInfo | undefined = db || loc
+          ? {
+              upi_id: db?.upi_id || loc?.upi_id,
+              account_name: db?.account_name || loc?.account_name,
+              qr_code_url: db ? db.qr_code_url : loc?.qr_code_url,
+              registration_fee: db?.registration_fee ?? loc?.registration_fee,
+            }
+          : undefined;
+        if (db?.qr_code_url) ws = { ...ws, qr_code_url: db.qr_code_url };
         const customOutcomeList = localOutcomes[ws.slug.toLowerCase()];
         const hasCustomOutcomes = customOutcomeList && customOutcomeList.length > 0;
         const isWebDev = ws.slug.toLowerCase() === "web-development" || ws.slug.toLowerCase().includes("web");
