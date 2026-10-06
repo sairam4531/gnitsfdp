@@ -423,6 +423,7 @@ export type Database = {
           id: string
           registration_open: boolean
           seat_limit: number
+          timings: string | null
           updated_at: string
           venue: string
         }
@@ -439,6 +440,7 @@ export type Database = {
           id?: string
           registration_open?: boolean
           seat_limit?: number
+          timings?: string | null
           updated_at?: string
           venue?: string
         }
@@ -455,6 +457,7 @@ export type Database = {
           id?: string
           registration_open?: boolean
           seat_limit?: number
+          timings?: string | null
           updated_at?: string
           venue?: string
         }
